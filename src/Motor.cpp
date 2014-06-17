@@ -3,13 +3,12 @@
 //
 //
 //  Created by Isabella Stephens on 10/12/12.
-//  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
+//  Copyright (c) 2012 Cartesian Co. All rights reserved.
 //
 
 #include "Motor.h"
 
-Motor::Motor(int stepPin, int dirPin, int powerPin, int stepsPerRev)
-{
+Motor::Motor(int stepPin, int dirPin, int powerPin, int stepsPerRev) {
     this->stepPin = stepPin;
     this->dirPin = dirPin;
     this->powerPin = powerPin;
@@ -37,19 +36,16 @@ Motor::Motor() {
     setSpeed(500);
 }
 
-void Motor::power(int state)
-{
+void Motor::power(int state) {
     if(state) digitalWrite(powerPin, LOW);
     else digitalWrite(powerPin, HIGH);
 }
 
-long Motor::getPosition()
-{
+long Motor::getPosition() {
     return position;
 }
 
-void Motor::resetPosition()
-{
+void Motor::resetPosition() {
     int currentDirection = this->direction;
     /*
     if (position > 0) {
@@ -65,22 +61,19 @@ void Motor::resetPosition()
     setDir(currentDirection);
 }
 
-void Motor::setDir(int direction)
-{
+void Motor::setDir(int direction) {
     this->direction = direction;
     if(direction) digitalWrite(dirPin, HIGH);
     else digitalWrite(dirPin, LOW);
 }
 
-void Motor::step(int direction)
-{
+void Motor::step(int direction) {
     digitalWrite(dirPin, direction);
     this->direction = direction;
     step();
 }
 
-void Motor::step()
-{
+void Motor::step() {
     while((micros() - lastStepTime) < speed) {
         if(micros() < lastStepTime) {
             delay(speed);
@@ -96,8 +89,7 @@ void Motor::step()
     else position++;
 }
 
-void Motor::move(long steps)
-{
+void Motor::move(long steps) {
     power(1);
     long distance = steps;
 
@@ -112,8 +104,7 @@ void Motor::move(long steps)
     }
 }
 
-void Motor::moveUM(long um)
-{
+void Motor::moveUM(long um) {
     long steps = (um*stepsPerMeter)/1000000L;
     move(steps);
 }
@@ -122,8 +113,7 @@ void Motor::moveUM(long um)
  * This function moves by nozzle widths. Offset is to 1 decimal place
  * so 10 will move 1 nozzle width, etc.
  */
-void Motor::moveNozzleOffset(int offset)
-{
+void Motor::moveNozzleOffset(int offset) {
     //85 um is a nozzle width
     //long um = (offset*265L)/10L;
     //long um = (offset*847L)/10L;
@@ -133,8 +123,7 @@ void Motor::moveNozzleOffset(int offset)
 
 }
 
-void Motor::setSpeed(int mmPerMinute)
-{
+void Motor::setSpeed(int mmPerMinute) {
     int rate = mmPerMinute;
     if (rate > 5000) rate = 5000; //maximum rate
     else if (rate < 0) rate = 0; // cannot have a negative rate
@@ -143,8 +132,6 @@ void Motor::setSpeed(int mmPerMinute)
     this->speed = i;
 }
 
-int Motor::getSpeed()
-{
+int Motor::getSpeed() {
     return this->speed;
 }
-

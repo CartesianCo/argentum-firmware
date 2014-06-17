@@ -3,7 +3,7 @@
 //
 //
 //  Created by Isabella Stephens on 10/12/12.
-//  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
+//  Copyright (c) 2012 Cartesian Co. All rights reserved.
 //
 
 #ifndef _Motor_h
@@ -42,6 +42,5 @@ private:
     //static const long stepsPerMeter = 94140;//11.767463 (half steps per mm)
     static const long stepsPerMeter = 80000; //0.0125 mm per step
 };
-
 
 #endif
