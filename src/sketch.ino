@@ -64,7 +64,7 @@ void serialEvent() {
 
         // read in extra bytes if necessary
         switch(command[0]) {
-            case 112:
+            case 'p':
                 break;
 
             case 'm':
@@ -100,52 +100,12 @@ void parseCommand(byte* command) {
     int dist = 0;
 
     switch(command[0]) {
-        case 1:
+        case 0x01:
             fireHead((byte)command[1], (byte)command[2], (byte)command[5], (byte)command[6]);
-            /*
-            Serial.print("C: ");
-            Serial.print((byte)command[1]);
-            Serial.print(" ");
-            Serial.println((byte)command[5]);
-            */
-            break;
-
-        case 2:
-            xMotor.setDir(1);
-            xMotor.move(-1);
-            //Serial.println("Move left");
 
             break;
 
-        case 3:
-            xMotor.setDir(0);
-            xMotor.move(1);
-
-            break;
-
-        case 4:
-            yMotor.setDir(1);
-            yMotor.move(-1);
-
-            break;
-
-        case 5:
-            yMotor.setDir(0);
-            yMotor.move(1);
-
-            break;
-
-        case 7:
-            for (int i=0; i <= command[1]; i++) delay(5000);
-
-            break;
-
-        case 8:
-            //digitalWrite(acessory, !digitalRead(acessory));
-
-            break;
-
-        case 112: // p
+        case 'p':
             Serial.println("Printing file.");
             xMotor.setSpeed(3000);
             xMotor.setSpeed(3000);
@@ -153,7 +113,7 @@ void parseCommand(byte* command) {
 
             break;
 
-        case 80: // P
+        case 'P': // P
             Serial.println("Paused - enter R to resume");
             while(Serial.read() != 'R'){}
 
@@ -181,41 +141,6 @@ void parseCommand(byte* command) {
                 } else {
                     yMotor.move(-1*dist);
                 }
-            }
-
-            break;
-
-        case 'f':
-        case 'F':
-            for(int j = 0; j < 1000; j++) {
-                for(int i = 0; i < 13; i++) {
-                    fireHead(255, i+1, 255, i+1);
-                }
-                delay(20);
-            }
-
-            break;
-
-        case 'x':
-        case 'X':
-            if(command[1] == '0') {
-                xMotor.power(0);
-            } else if (command[1] == '1') {
-                xMotor.power(1);
-            } else {
-                Serial.println(command[1]);
-            }
-
-            break;
-
-        case 'y':
-        case 'Y':
-            if(command[1] == '0') {
-                yMotor.power(0);
-            } else if (command[1] == '1') {
-                yMotor.power(1);
-            } else {
-                Serial.println(command[1]);
             }
 
             break;
@@ -277,13 +202,6 @@ void readFile(char* filename) {
         switch(command[0]) {
             case 1:
                 for(int i = 0; i < 7; i++) {
-                    command[i + 1] = myFile.read();
-                }
-
-                break;
-
-            case 7:
-                for(int i = 0; i < 1; i++) {
                     command[i + 1] = myFile.read();
                 }
 
