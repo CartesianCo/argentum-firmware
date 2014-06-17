@@ -1,4 +1,5 @@
 #include "Motor.h"
+#include "LEDStrip.h"
 #include <SD.h>
 #include <Servo.h>
 
@@ -35,9 +36,12 @@ void setup()
   ServoR.write(20);
   ServoL.write(45);
 
-
+    initLED();
 
   delay(1000);
+
+  setLEDToColour(COLOUR_HOME);
+
   if(!SD.begin(53)) { //Initalise SD
     Serial.println("SD card could not be accessed.");
   }
@@ -64,7 +68,7 @@ void serialEvent()
     command[0] = Serial.read();
 
     // read in extra bytes if necessary
-    switch(command[0]) 
+    switch(command[0])
     {
       case 112:
         break;
@@ -227,6 +231,8 @@ void readFile(char* filename)
 
   // if file.available() fails then do something?
 
+  setLEDToColour(COLOUR_PRINTING);
+
   // loop through file
   while(myFile.available())
   {
@@ -267,6 +273,8 @@ void readFile(char* filename)
     }
   }
 
+  setLEDToColour(COLOUR_FINISHED);
+
   //close file
   myFile.close();
 }
@@ -291,17 +299,16 @@ void fireHead(byte rPrim, byte rAddr, byte lPrim, byte lAddr)
 
       PORTC = (PORTC | (int(rAddr) << 4));
 
-      __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t"); 
+      __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
       PORTL = int(lPrim);
-      PORTA = int(rPrim); 
+      PORTA = int(rPrim);
       delayMicroseconds(6);
       __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
       //delay(5000);
       PORTA = 0;
       PORTL = 0;
-      __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");  
+      __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
       PORTC = 0;
       //delayMicroseconds(500);
       }
 }
-
