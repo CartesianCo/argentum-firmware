@@ -2,6 +2,7 @@
 #include "LEDStrip.h"
 #include <SD.h>
 #include <Servo.h>
+#include "settings.h"
 
 Motor yMotor(A14, A13, A15, 0);
 Motor xMotor(A11, A10, A12, 0);
@@ -30,6 +31,8 @@ void setup() {
     ServoL.write(45);
 
     initLED();
+
+    readSetting(0);
 
     delay(1000);
 
