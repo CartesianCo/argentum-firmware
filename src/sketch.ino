@@ -6,12 +6,7 @@
 Motor yMotor(A14, A13, A15, 0);
 Motor xMotor(A11, A10, A12, 0);
 
-//Motor yMotor(3, 2, 4, 0);
-//Motor xMotor(39, 41, 44, 0);
-//Motor xMotor(3, 2, 4, 0);
-//Motor yMotor(39, 41, 44, 0);
-
-int acessory = 39;
+int accessory = 39;
 
 Servo ServoR; // The right drying roller servo
 Servo ServoL; // The left drying roller servo
@@ -19,11 +14,11 @@ Servo ServoL; // The left drying roller servo
 File myFile;
 
 void setup() {
-    Serial.begin(9600); //Initalise Serial
+    Serial.begin(9600);
     Serial.flush();
 
-    pinMode(acessory, OUTPUT);
-    digitalWrite(acessory, HIGH);
+    pinMode(accessory, OUTPUT);
+    digitalWrite(accessory, HIGH);
 
     DDRC = 255;
     DDRL = 255;
@@ -40,12 +35,12 @@ void setup() {
 
     setLEDToColour(COLOUR_HOME);
 
-    if(!SD.begin(53)) { //Initalise SD
+    //Initalise SD
+    if(!SD.begin(53)) {
         Serial.println("SD card could not be accessed.");
     }
 
     Serial.println("Press p to print Output.txt, S to stop, P to pause, R to resume");
-    //xMotor.setSpeed(5000);
 }
 
 void loop() {
