@@ -6,12 +6,7 @@
 Motor yMotor(A14, A13, A15, 0);
 Motor xMotor(A11, A10, A12, 0);
 
-//Motor yMotor(3, 2, 4, 0);
-//Motor xMotor(39, 41, 44, 0);
-//Motor xMotor(3, 2, 4, 0);
-//Motor yMotor(39, 41, 44, 0);
-
-int acessory = 39;
+int accessory = 39;
 
 Servo ServoR; // The right drying roller servo
 Servo ServoL; // The left drying roller servo
@@ -22,8 +17,8 @@ void setup() {
     Serial.begin(9600); //Initalise Serial
     Serial.flush();
 
-    pinMode(acessory, OUTPUT);
-    digitalWrite(acessory, HIGH);
+    pinMode(accessory, OUTPUT);
+    digitalWrite(accessory, HIGH);
 
     DDRC = 255;
     DDRL = 255;
@@ -193,7 +188,6 @@ void readFile(char* filename) {
     setLEDToColour(COLOUR_PRINTING);
 
     // loop through file
-
     while(myFile.available()) {
         // read in first byte of command
         command[0] = myFile.read();
@@ -250,7 +244,8 @@ void readFile(char* filename) {
 // Put in to a printhead class
 void fireHead(byte rPrim, byte rAddr, byte lPrim, byte lAddr) {
     int x1, x2;
-    if (rPrim+rAddr+lPrim+lAddr > 0) {
+
+    if (rPrim || rAddr || lPrim || lAddr) {
         PORTC = (PORTC | int(lAddr)); //Assign this to port C to load it into the cannon.
 
         //x1 = int(rAddr) << 4 | int(rAddr) >4; //Reverse
