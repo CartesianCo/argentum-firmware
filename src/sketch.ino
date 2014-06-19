@@ -15,7 +15,7 @@ Servo ServoL; // The left drying roller servo
 File myFile;
 
 void setup() {
-    Serial.begin(9600); //Initalise Serial
+    Serial.begin(9600);
     Serial.flush();
 
     pinMode(accessory, OUTPUT);
@@ -31,8 +31,6 @@ void setup() {
     ServoL.write(45);
 
     initLED();
-
-    readSetting(0);
 
     delay(1000);
 
@@ -139,6 +137,35 @@ void parseCommand(byte* command) {
                 } else {
                     yMotor.move(-1*dist);
                 }
+            }
+
+            break;
+
+        case '?':
+            Serial.println(read_setting(command[1]));
+
+            break;
+
+        case 'x':
+        case 'X':
+            if(command[1] == '0') {
+                xMotor.power(0);
+            } else if (command[1] == '1') {
+                xMotor.power(1);
+            } else {
+                Serial.println(command[1]);
+            }
+
+            break;
+
+        case 'y':
+        case 'Y':
+            if(command[1] == '0') {
+                yMotor.power(0);
+            } else if (command[1] == '1') {
+                yMotor.power(1);
+            } else {
+                Serial.println(command[1]);
             }
 
             break;

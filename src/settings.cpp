@@ -2,11 +2,11 @@
 
 #include <EEPROM.h>
 
-setting_t readSetting(uint8_t settingID) {
+uint8_t read_setting(uint8_t setting_id) {
     setting_t setting;
 
-    setting.address = settingID;
-    setting.value = EEPROM.read(settingID);
+    setting.address = setting_id;
+    setting.value = EEPROM.read(setting_id);
 
-    return setting;
+    return setting.value;
 }

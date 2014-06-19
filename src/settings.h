@@ -38,6 +38,6 @@ typedef struct {
     uint8_t value;
 } setting_t;
 
-setting_t readSetting(uint8_t settingID);
+uint8_t read_setting(uint8_t setting_id);
 
 #endif
