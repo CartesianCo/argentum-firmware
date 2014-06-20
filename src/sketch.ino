@@ -7,8 +7,8 @@
 Motor aMotor(15, 14, 16, 0); // X
 Motor bMotor(18, 17, 19, 0); // Y
 
-Motor *xMotor = &aMotor;
-Motor *yMotor = &bMotor;
+Motor *xMotor = &bMotor;
+Motor *yMotor = &aMotor;
 
 Servo ServoR; // The right drying roller servo
 Servo ServoL; // The left drying roller servo
@@ -16,7 +16,7 @@ Servo ServoL; // The left drying roller servo
 File myFile;
 
 void setup() {
-    while(1) {
+    /*while(1) {
         xMotor->set_direction(Motor::Forward);
 
         for(int i = 0; i < 200; i++) {
@@ -28,7 +28,7 @@ void setup() {
         for(int i = 0; i < 200; i++) {
             xMotor->step();
         }
-    }
+    }*/
 
     Serial.begin(9600);
     Serial.flush();
@@ -319,6 +319,7 @@ const int x_neg_limit_pin = A0;
 const int y_pos_limit_pin = A1;
 const int y_neg_limit_pin = 6;
 
+/*
 #define x_pos_limit() digitalRead(x_pos_limit_pin)
 #define x_neg_limit() digitalRead(x_neg_limit_pin)
 
@@ -329,6 +330,159 @@ const int y_neg_limit_pin = 6;
 #define y_limit() (y_pos_limit() || y_neg_limit())
 
 #define any_limit() (x_limit() || y_limit())
+*/
+
+bool x_pos_limit(void) {
+    return digitalRead(x_pos_limit_pin);
+}
+
+bool x_neg_limit(void) {
+    return digitalRead(x_neg_limit_pin);
+}
+
+bool y_pos_limit(void) {
+    return digitalRead(y_pos_limit_pin);
+}
+
+bool y_neg_limit(void) {
+    return digitalRead(y_neg_limit_pin);
+}
+
+bool x_limit(void) {
+    return (x_pos_limit() || x_neg_limit());
+}
+
+bool y_limit(void) {
+    return (y_pos_limit() || y_neg_limit());
+}
+
+bool any_limit(void) {
+    return (x_limit() || y_limit());
+}
+
+void swap_motors(void) {
+    xMotor = &bMotor;
+    yMotor = &aMotor;
+}
+
+void print_switch_status(void) {
+    if(x_pos_limit()) {
+        Serial.print("X+ ");
+    }
+
+    if(x_neg_limit()) {
+        Serial.print("X- ");
+    }
+
+    if(y_pos_limit()) {
+        Serial.print("Y+ ");
+    }
+
+    if(y_neg_limit()) {
+        Serial.print("Y- ");
+    }
+
+    Serial.print("\n");
+}
+
+const static int escape_steps = 200;
+
+bool clear_blockage(void) {
+    if(any_limit()) {
+        Serial.println("At least one switch is already triggered.");
+        xMotor->steps(escape_steps);
+
+        if(any_limit()) {
+            Serial.println("Still triggered...");
+        }
+
+        xMotor->set_direction(Motor::Backward);
+
+        xMotor->steps(escape_steps);
+
+        if(any_limit()) {
+            Serial.println("Still triggered...");
+        }
+
+        yMotor->steps(escape_steps);
+
+        if(any_limit()) {
+            Serial.println("Still triggered...");
+        }
+
+        yMotor->set_direction(Motor::Backward);
+
+        yMotor->steps(escape_steps);
+
+        if(any_limit()) {
+            Serial.println("Still triggered...");
+        }
+    }
+}
+
+bool detect_motors(void) {
+    if(!any_limit()) {
+        while(!any_limit()) {
+            xMotor->step();
+        }
+    } else {
+        clear_blockage();
+    }
+
+    // Now know which axis 'xMotor' currently refers to, and which direction
+    // it moved in.
+
+    // Back off the limit switch
+    xMotor->set_direction(Motor::Backward);
+    xMotor->steps(escape_steps);
+    xMotor->set_direction(Motor::Forward);
+
+    if(x_limit()) {
+        // It's the correct axis
+        Serial.println("  - Orientation Correct.");
+
+        return true;
+    } else {
+        // Incorrect axis
+        Serial.println("  - Orientation Incorrect.");
+
+        swap_motors();
+
+        return false;
+    }
+}
+
+bool _triggered_limit(void) {
+    Serial.println("bool (*triggered_limit)(void) pointer wasn't set...");
+}
+
+void free_axis(Motor *motor, bool (*pos_limit)(void), bool (*neg_limit)(void)) {
+    Serial.println("  - Freeing Axis");
+
+    bool (*triggered_limit)(void) = &_triggered_limit;
+
+    if(pos_limit()) {
+        Serial.println("  - Positive");
+        motor->set_direction(Motor::Forward);
+        triggered_limit = pos_limit;
+    }
+
+    if(neg_limit()) {
+        Serial.println("  - Negative");
+        motor->set_direction(Motor::Backward);
+        triggered_limit = neg_limit;
+    }
+
+    for(int i = 0; i < 100; i++) {
+        motor->step();
+    }
+
+    if(triggered_limit()) {
+        Serial.println("  - Stuck?");
+    } else {
+        Serial.println("  - Freed!");
+    }
+}
 
 void calibration(void) {
     /*while(1) {
@@ -349,7 +503,6 @@ void calibration(void) {
         }
     }*/
     Serial.println("Calibration beginning.");
-
     /*
 
     Procedure:
@@ -365,6 +518,12 @@ void calibration(void) {
 
     */
 
+    xMotor->set_direction(Motor::Forward);
+    yMotor->set_direction(Motor::Forward);
+
+    xMotor->set_speed(250);
+    yMotor->set_speed(250);
+
     bool x_flipped = false;
     bool y_flipped = false;
 
@@ -375,67 +534,81 @@ void calibration(void) {
 
     // Find an initial home position.
 
-    Serial.println("? - Initial Maximum (either, should be X)");
+    Serial.println("  - Determining motor orientation.");
 
-    while(!any_limit()) {
+    motors_flipped = detect_motors();
+
+    print_switch_status();
+
+    if(any_limit()) {
+        Serial.println("  - Switch already triggered, attempting to escape");
+
+        if(x_limit()) {
+            Serial.println("  - X Trapped, attempting to free.");
+            free_axis(xMotor, x_pos_limit, x_neg_limit);
+        }
+
+        if(y_limit()) {
+            Serial.println("  - Y Trapped, attempting to free.");
+            free_axis(yMotor, y_pos_limit, y_neg_limit);
+        }
+    }
+
+    return;
+
+    Serial.println("X - First Limit");
+
+    while(!x_limit()) {
         xMotor->step();
     }
 
-    if(x_limit()) {
-        // Motor axes are correct
-        Serial.println("X - Found First Limit");
+    if(!x_pos_limit()) {
+        // X Axis is the correct direction
+        Serial.println("X - Direction Swapped");
 
-        if(x_neg_limit()) {
-            Serial.println("X - Flipping Motor Direction");
-            x_flipped = true;
-
-            xMotor->set_direction(Motor::Backward);
-        }
-
-        Serial.println("X - Finding Second Limit");
-        while(!x_limit()) {
-            xMotor->step();
-
-            x_distance++;
-        }
+        x_flipped = true;
+    } else {
+        Serial.println("X - Direction Correct");
     }
+
+    xMotor->set_direction(Motor::Backward);
+
+    Serial.println("X - Second Limit");
+
+    while(!x_neg_limit()) {
+        xMotor->step();
+        x_distance++;
+    }
+
+    // Y
+
+    Serial.println("Y - First Limit");
 
     if(y_limit()) {
-        // Motor axes are not correct
-        Serial.println("Y - Found First Limit [ MOTOR CONNECTION ]");
-
-        if(y_neg_limit()) {
-            Serial.println("Y - Flipping Motor Direction");
-            y_flipped = true;
-
-            yMotor->set_direction(Motor::Backward);
-        }
-
-        motors_flipped = true;
-        xMotor = &bMotor;
-        yMotor = &aMotor;
-
-        Serial.println("Y - Finding Second Limit");
-
-        while(!y_limit()) {
-            yMotor->step();
-
-            y_distance++;
-        }
+        yMotor->set_direction(Motor::Backward);
     }
-
-    //goto complete;
-
-    Serial.println("Y - Initial Maximum (either)");
 
     while(!y_limit()) {
         yMotor->step();
     }
 
-    Serial.println("Y - Found First Limit");
+    if(!y_pos_limit()) {
+        // X Axis is the correct direction
+        Serial.println("Y - Direction Swapped");
 
+        y_flipped = true;
+    } else {
+        Serial.println("Y - Direction Correct");
+    }
 
-complete:
+    yMotor->set_direction(Motor::Backward);
+
+    Serial.println("Y - Second Limit");
+
+    while(!y_neg_limit()) {
+        yMotor->step();
+        y_distance++;
+    }
 
     Serial.println("Calibration procedure completed:");
     Serial.println(x_flipped);

@@ -20,8 +20,13 @@ public:
     long get_position();
     void reset_position();
     void switch_power();
+
     void set_direction(uint8_t direction);
+    void toggle_direction(void);
+
     void step();
+    void steps(long steps);
+
     void set_speed(int mm_per_minute); //set to 0 for instantaneous movement
     int  get_speed();
     void move(long steps);

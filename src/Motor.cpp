@@ -59,6 +59,10 @@ void Motor::reset_position() {
     set_direction(current_direction);
 }
 
+void Motor::toggle_direction(void) {
+    this->set_direction(!this->direction);
+}
+
 void Motor::set_direction(uint8_t direction) {
     this->direction = direction;
 
@@ -66,6 +70,12 @@ void Motor::set_direction(uint8_t direction) {
         digitalWrite(dir_pin, HIGH);
     } else {
         digitalWrite(dir_pin, LOW);
+    }
+}
+
+void Motor::steps(long steps) {
+    while(steps--) {
+        this->step();
     }
 }
 
