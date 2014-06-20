@@ -21,13 +21,10 @@ public:
     void resetPosition();
     void switchPower();
     void setDir(int direction);
-    void step(int direction);
     void step();
     void setSpeed(int mmPerMinute); //set to 0 for instantaneous movement
     int getSpeed();
     void move(long steps);
-    void moveUM(long um);
-    void moveNozzleOffset(int offset);
     long lastStepTime;
 
 

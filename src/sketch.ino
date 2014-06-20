@@ -4,8 +4,11 @@
 #include <Servo.h>
 #include "settings.h"
 
-Motor yMotor(A14, A13, A15, 0);
-Motor xMotor(A11, A10, A12, 0);
+Motor aMotor(15, 14, 16, 0); // X
+Motor bMotor(18, 17, 19, 0); // Y
+
+Motor *xMotor = &aMotor;
+Motor *yMotor = &bMotor;
 
 int accessory = 39;
 
@@ -21,9 +24,22 @@ void setup() {
     pinMode(accessory, OUTPUT);
     digitalWrite(accessory, HIGH);
 
-    DDRC = 255;
-    DDRL = 255;
-    DDRA = 255;
+    // Configure Cartridge Ports
+    DDRC = 0xFF;
+    DDRL = 0xFF;
+    DDRA = 0xFF;
+
+    // Configure Input Pins
+    pinMode(A12, INPUT); // General Analog Inputs
+    pinMode(A13, INPUT);
+    pinMode(A14, INPUT);
+    pinMode(A15, INPUT); // Voltage Feedback (9V Sense)
+
+    pinMode(5, INPUT); // XMAX
+    pinMode(A0, INPUT); // XMIN
+
+    pinMode(A1, INPUT); // YMAX
+    pinMode(6, INPUT); // YMIN
 
     ServoR.attach(14);
     ServoL.attach(15);
@@ -103,8 +119,8 @@ void parseCommand(byte* command) {
 
         case 'p':
             Serial.println("Printing file.");
-            xMotor.setSpeed(3000);
-            xMotor.setSpeed(3000);
+            //xMotor.setSpeed(3000);
+            //xMotor.setSpeed(3000);
             for (int i=0; i <= 0; i++) readFile("Output.hex");
 
             break;
@@ -112,6 +128,8 @@ void parseCommand(byte* command) {
         case 'P': // P
             Serial.println("Paused - enter R to resume");
             while(Serial.read() != 'R'){}
+
+            Serial.println("Resuming");
 
             break;
 
@@ -127,17 +145,22 @@ void parseCommand(byte* command) {
 
             if (toupper(command[2]) == 'X') {
                 if(dist == 0) {
-                    xMotor.resetPosition();
+                    xMotor->resetPosition();
                 } else {
-                    xMotor.move(-2*dist);
+                    xMotor->move(-dist);
                 }
             } else if (toupper(command[2]) == 'Y') {
                 if(dist == 0) {
-                    yMotor.resetPosition();
+                    yMotor->resetPosition();
                 } else {
-                    yMotor.move(-1*dist);
+                    yMotor->move(-dist);
                 }
             }
+
+            break;
+
+        case 'C':
+            calibration();
 
             break;
 
@@ -146,12 +169,19 @@ void parseCommand(byte* command) {
 
             break;
 
+        case '!':
+            Serial.println("Writing setting.");
+
+            write_setting(command[1], command[2]);
+
+            break;
+
         case 'x':
         case 'X':
             if(command[1] == '0') {
-                xMotor.power(0);
+                xMotor->power(0);
             } else if (command[1] == '1') {
-                xMotor.power(1);
+                xMotor->power(1);
             } else {
                 Serial.println(command[1]);
             }
@@ -161,9 +191,9 @@ void parseCommand(byte* command) {
         case 'y':
         case 'Y':
             if(command[1] == '0') {
-                yMotor.power(0);
+                yMotor->power(0);
             } else if (command[1] == '1') {
-                yMotor.power(1);
+                yMotor->power(1);
             } else {
                 Serial.println(command[1]);
             }
@@ -252,8 +282,8 @@ void readFile(char* filename) {
             if(Serial.peek() == 'S') {
                 myFile.close();
 
-                xMotor.resetPosition();
-                yMotor.resetPosition();
+                xMotor->resetPosition();
+                yMotor->resetPosition();
 
                 return;
             }
@@ -265,6 +295,132 @@ void readFile(char* filename) {
 
     //close file
     myFile.close();
+}
+
+const int x_pos_limit_pin = 5;
+const int x_neg_limit_pin = A0;
+const int y_pos_limit_pin = A1;
+const int y_neg_limit_pin = 6;
+
+#define x_pos_limit() digitalRead(x_pos_limit_pin)
+#define x_neg_limit() digitalRead(x_neg_limit_pin)
+
+#define y_pos_limit() digitalRead(y_pos_limit_pin)
+#define y_neg_limit() digitalRead(y_neg_limit_pin)
+
+#define x_limit() (x_pos_limit() || x_neg_limit())
+#define y_limit() (y_pos_limit() || y_neg_limit())
+
+#define any_limit() (x_limit() || y_limit())
+
+void calibration(void) {
+    /*while(1) {
+        if(x_pos_limit()) {
+            Serial.println("X - POS");
+        }
+
+        if(x_neg_limit()) {
+            Serial.println("X - NEG");
+        }
+
+        if(y_pos_limit()) {
+            Serial.println("Y - POS");
+        }
+
+        if(y_neg_limit()) {
+            Serial.println("Y - NEG");
+        }
+    }*/
+    Serial.println("Calibration beginning.");
+
+    /*
+
+    Procedure:
+        - Attempt to home the head, we don't know which way is which at this
+          point, however we are assuming that the limit switches are wired
+          correctly.
+
+        - Command both axes to move in the positive direction, and monitor the
+          limit switch inputs for collisions.
+
+        - Next, move in the opposite direction until a collision, and count
+          the number of steps required. This is the bed size.
+
+    */
+
+    bool x_flipped = false;
+    bool y_flipped = false;
+
+    bool motors_flipped = false;
+
+    long x_distance = 0L;
+    long y_distance = 0L;
+
+    // Find an initial home position.
+
+    Serial.println("? - Initial Maximum (either, should be X)");
+
+    while(!any_limit()) {
+        xMotor->move(-1);
+    }
+
+    if(x_limit()) {
+        // Motor axes are correct
+        Serial.println("X - Found First Limit");
+
+        if(x_neg_limit()) {
+            Serial.println("X - Flipping Motor Direction");
+            x_flipped = true;
+        }
+
+        Serial.println("X - Finding Second Limit");
+        while(!x_limit()) {
+            xMotor->move(1);
+
+            x_distance++;
+        }
+    }
+
+    if(y_limit()) {
+        // Motor axes are not correct
+        Serial.println("Y - Found First Limit [ MOTOR CONNECTION ]");
+
+        if(y_neg_limit()) {
+            Serial.println("Y - Flipping Motor Direction");
+            y_flipped = true;
+        }
+
+        motors_flipped = true;
+        xMotor = &bMotor;
+        yMotor = &aMotor;
+
+        Serial.println("Y - Finding Second Limit");
+
+        while(!y_limit()) {
+            yMotor->move(1);
+
+            y_distance++;
+        }
+    }
+
+    //goto complete;
+
+    Serial.println("Y - Initial Maximum (either)");
+
+    while(!y_limit()) {
+        yMotor->move(-1);
+    }
+
+    Serial.println("Y - Found First Limit");
+
+
+complete:
+
+    Serial.println("Calibration procedure completed:");
+    Serial.println(x_flipped);
+    Serial.println(y_flipped);
+    Serial.println(x_distance, DEC);
+    Serial.println(y_distance, DEC);
 }
 
 // PORT C is [R1, R2, R3, R4, L1, L2, L3, L4] (Multiplexer)

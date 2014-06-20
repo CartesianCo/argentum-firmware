@@ -33,11 +33,7 @@ public:
     ~Settings();
 };
 
-typedef struct {
-    uint8_t address;
-    uint8_t value;
-} setting_t;
-
-uint8_t read_setting(uint8_t setting_id);
+uint8_t read_setting(uint8_t id);
+void write_setting(uint8_t id, uint8_t value);
 
 #endif

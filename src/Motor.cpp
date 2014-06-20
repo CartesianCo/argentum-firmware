@@ -67,12 +67,6 @@ void Motor::setDir(int direction) {
     else digitalWrite(dirPin, LOW);
 }
 
-void Motor::step(int direction) {
-    digitalWrite(dirPin, direction);
-    this->direction = direction;
-    step();
-}
-
 void Motor::step() {
     while((micros() - lastStepTime) < speed) {
         if(micros() < lastStepTime) {
@@ -102,25 +96,6 @@ void Motor::move(long steps) {
     for (long i = 0; i < distance; i++) {
         step();
     }
-}
-
-void Motor::moveUM(long um) {
-    long steps = (um*stepsPerMeter)/1000000L;
-    move(steps);
-}
-
-/*
- * This function moves by nozzle widths. Offset is to 1 decimal place
- * so 10 will move 1 nozzle width, etc.
- */
-void Motor::moveNozzleOffset(int offset) {
-    //85 um is a nozzle width
-    //long um = (offset*265L)/10L;
-    //long um = (offset*847L)/10L;
-    //long um = (offset*1693L)/10L;
-    long um = (offset*169L)/10L;
-    moveUM(um);
-
 }
 
 void Motor::setSpeed(int mmPerMinute) {
