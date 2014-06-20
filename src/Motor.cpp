@@ -59,7 +59,7 @@ void Motor::reset_position() {
     set_direction(current_direction);
 }
 
-void Motor::toggle_direction(void) {
+void Motor::swap_direction(void) {
     this->set_direction(!this->direction);
 }
 

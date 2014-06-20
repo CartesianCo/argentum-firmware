@@ -332,6 +332,38 @@ const int y_neg_limit_pin = 6;
 #define any_limit() (x_limit() || y_limit())
 */
 
+#define X_POS_BIT 0b00001000
+#define X_NEG_BIT 0b00000100
+#define Y_POS_BIT 0b00000010
+#define Y_NEG_BIT 0b00000001
+
+#define X_POS(switches) (switches & X_POS_BIT)
+#define X_NEG(switches) (switches & X_NEG_BIT)
+#define Y_POS(switches) (switches & Y_POS_BIT)
+#define Y_NEG(switches) (switches & Y_NEG_BIT)
+
+uint8_t limit_switches(void) {
+    uint8_t switches = 0b00000000;
+
+    if(x_pos_limit()) {
+        switches |= 0b00001000;
+    }
+
+    if(x_neg_limit()) {
+        switches |= 0b00000100;
+    }
+
+    if(y_pos_limit()) {
+        switches |= 0b00000010;
+    }
+
+    if(y_neg_limit()) {
+        switches |= 0b00000001;
+    }
+
+    return switches;
+}
+
 bool x_pos_limit(void) {
     return digitalRead(x_pos_limit_pin);
 }
@@ -365,58 +397,125 @@ void swap_motors(void) {
     yMotor = &aMotor;
 }
 
-void print_switch_status(void) {
-    if(x_pos_limit()) {
+void print_switch_status(uint8_t switches) {
+    //Serial.print("Switch binary: ");
+    //Serial.println(switches, BIN);
+
+    if(X_POS(switches)) {
         Serial.print("X+ ");
     }
 
-    if(x_neg_limit()) {
+    if(X_NEG(switches)) {
         Serial.print("X- ");
     }
 
-    if(y_pos_limit()) {
+    if(Y_POS(switches)) {
         Serial.print("Y+ ");
     }
 
-    if(y_neg_limit()) {
+    if(Y_NEG(switches)) {
         Serial.print("Y- ");
     }
 
-    Serial.print("\n");
+    Serial.print("\r\n");
 }
 
-const static int escape_steps = 200;
+void print_switch_status(void) {
+    uint8_t switches = limit_switches();
 
-bool clear_blockage(void) {
+    print_switch_status(switches);
+}
+
+uint8_t switch_change(void) {
+    static uint8_t old_switches = limit_switches();
+
+    uint8_t current_switches = limit_switches();
+
+    //Serial.println(old_switches, BIN);
+    //Serial.println(current_switches, BIN);
+
+    uint8_t diff = old_switches ^ current_switches;
+
+    old_switches = current_switches;
+
+    return diff;
+}
+
+const static int x_escape_steps = 200;
+const static int y_escape_steps = 400;
+
+bool clear_unknown_blockage(void) {
     if(any_limit()) {
         Serial.println("At least one switch is already triggered.");
-        xMotor->steps(escape_steps);
+        print_switch_status();
+
+        uint8_t switches = switch_change();
+
+        Serial.println("Moving X + to escape");
+        xMotor->move(x_escape_steps);
+
+        Serial.println("Result of moving X + :");
+        switches = switch_change();
+        print_switch_status(switches);
 
         if(any_limit()) {
             Serial.println("Still triggered...");
+            //print_switch_status();
+
+            Serial.println("Moving X - to escape");
+
+            xMotor->move(-x_escape_steps);
+        } else {
+            Serial.println("Moving X + worked");
+            //print_switch_status();
+
+            return true;
         }
 
-        xMotor->set_direction(Motor::Backward);
-
-        xMotor->steps(escape_steps);
+        Serial.println("Result of moving X - :");
+        switches = switch_change();
+        print_switch_status(switches);
 
         if(any_limit()) {
             Serial.println("Still triggered...");
+            //print_switch_status();
+
+            Serial.println("Moving Y + to escape");
+
+            yMotor->move(y_escape_steps);
+        } else {
+            Serial.println("Moving X - worked");
+            //print_switch_status();
+
+            return true;
         }
 
-        yMotor->steps(escape_steps);
+        Serial.println("Result of moving Y + :");
+        switches = switch_change();
+        print_switch_status(switches);
 
         if(any_limit()) {
             Serial.println("Still triggered...");
+            //print_switch_status();
+
+            Serial.println("Moving Y - to escape");
+
+            yMotor->move(-y_escape_steps);
         }
 
-        yMotor->set_direction(Motor::Backward);
-
-        yMotor->steps(escape_steps);
+        Serial.println("Result of moving Y - :");
+        switches = switch_change();
+        print_switch_status(switches);
 
         if(any_limit()) {
-            Serial.println("Still triggered...");
+            Serial.println("Give up?");
+
+            return false;
         }
+    } else {
+        Serial.println("No blockages");
+
+        return true;
     }
 }
 
@@ -426,16 +525,8 @@ bool detect_motors(void) {
             xMotor->step();
         }
     } else {
-        clear_blockage();
+        clear_unknown_blockage();
     }
-
-    // Now know which axis 'xMotor' currently refers to, and which direction
-    // it moved in.
-
-    // Back off the limit switch
-    xMotor->set_direction(Motor::Backward);
-    xMotor->steps(escape_steps);
-    xMotor->set_direction(Motor::Forward);
 
     if(x_limit()) {
         // It's the correct axis
@@ -485,38 +576,7 @@ void free_axis(Motor *motor, bool (*pos_limit)(void), bool (*neg_limit)(void)) {
 }
 
 void calibration(void) {
-    /*while(1) {
-        if(x_pos_limit()) {
-            Serial.println("X - POS");
-        }
-
-        if(x_neg_limit()) {
-            Serial.println("X - NEG");
-        }
-
-        if(y_pos_limit()) {
-            Serial.println("Y - POS");
-        }
-
-        if(y_neg_limit()) {
-            Serial.println("Y - NEG");
-        }
-    }*/
     Serial.println("Calibration beginning.");
-    /*
-
-    Procedure:
-        - Attempt to home the head, we don't know which way is which at this
-          point, however we are assuming that the limit switches are wired
-          correctly.
-
-        - Command both axes to move in the positive direction, and monitor the
-          limit switch inputs for collisions.
-
-        - Next, move in the opposite direction until a collision, and count
-          the number of steps required. This is the bed size.
-
-    */
 
     xMotor->set_direction(Motor::Forward);
     yMotor->set_direction(Motor::Forward);
@@ -532,83 +592,29 @@ void calibration(void) {
     long x_distance = 0L;
     long y_distance = 0L;
 
-    // Find an initial home position.
-
-    Serial.println("  - Determining motor orientation.");
-
-    motors_flipped = detect_motors();
-
-    print_switch_status();
-
-    if(any_limit()) {
-        Serial.println("  - Switch already triggered, attempting to escape");
-
-        if(x_limit()) {
-            Serial.println("  - X Trapped, attempting to free.");
-            free_axis(xMotor, x_pos_limit, x_neg_limit);
-        }
-
-        if(y_limit()) {
-            Serial.println("  - Y Trapped, attempting to free.");
-            free_axis(yMotor, y_pos_limit, y_neg_limit);
-        }
+    /*while(y_neg_limit()) {
+        yMotor->step();
+        y_distance++;
     }
 
-    return;
+    Serial.println(y_distance, DEC);
 
-    Serial.println("X - First Limit");
-
-    while(!x_limit()) {
-        xMotor->step();
-    }
-
-    if(!x_pos_limit()) {
-        // X Axis is the correct direction
-        Serial.println("X - Direction Swapped");
-
-        x_flipped = true;
-    } else {
-        Serial.println("X - Direction Correct");
-    }
-
-    xMotor->set_direction(Motor::Backward);
-
-    Serial.println("X - Second Limit");
-
-    while(!x_neg_limit()) {
+    while(x_pos_limit()) {
         xMotor->step();
         x_distance++;
     }
 
-    // Y
+    Serial.println(x_distance, DEC);*/
 
-    Serial.println("Y - First Limit");
+    // Find an initial home position.
 
-    if(y_limit()) {
-        yMotor->set_direction(Motor::Backward);
-    }
+    Serial.println("  - Determining motor orientation.");
 
-    while(!y_limit()) {
-        yMotor->step();
-    }
+    clear_unknown_blockage();
 
-    if(!y_pos_limit()) {
-        // X Axis is the correct direction
-        Serial.println("Y - Direction Swapped");
+    //motors_flipped = detect_motors();
 
-        y_flipped = true;
-    } else {
-        Serial.println("Y - Direction Correct");
-    }
-
-    yMotor->set_direction(Motor::Backward);
-
-    Serial.println("Y - Second Limit");
-
-    while(!y_neg_limit()) {
-        yMotor->step();
-        y_distance++;
-    }
+    return;
 
     Serial.println("Calibration procedure completed:");
     Serial.println(x_flipped);

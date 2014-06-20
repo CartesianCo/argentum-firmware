@@ -22,7 +22,7 @@ public:
     void switch_power();
 
     void set_direction(uint8_t direction);
-    void toggle_direction(void);
+    void swap_direction(void);
 
     void step();
     void steps(long steps);
