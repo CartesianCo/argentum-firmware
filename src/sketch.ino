@@ -10,19 +10,28 @@ Motor bMotor(18, 17, 19, 0); // Y
 Motor *xMotor = &aMotor;
 Motor *yMotor = &bMotor;
 
-int accessory = 39;
-
 Servo ServoR; // The right drying roller servo
 Servo ServoL; // The left drying roller servo
 
 File myFile;
 
 void setup() {
+    while(1) {
+        xMotor->set_direction(Motor::Forward);
+
+        for(int i = 0; i < 200; i++) {
+            xMotor->step();
+        }
+
+        xMotor->set_direction(Motor::Backward);
+
+        for(int i = 0; i < 200; i++) {
+            xMotor->step();
+        }
+    }
+
     Serial.begin(9600);
     Serial.flush();
-
-    pinMode(accessory, OUTPUT);
-    digitalWrite(accessory, HIGH);
 
     // Configure Cartridge Ports
     DDRC = 0xFF;
@@ -41,10 +50,10 @@ void setup() {
     pinMode(A1, INPUT); // YMAX
     pinMode(6, INPUT); // YMIN
 
-    ServoR.attach(14);
+    /*ServoR.attach(14);
     ServoL.attach(15);
     ServoR.write(20);
-    ServoL.write(45);
+    ServoL.write(45);*/
 
     initLED();
 
@@ -82,11 +91,13 @@ void serialEvent() {
             case 'm':
             case 'M':
                 i = 1;
-                while(Serial.peek() == -1){}
+                while(Serial.peek() == -1) {}
+
                 while(Serial.peek() != 10 && i < 9) {
-                command[i] = Serial.read();
-                i++;
-                while(Serial.peek() == -1){}
+                    command[i] = Serial.read();
+                    i++;
+
+                    while(Serial.peek() == -1){}
                 }
                 command[i] = '\n';
 
@@ -119,15 +130,16 @@ void parseCommand(byte* command) {
 
         case 'p':
             Serial.println("Printing file.");
-            //xMotor.setSpeed(3000);
-            //xMotor.setSpeed(3000);
-            for (int i=0; i <= 0; i++) readFile("Output.hex");
+
+            for (int i=0; i <= 0; i++) {
+                readFile("Output.hex");
+            }
 
             break;
 
         case 'P': // P
             Serial.println("Paused - enter R to resume");
-            while(Serial.read() != 'R'){}
+            while(Serial.read() != 'R');
 
             Serial.println("Resuming");
 
@@ -143,17 +155,20 @@ void parseCommand(byte* command) {
 
             dist = atoi(cmdInt);
 
+            Serial.print("Moving ");
+            Serial.println(dist);
+
             if (toupper(command[2]) == 'X') {
                 if(dist == 0) {
                     xMotor->reset_position();
                 } else {
-                    xMotor->move(-dist);
+                    xMotor->move(dist);
                 }
             } else if (toupper(command[2]) == 'Y') {
                 if(dist == 0) {
                     yMotor->reset_position();
                 } else {
-                    yMotor->move(-dist);
+                    yMotor->move(dist);
                 }
             }
 
@@ -165,6 +180,8 @@ void parseCommand(byte* command) {
             break;
 
         case '?':
+            Serial.print(command[1]);
+            Serial.print(" = ");
             Serial.println(read_setting(command[1]));
 
             break;
@@ -361,7 +378,7 @@ void calibration(void) {
     Serial.println("? - Initial Maximum (either, should be X)");
 
     while(!any_limit()) {
-        xMotor->move(-1);
+        xMotor->step();
     }
 
     if(x_limit()) {
@@ -371,11 +388,13 @@ void calibration(void) {
         if(x_neg_limit()) {
             Serial.println("X - Flipping Motor Direction");
             x_flipped = true;
+
+            xMotor->set_direction(Motor::Backward);
         }
 
         Serial.println("X - Finding Second Limit");
         while(!x_limit()) {
-            xMotor->move(1);
+            xMotor->step();
 
             x_distance++;
         }
@@ -388,6 +407,8 @@ void calibration(void) {
         if(y_neg_limit()) {
             Serial.println("Y - Flipping Motor Direction");
             y_flipped = true;
+
+            yMotor->set_direction(Motor::Backward);
         }
 
         motors_flipped = true;
@@ -397,7 +418,7 @@ void calibration(void) {
         Serial.println("Y - Finding Second Limit");
 
         while(!y_limit()) {
-            yMotor->move(1);
+            yMotor->step();
 
             y_distance++;
         }
@@ -408,7 +429,7 @@ void calibration(void) {
     Serial.println("Y - Initial Maximum (either)");
 
     while(!y_limit()) {
-        yMotor->move(-1);
+        yMotor->step();
     }
 
     Serial.println("Y - Found First Limit");

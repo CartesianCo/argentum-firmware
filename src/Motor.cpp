@@ -8,7 +8,7 @@
 
 #include "Motor.h"
 
-Motor::Motor(int step_pin, int dirPin, int powerPin, int stepsPerRev) {
+Motor::Motor(int step_pin, int dir_pin, int power_pin, int steps_per_rev) {
     this->step_pin = step_pin;
     this->dir_pin = dir_pin;
     this->power_pin = power_pin;
@@ -22,17 +22,21 @@ Motor::Motor(int step_pin, int dirPin, int powerPin, int stepsPerRev) {
      * will cause the motors to skip). Speed is not used by functions which step
      * only once.
      */
-    set_speed(1000);
+    set_speed(500);
 
-    pinMode(step_pin,         OUTPUT);
-    pinMode(dir_pin,          OUTPUT);
-    pinMode(power_pin,        OUTPUT);
+    pinMode(step_pin, OUTPUT);
+    pinMode(dir_pin, OUTPUT);
+    pinMode(power_pin, OUTPUT);
 
-    digitalWrite(step_pin,    LOW);
+    digitalWrite(step_pin, LOW);
 
-    set_dir(Motor::Forward);
+    set_direction(Motor::Forward);
 
     power(true);
+}
+
+Motor::Motor() {
+    set_speed(500);
 }
 
 void Motor::power(bool state) {
@@ -52,21 +56,22 @@ void Motor::reset_position() {
 
     move(position);
 
-    set_dir(current_direction);
+    set_direction(current_direction);
 }
 
-void Motor::set_dir(int direction) {
+void Motor::set_direction(uint8_t direction) {
     this->direction = direction;
+
     if (direction) {
-        digitalWrite(this->dir_pin, HIGH);
+        digitalWrite(dir_pin, HIGH);
     } else {
-        digitalWrite(this->dir_pin, LOW);
+        digitalWrite(dir_pin, LOW);
     }
 }
 
 void Motor::step() {
     while ((micros() - last_step_time) < speed) {
-        if(micros() < last_step_time) {
+        if (micros() < last_step_time) {
             delay(speed);
             continue;
         }
@@ -85,17 +90,15 @@ void Motor::step() {
 }
 
 void Motor::move(long steps) {
-    long distance = steps;
-
     if (steps < 0) {
-        set_dir(0);
-        distance = steps * -1;
+        set_direction(Motor::Backward);
+        steps = -steps;
     }
     else {
-        set_dir(1);
+        set_direction(Motor::Forward);
     }
 
-    for (long i = 0; i < distance; i++) {
+    for (long i = 0; i < steps; i++) {
         step();
     }
 }
