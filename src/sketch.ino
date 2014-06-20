@@ -145,13 +145,13 @@ void parseCommand(byte* command) {
 
             if (toupper(command[2]) == 'X') {
                 if(dist == 0) {
-                    xMotor->resetPosition();
+                    xMotor->reset_position();
                 } else {
                     xMotor->move(-dist);
                 }
             } else if (toupper(command[2]) == 'Y') {
                 if(dist == 0) {
-                    yMotor->resetPosition();
+                    yMotor->reset_position();
                 } else {
                     yMotor->move(-dist);
                 }
@@ -282,8 +282,8 @@ void readFile(char* filename) {
             if(Serial.peek() == 'S') {
                 myFile.close();
 
-                xMotor->resetPosition();
-                yMotor->resetPosition();
+                xMotor->reset_position();
+                yMotor->reset_position();
 
                 return;
             }

@@ -14,30 +14,32 @@
 class Motor {
 public:
     //constructor:
-    Motor(int stepPin, int dirPin, int powerPin, int stepsPerRev);
+    Motor(int step_pin, int dir_pin, int power_pin, int steps_per_rev);
     Motor();
-    void power(int state);
-    long getPosition();
-    void resetPosition();
-    void switchPower();
-    void setDir(int direction);
+    void power(bool state);
+    long get_position();
+    void reset_position();
+    void switch_power();
+    void set_dir(int direction);
     void step();
-    void setSpeed(int mmPerMinute); //set to 0 for instantaneous movement
-    int getSpeed();
+    void set_speed(int mm_per_minute); //set to 0 for instantaneous movement
+    int get_speed();
     void move(long steps);
-    long lastStepTime;
+    long last_step_time;
 
+    static const uint8_t Forward = 0;
+    static const uint8_t Backward = 1;
 
 private:
-    int stepPin;
-    int dirPin;
-    int powerPin;
-    int stepsPerRev;
+    int step_pin;
+    int dir_pin;
+    int power_pin;
+    int steps_per_rev;
     double position;
     int direction;
     int speed;
-    //static const long stepsPerMeter = 94140;//11.767463 (half steps per mm)
-    static const long stepsPerMeter = 80000; //0.0125 mm per step
+
+    static const long steps_per_meter = 80000; //0.0125 mm per step
 };
 
 #endif
