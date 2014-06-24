@@ -3,6 +3,9 @@
 #include <SD.h>
 #include <Servo.h>
 #include "settings.h"
+#include "SerialCommand.h"
+
+#define COMMAND_BUFFER_SIZE 64
 
 Motor aMotor(15, 14, 16, 0); // X
 Motor bMotor(18, 17, 19, 0); // Y
@@ -16,20 +19,6 @@ Servo ServoL; // The left drying roller servo
 File myFile;
 
 void setup() {
-    /*while(1) {
-        xMotor->set_direction(Motor::Forward);
-
-        for(int i = 0; i < 200; i++) {
-            xMotor->step();
-        }
-
-        xMotor->set_direction(Motor::Backward);
-
-        for(int i = 0; i < 200; i++) {
-            xMotor->step();
-        }
-    }*/
-
     Serial.begin(9600);
     Serial.flush();
 
@@ -69,11 +58,42 @@ void setup() {
     //xMotor.setSpeed(5000);
 }
 
+bool command_received = false;
+uint8_t command_buffer[COMMAND_BUFFER_SIZE];
+unsigned char *command_head = command_buffer;
+
 void loop() {
+    if(command_received) {
+        Serial.println((char *)command_head);
+
+        parse_command(command_head);
+
+        for(uint8_t i = 0; i < COMMAND_BUFFER_SIZE; i++) {
+            command_buffer[i] = 0x00;
+        }
+
+        command_received = false;
+    }
 }
 
+void serialEvent(void) {
+    while(Serial.available()) {
+        uint8_t r = Serial.read();
 
-void serialEvent() {
+        *command_head = r;
+
+        Serial.print((char)*command_head);
+
+        if(*(command_head) == '\r') {
+            command_received = true;
+            command_head = command_buffer;
+        }
+
+        command_head++;
+    }
+}
+
+void sserialEvent(void) {
     byte command[10];
     int i;
 
@@ -114,12 +134,12 @@ void serialEvent() {
         }
 
         //run command
-        parseCommand(command);
+        parse_command(command);
     }
 }
 
 
-void parseCommand(byte* command) {
+void parse_command(byte* command) {
     int dist = 0;
 
     switch(command[0]) {
@@ -292,7 +312,7 @@ void readFile(char* filename) {
                 break;
         }
 
-        parseCommand(command);
+        parse_command(command);
 
         //Check if Any serial commands have been received
         if(Serial.available()) {
@@ -688,10 +708,11 @@ void calibration(void) {
             if(!x_limit()) {
                 xMotor->move(-1);
             } else {
+                x_direction_resolved = true;
+
                 if(x_pos_limit()) {
                     // Inverted
                     xMotor->set_inverted(true);
-                    x_direction_resolved = true;
                 }
             }
         }
@@ -700,42 +721,19 @@ void calibration(void) {
             if(!y_limit()) {
                 yMotor->move(-1);
             } else {
+                y_direction_resolved = true;
+
                 if(y_pos_limit()) {
                     // Inverted
                     yMotor->set_inverted(true);
-                    y_direction_resolved = true;
                 }
             }
         }
     }
 
-    // We know X and Y at this point. (And the direction of at least one)
-    /*if(!x_direction_resolved) {
-        Serial.println("Manually resolving X");
-        while(!x_limit()) {
-            xMotor->move(-1);
-        }
-
-        if(x_pos_limit()) {
-            // Inverted
-            xMotor->set_inverted(true);
-        }
-    }
-
-    if(!y_direction_resolved) {
-        Serial.println("Manually resolving Y");
-        while(!y_limit()) {
-            yMotor->move(-1);
-        }
-
-        if(y_pos_limit()) {
-            yMotor->set_inverted(true);
-        }
-    }*/
-
     Serial.println("Homing");
 
-    while(!any_limit()) {
+    while(!pos_limit()) {
         xMotor->move(1);
         yMotor->move(1);
     }
