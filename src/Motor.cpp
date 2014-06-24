@@ -73,6 +73,10 @@ void Motor::set_direction(uint8_t direction) {
     }
 }
 
+void Motor::set_inverted(bool inverted) {
+    this->inverted = inverted;
+}
+
 void Motor::steps(long steps) {
     while(steps--) {
         this->step();
@@ -92,10 +96,10 @@ void Motor::step() {
 
     last_step_time = micros();
 
-    if (direction) {
-        position--;
-    } else {
+    if (direction == Motor::Forward) {
         position++;
+    } else {
+        position--;
     }
 }
 

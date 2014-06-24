@@ -347,6 +347,12 @@ const int y_neg_limit_pin = 6;
 #define Y_POS(switches) (switches & Y_POS_BIT)
 #define Y_NEG(switches) (switches & Y_NEG_BIT)
 
+#define X_LIMIT(switches) (switches & X_MASK)
+#define Y_LIMIT(switches) (switches & Y_MASK)
+
+#define POS_LIMIT(switches) (switches & POS_MASK)
+#define NEG_LIMIT(switches) (switches & NEG_MASK)
+
 /*
 
 Pinout Reference: http://arduino.cc/en/uploads/Hacking/PinMap2560big.png
@@ -357,8 +363,6 @@ Y Positive Limit -> A1 (Port F, Bit 1)
 Y Negative Limit -> 6  (Port H, Bit 3)
 
 */
-
-
 
 uint8_t limit_switches(void) {
     uint8_t switches = 0b00000000;
@@ -463,139 +467,8 @@ uint8_t switch_change(void) {
     return diff;
 }
 
-const static int x_escape_steps = 200;
-const static int y_escape_steps = 400;
-
-bool clear_unknown_blockage(void) {
-    if(any_limit()) {
-        Serial.println("At least one switch is already triggered.");
-        print_switch_status();
-
-        uint8_t switches = switch_change();
-
-        Serial.println("Moving X + to escape");
-        xMotor->move(x_escape_steps);
-
-        Serial.println("Result of moving X + :");
-        switches = switch_change();
-        print_switch_status(switches);
-
-        if(any_limit()) {
-            Serial.println("Still triggered...");
-            //print_switch_status();
-
-            Serial.println("Moving X - to escape");
-
-            xMotor->move(-x_escape_steps);
-        } else {
-            Serial.println("Moving X + worked");
-            //print_switch_status();
-
-            return true;
-        }
-
-        Serial.println("Result of moving X - :");
-        switches = switch_change();
-        print_switch_status(switches);
-
-        if(any_limit()) {
-            Serial.println("Still triggered...");
-            //print_switch_status();
-
-            Serial.println("Moving Y + to escape");
-
-            yMotor->move(y_escape_steps);
-        } else {
-            Serial.println("Moving X - worked");
-            //print_switch_status();
-
-            return true;
-        }
-
-        Serial.println("Result of moving Y + :");
-        switches = switch_change();
-        print_switch_status(switches);
-
-        if(any_limit()) {
-            Serial.println("Still triggered...");
-            //print_switch_status();
-
-            Serial.println("Moving Y - to escape");
-
-            yMotor->move(-y_escape_steps);
-        }
-
-        Serial.println("Result of moving Y - :");
-        switches = switch_change();
-        print_switch_status(switches);
-
-        if(any_limit()) {
-            Serial.println("Give up?");
-
-            return false;
-        }
-    } else {
-        Serial.println("No blockages");
-
-        return true;
-    }
-}
-
-bool detect_motors(void) {
-    if(!any_limit()) {
-        while(!any_limit()) {
-            xMotor->step();
-        }
-    } else {
-        clear_unknown_blockage();
-    }
-
-    if(x_limit()) {
-        // It's the correct axis
-        Serial.println("  - Orientation Correct.");
-
-        return true;
-    } else {
-        // Incorrect axis
-        Serial.println("  - Orientation Incorrect.");
-
-        swap_motors();
-
-        return false;
-    }
-}
-
-bool _triggered_limit(void) {
-    Serial.println("bool (*triggered_limit)(void) pointer wasn't set...");
-}
-
-void free_axis(Motor *motor, bool (*pos_limit)(void), bool (*neg_limit)(void)) {
-    Serial.println("  - Freeing Axis");
-
-    bool (*triggered_limit)(void) = &_triggered_limit;
-
-    if(pos_limit()) {
-        Serial.println("  - Positive");
-        motor->set_direction(Motor::Forward);
-        triggered_limit = pos_limit;
-    }
-
-    if(neg_limit()) {
-        Serial.println("  - Negative");
-        motor->set_direction(Motor::Backward);
-        triggered_limit = neg_limit;
-    }
-
-    for(int i = 0; i < 100; i++) {
-        motor->step();
-    }
-
-    if(triggered_limit()) {
-        Serial.println("  - Stuck?");
-    } else {
-        Serial.println("  - Freed!");
-    }
-}
+const static int a_escape_steps = 400;
+const static int b_escape_steps = 400;
 
 void see(Motor *motor, long steps, uint8_t *released, uint8_t *triggered) {
     uint8_t switches = limit_switches();
@@ -613,70 +486,152 @@ void see(Motor *motor, long steps, uint8_t *released, uint8_t *triggered) {
     *triggered = (change & ~switches);
 }
 
-void calibration(void) {
-    Serial.println("Calibration beginning.");
+bool resolve(Motor *motor, uint8_t axis_mask, bool *axis_correct, uint8_t direction_mask, bool *direction_correct) {
+    uint8_t released, triggered;
 
-    xMotor->set_direction(Motor::Forward);
-    yMotor->set_direction(Motor::Forward);
+    see(motor, a_escape_steps, &released, &triggered);
 
-    xMotor->set_speed(2500);
-    yMotor->set_speed(2500);
+    if(released || triggered) {
+        // This axis is now completely resolved, just have to figure out
+        // the details.
+        Serial.println("Resolved");
+//        *a_resolved = true;
 
-    bool x_flipped = false;
-    bool y_flipped = false;
+        if(released) {
+            Serial.print("Moving A + 100 released: ");
+            print_switch_status(released);
+            Serial.println("");
 
-    bool motors_flipped = false;
+            //*axis_correct = (released & axis_mask);
+            //*direction_correct = (released & direction_mask);
 
-    long x_distance = 0L;
-    long y_distance = 0L;
+            if(released & axis_mask) {
+                Serial.println("Axis is correct.");
+                *axis_correct = true;
+            } else {
+                Serial.println("Axis is incorrect.");
+                *axis_correct = false;
+            }
 
+            if(released & direction_mask) {
+                Serial.println("Direction is incorrect.");
+                *direction_correct = false;
+            } else {
+                Serial.println("Direction is correct.");
+                *direction_correct = true;
+            }
+        } else if(triggered) {
+            Serial.print("Moving A + 100 triggered: ");
+            print_switch_status(triggered);
+            Serial.println("");
+
+            if(X_LIMIT(triggered)) {
+                Serial.println("Axis is correct.");
+                *axis_correct = true;
+            } else {
+                Serial.println("Axis is incorrect.");
+                *axis_correct = false;
+            }
+
+            if(POS_LIMIT(triggered)) {
+                Serial.println("Direction is correct.");
+                *direction_correct = true;
+            } else {
+                Serial.println("Direction is incorrect.");
+                *direction_correct = false;
+            }
+        }
+
+        Serial.println("Quackers:");
+        //Serial.print(axis_correct, HEX);
+        //Serial.print(direction_correct);
+        Serial.print(*axis_correct);
+        Serial.print(*direction_correct);
+        Serial.println("");
+
+        return true;
+    } else {
+        Serial.println("Moving A + 100 did nothing.");
+    }
+
+    return false;
+}
+
+// Assumptions:
+// - Cannot release AND trigger a limit with a small (400 steps) move on a
+//   single axis.
+
+uint8_t freedom(bool *a_resolved, bool *b_resolved) {
     if(any_limit()) {
         uint8_t released, triggered;
 
-        for(int i = 0; i < 4; i++) {
-            see((i < 2) ? xMotor : yMotor,
-                (i % 2) ? x_escape_steps : -x_escape_steps,
-                &released,
-                &triggered);
+        see(&aMotor, a_escape_steps, &released, &triggered);
+
+        if(released || triggered) {
+            // This axis is now completely resolved, just have to figure out
+            // the details.
+            Serial.println("Resolved A");
+            *a_resolved = true;
 
             if(released) {
-                Serial.print("Moving X + 100 released: ");
+                Serial.print("Moving A + 100 released: ");
+                print_switch_status(released);
+                Serial.println("");
+
+                if(X_LIMIT(released)) {
+                    Serial.println("Axis is correct.");
+                } else {
+                    Serial.println("Axis is incorrect.");
+                }
+
+                if(POS_LIMIT(released)) {
+                    // Releasing a positive limit means we're moving -ve
+                    Serial.println("Direction is incorrect.");
+                } else {
+                    Serial.println("Direction is correct.");
+                }
+            } else if(triggered) {
+                Serial.print("Moving A + 100 triggered: ");
+                print_switch_status(triggered);
+                Serial.println("");
+
+                if(X_LIMIT(triggered)) {
+                    Serial.println("Axis is correct.");
+                } else {
+                    Serial.println("Axis is incorrect.");
+                }
+
+                if(POS_LIMIT(triggered)) {
+                    Serial.println("Direction is correct.");
+                } else {
+                    Serial.println("Direction is incorrect.");
+                }
+            }
+        } else {
+            Serial.println("Moving A + 100 did nothing.");
+        }
+
+        if(!(*a_resolved)) {
+            see(&aMotor, -a_escape_steps, &released, &triggered);
+
+            if(released) {
+                Serial.print("Moving A - 100 released: ");
                 print_switch_status(released);
                 Serial.println("");
             }
 
             if(triggered) {
-                Serial.print("Moving X + 100 triggered: ");
+                Serial.print("Moving A - 100 triggered: ");
                 print_switch_status(triggered);
                 Serial.println("");
             }
 
             if(!triggered && !released) {
-                Serial.println("Moving X + 100 did nothing.");
+                Serial.println("Moving A - 100 did nothing.");
             }
         }
 
-        /*
-
-        see(xMotor, -x_escape_steps, &released, &triggered);
-
-        if(released) {
-            Serial.print("Moving X - 100 released: ");
-            print_switch_status(released);
-            Serial.println("");
-        }
-
-        if(triggered) {
-            Serial.print("Moving X - 100 triggered: ");
-            print_switch_status(triggered);
-            Serial.println("");
-        }
-
-        if(!triggered && !released) {
-            Serial.println("Moving X - 100 did nothing.");
-        }
-
-        see(yMotor, y_escape_steps, &released, &triggered);
+        see(yMotor, b_escape_steps, &released, &triggered);
 
         if(released) {
             Serial.print("Moving Y + 100 released: ");
@@ -694,7 +649,7 @@ void calibration(void) {
             Serial.println("Moving Y + 100 did nothing.");
         }
 
-        see(yMotor, -y_escape_steps, &released, &triggered);
+        see(yMotor, -b_escape_steps, &released, &triggered);
 
         if(released) {
             Serial.print("Moving Y - 100 released: ");
@@ -711,10 +666,58 @@ void calibration(void) {
         if(!triggered && !released) {
             Serial.println("Moving Y - 100 did nothing.");
         }
-        */
     } else {
         Serial.println("No switches triggered.");
     }
+
+    return 0;
+}
+
+void calibration(void) {
+    Serial.println("Calibration beginning.");
+
+    xMotor->set_direction(Motor::Forward);
+    yMotor->set_direction(Motor::Forward);
+
+    xMotor->set_speed(250);
+    yMotor->set_speed(250);
+
+    bool x_flipped = false;
+    bool y_flipped = false;
+
+    bool motors_flipped = false;
+
+    long x_distance = 0L;
+    long y_distance = 0L;
+
+    bool a_resolved = false;
+    bool b_resolved = false;
+
+    bool axis_correct = false;
+    bool direction_correct = false;
+
+        //freedom(&a_resolved, &b_resolved);
+    bool resolved = resolve(&bMotor, X_MASK, &axis_correct, Y_MASK, &direction_correct);
+
+    if(resolved) {
+        Serial.println("Results:");
+        Serial.print(axis_correct);
+        Serial.print(direction_correct);
+        Serial.println("");
+
+        if(axis_correct) {
+            Serial.println("Axis is correct.");
+        } else {
+            Serial.println("Axis is incorrect.");
+        }
+
+        if(direction_correct) {
+            Serial.println("Direction is correct.");
+        } else {
+            Serial.println("Direction is incorrect.");
+        }
+    }
+
 
     /*while(y_neg_limit()) {
         yMotor->step();
