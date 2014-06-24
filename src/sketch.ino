@@ -470,22 +470,6 @@ uint8_t switch_change(void) {
 const static int a_escape_steps = 400;
 const static int b_escape_steps = 400;
 
-void see(Motor *motor, long steps, uint8_t *released, uint8_t *triggered) {
-    uint8_t switches = limit_switches();
-
-    motor->move(steps);
-
-    uint8_t change = limit_switches();
-
-    /*Serial.print("Before: ");
-    print_switch_status(switches);
-    Serial.print("After: ");
-    print_switch_status(change);*/
-
-    *released = (switches & ~change);
-    *triggered = (change & ~switches);
-}
-
 /**
  * Attempt to resolve the direction and a axis of a motor.
  *
@@ -501,14 +485,29 @@ void see(Motor *motor, long steps, uint8_t *released, uint8_t *triggered) {
  * @param steps The number of steps to move that motor
  * @param axis_mask A mask defining the axis that this motor should correspond
  to.
+
  * @param axis_correct A pointer to a bool, which will indicate whether the
  axis_mask corresponds to any of the limit switches that were triggered or
  released.
- */
-bool resolve(Motor *motor, long steps, uint8_t axis_mask, bool *axis_correct, uint8_t direction_mask, bool *direction_correct) {
-    uint8_t released, triggered;
 
-    see(motor, steps, &released, &triggered);
+ * @param direction_mask A mask defining the direction that this motor should
+ move in for the given step, typically positive.
+
+ * @param direction_correct A pointer to a bool...
+ */
+bool resolve(Motor *motor,
+             long steps,
+             uint8_t axis_mask,
+             bool *axis_correct,
+             uint8_t direction_mask,
+             bool *direction_correct) {
+
+    uint8_t before = limit_switches();
+    motor->move(steps);
+    uint8_t after = limit_switches();
+
+    uint8_t released = (before & ~after);
+    uint8_t triggered = (after & ~before);
 
     if(released || triggered) {
         *axis_correct = ((released | triggered) & axis_mask);
@@ -524,10 +523,6 @@ bool resolve(Motor *motor, long steps, uint8_t axis_mask, bool *axis_correct, ui
 
     return false;
 }
-
-// Assumptions:
-// - Cannot release AND trigger a limit with a small (400 steps) move on a
-//   single axis.
 
 uint8_t freedom(bool *a_resolved, bool *b_resolved) {
     if(any_limit()) {
