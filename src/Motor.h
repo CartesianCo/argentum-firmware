@@ -23,6 +23,7 @@ public:
 
     void set_direction(uint8_t direction);
     void swap_direction(void);
+    void set_inverted(bool inverted);
 
     void step();
     void steps(long steps);
@@ -43,6 +44,7 @@ private:
     double position;
     int direction;
     int speed;
+    bool inverted;
 
     static const long steps_per_meter = 80000; //0.0125 mm per step
 };

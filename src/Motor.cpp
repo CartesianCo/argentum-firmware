@@ -16,6 +16,7 @@ Motor::Motor(int step_pin, int dir_pin, int power_pin, int steps_per_rev) {
     this->direction = 0;
     this->position = 0;
     this->last_step_time = 0;
+    this->inverted = false;
 
     /* Speed is the delay between steps necessary to move at the required speed
      * The default speed is 500. To move instantaneously, set speed to 0 (this
@@ -66,11 +67,25 @@ void Motor::swap_direction(void) {
 void Motor::set_direction(uint8_t direction) {
     this->direction = direction;
 
-    if (direction) {
-        digitalWrite(dir_pin, HIGH);
+    if(this->inverted) {
+        if (direction) {
+            digitalWrite(dir_pin, LOW);
+        } else {
+            digitalWrite(dir_pin, HIGH);
+        }
     } else {
-        digitalWrite(dir_pin, LOW);
+        if (direction) {
+            digitalWrite(dir_pin, HIGH);
+        } else {
+            digitalWrite(dir_pin, LOW);
+        }
     }
+}
+
+void Motor::set_inverted(bool inverted) {
+    this->inverted = inverted;
+
+    this->set_direction(this->direction);
 }
 
 void Motor::steps(long steps) {
@@ -92,10 +107,10 @@ void Motor::step() {
 
     last_step_time = micros();
 
-    if (direction) {
-        position--;
-    } else {
+    if (direction == Motor::Forward) {
         position++;
+    } else {
+        position--;
     }
 }
 
