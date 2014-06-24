@@ -337,10 +337,28 @@ const int y_neg_limit_pin = 6;
 #define Y_POS_BIT 0b00000010
 #define Y_NEG_BIT 0b00000001
 
+#define X_MASK    0b00001100
+#define Y_MASK    0b00000011
+#define POS_MASK  0b00001010
+#define NEG_MASK  0b00000101
+
 #define X_POS(switches) (switches & X_POS_BIT)
 #define X_NEG(switches) (switches & X_NEG_BIT)
 #define Y_POS(switches) (switches & Y_POS_BIT)
 #define Y_NEG(switches) (switches & Y_NEG_BIT)
+
+/*
+
+Pinout Reference: http://arduino.cc/en/uploads/Hacking/PinMap2560big.png
+
+X Positive Limit -> 5  (Port E, Bit 3)
+X Negative Limit -> A0 (Port F, Bit 0)
+Y Positive Limit -> A1 (Port F, Bit 1)
+Y Negative Limit -> 6  (Port H, Bit 3)
+
+*/
+
+
 
 uint8_t limit_switches(void) {
     uint8_t switches = 0b00000000;
@@ -366,18 +384,22 @@ uint8_t limit_switches(void) {
 
 bool x_pos_limit(void) {
     return digitalRead(x_pos_limit_pin);
+    //return (PORTE & 0b00000100);
 }
 
 bool x_neg_limit(void) {
     return digitalRead(x_neg_limit_pin);
+    //return (PORTF & 0b00000001);
 }
 
 bool y_pos_limit(void) {
     return digitalRead(y_pos_limit_pin);
+    //return (PORTF & 0b00000010);
 }
 
 bool y_neg_limit(void) {
     return digitalRead(y_neg_limit_pin);
+    //return (PORTH & 0b00000100);
 }
 
 bool x_limit(void) {
@@ -575,14 +597,30 @@ void free_axis(Motor *motor, bool (*pos_limit)(void), bool (*neg_limit)(void)) {
     }
 }
 
+void see(Motor *motor, long steps, uint8_t *released, uint8_t *triggered) {
+    uint8_t switches = limit_switches();
+
+    motor->move(steps);
+
+    uint8_t change = limit_switches();
+
+    /*Serial.print("Before: ");
+    print_switch_status(switches);
+    Serial.print("After: ");
+    print_switch_status(change);*/
+
+    *released = (switches & ~change);
+    *triggered = (change & ~switches);
+}
+
 void calibration(void) {
     Serial.println("Calibration beginning.");
 
     xMotor->set_direction(Motor::Forward);
     yMotor->set_direction(Motor::Forward);
 
-    xMotor->set_speed(250);
-    yMotor->set_speed(250);
+    xMotor->set_speed(2500);
+    yMotor->set_speed(2500);
 
     bool x_flipped = false;
     bool y_flipped = false;
@@ -591,6 +629,92 @@ void calibration(void) {
 
     long x_distance = 0L;
     long y_distance = 0L;
+
+    if(any_limit()) {
+        uint8_t released, triggered;
+
+        for(int i = 0; i < 4; i++) {
+            see((i < 2) ? xMotor : yMotor,
+                (i % 2) ? x_escape_steps : -x_escape_steps,
+                &released,
+                &triggered);
+
+            if(released) {
+                Serial.print("Moving X + 100 released: ");
+                print_switch_status(released);
+                Serial.println("");
+            }
+
+            if(triggered) {
+                Serial.print("Moving X + 100 triggered: ");
+                print_switch_status(triggered);
+                Serial.println("");
+            }
+
+            if(!triggered && !released) {
+                Serial.println("Moving X + 100 did nothing.");
+            }
+        }
+
+        /*
+
+        see(xMotor, -x_escape_steps, &released, &triggered);
+
+        if(released) {
+            Serial.print("Moving X - 100 released: ");
+            print_switch_status(released);
+            Serial.println("");
+        }
+
+        if(triggered) {
+            Serial.print("Moving X - 100 triggered: ");
+            print_switch_status(triggered);
+            Serial.println("");
+        }
+
+        if(!triggered && !released) {
+            Serial.println("Moving X - 100 did nothing.");
+        }
+
+        see(yMotor, y_escape_steps, &released, &triggered);
+
+        if(released) {
+            Serial.print("Moving Y + 100 released: ");
+            print_switch_status(released);
+            Serial.println("");
+        }
+
+        if(triggered) {
+            Serial.print("Moving Y + 100 triggered: ");
+            print_switch_status(triggered);
+            Serial.println("");
+        }
+
+        if(!triggered && !released) {
+            Serial.println("Moving Y + 100 did nothing.");
+        }
+
+        see(yMotor, -y_escape_steps, &released, &triggered);
+
+        if(released) {
+            Serial.print("Moving Y - 100 released: ");
+            print_switch_status(released);
+            Serial.println("");
+        }
+
+        if(triggered) {
+            Serial.print("Moving Y - 100 triggered: ");
+            print_switch_status(triggered);
+            Serial.println("");
+        }
+
+        if(!triggered && !released) {
+            Serial.println("Moving Y - 100 did nothing.");
+        }
+        */
+    } else {
+        Serial.println("No switches triggered.");
+    }
 
     /*while(y_neg_limit()) {
         yMotor->step();
@@ -608,9 +732,9 @@ void calibration(void) {
 
     // Find an initial home position.
 
-    Serial.println("  - Determining motor orientation.");
+    //Serial.println("  - Determining motor orientation.");
 
-    clear_unknown_blockage();
+    //clear_unknown_blockage();
 
     //motors_flipped = detect_motors();
 
