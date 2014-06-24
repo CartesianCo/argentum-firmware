@@ -494,64 +494,60 @@ bool resolve(Motor *motor, uint8_t axis_mask, bool *axis_correct, uint8_t direct
     if(released || triggered) {
         // This axis is now completely resolved, just have to figure out
         // the details.
-        Serial.println("Resolved");
+        //Serial.println("Resolved");
 //        *a_resolved = true;
 
         if(released) {
-            Serial.print("Moving A + 100 released: ");
-            print_switch_status(released);
-            Serial.println("");
+            //Serial.print("Moving A + 100 released: ");
+            //print_switch_status(released);
+            //Serial.println("");
 
-            //*axis_correct = (released & axis_mask);
-            //*direction_correct = (released & direction_mask);
+            *axis_correct = (released & axis_mask);
+            *direction_correct = !(released & direction_mask);
 
-            if(released & axis_mask) {
-                Serial.println("Axis is correct.");
+            /*if(released & axis_mask) {
+                //Serial.println("Axis is correct.");
                 *axis_correct = true;
             } else {
-                Serial.println("Axis is incorrect.");
+            //    Serial.println("Axis is incorrect.");
                 *axis_correct = false;
             }
 
             if(released & direction_mask) {
-                Serial.println("Direction is incorrect.");
+            //    Serial.println("Direction is incorrect.");
                 *direction_correct = false;
             } else {
-                Serial.println("Direction is correct.");
+            //    Serial.println("Direction is correct.");
                 *direction_correct = true;
-            }
+            }*/
         } else if(triggered) {
-            Serial.print("Moving A + 100 triggered: ");
-            print_switch_status(triggered);
-            Serial.println("");
+            //Serial.print("Moving A + 100 triggered: ");
+            //print_switch_status(triggered);
+            //Serial.println("");
 
-            if(X_LIMIT(triggered)) {
-                Serial.println("Axis is correct.");
+            *axis_correct = (triggered & axis_mask);
+            *direction_correct = (triggered & direction_mask);
+
+            /*if(triggered & axis_mask) {
+            //    Serial.println("Axis is correct.");
                 *axis_correct = true;
             } else {
-                Serial.println("Axis is incorrect.");
+            //    Serial.println("Axis is incorrect.");
                 *axis_correct = false;
             }
 
-            if(POS_LIMIT(triggered)) {
-                Serial.println("Direction is correct.");
+            if(triggered & direction_mask) {
+            //    Serial.println("Direction is correct.");
                 *direction_correct = true;
             } else {
-                Serial.println("Direction is incorrect.");
+            //    Serial.println("Direction is incorrect.");
                 *direction_correct = false;
-            }
+            }*/
         }
-
-        Serial.println("Quackers:");
-        //Serial.print(axis_correct, HEX);
-        //Serial.print(direction_correct);
-        Serial.print(*axis_correct);
-        Serial.print(*direction_correct);
-        Serial.println("");
 
         return true;
     } else {
-        Serial.println("Moving A + 100 did nothing.");
+        //Serial.println("Moving A + 100 did nothing.");
     }
 
     return false;
@@ -697,7 +693,7 @@ void calibration(void) {
     bool direction_correct = false;
 
         //freedom(&a_resolved, &b_resolved);
-    bool resolved = resolve(&bMotor, X_MASK, &axis_correct, Y_MASK, &direction_correct);
+    bool resolved = resolve(&bMotor, X_MASK, &axis_correct, POS_MASK, &direction_correct);
 
     if(resolved) {
         Serial.println("Results:");
@@ -716,6 +712,8 @@ void calibration(void) {
         } else {
             Serial.println("Direction is incorrect.");
         }
+    } else {
+        Serial.println("Movement didn't resolve the axis.");
     }
 
 
