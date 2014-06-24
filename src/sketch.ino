@@ -470,25 +470,6 @@ uint8_t switch_change(void) {
 const static int a_escape_steps = 400;
 const static int b_escape_steps = 400;
 
-void resolve_helper(char axis, char yes, char no, bool axis_correct, bool direction_correct) {
-    Serial.print("Found ");
-    Serial.print(axis);
-    Serial.print(" = ");
-
-    if(axis_correct) {
-        Serial.print(yes);
-    } else {
-        Serial.print(no);
-    }
-    Serial.println("");
-
-    if(direction_correct) {
-        Serial.println("Found + = +");
-    } else {
-        Serial.println("Found + = -");
-    }
-}
-
 /**
  * Attempt to resolve the direction and a axis of a motor.
  *
@@ -528,6 +509,11 @@ bool resolve(Motor *motor,
     uint8_t released = (before & ~after);
     uint8_t triggered = (after & ~before);
 
+    // If we activated a switch, release it. Should this happen?
+    if(triggered) {
+        motor->move(-steps);
+    }
+
     if(released || triggered) {
         *axis_correct = ((released | triggered) & axis_mask);
 
@@ -554,6 +540,10 @@ void freedom(bool *a_resolved, bool *b_resolved) {
         // A -> X+
         *a_resolved = resolve(&aMotor, a_escape_steps, X_MASK, &axis_correct, POS_MASK, &direction_correct);
 
+        if(!*a_resolved) {
+            *a_resolved = resolve(&aMotor, -a_escape_steps, X_MASK, &axis_correct, NEG_MASK, &direction_correct);
+        }
+
         if(*a_resolved) {
             if(axis_correct) {
                 Serial.println("Found A = X");
@@ -571,64 +561,34 @@ void freedom(bool *a_resolved, bool *b_resolved) {
                 Serial.println("Found + = +");
             } else {
                 Serial.println("Found + = -");
-
-            }
-        } else {
-            *a_resolved = resolve(&aMotor, -a_escape_steps, X_MASK, &axis_correct, NEG_MASK, &direction_correct);
-
-            if(*a_resolved) {
-                if(axis_correct) {
-                    Serial.println("Found A = X");
-
-                    xMotor = &aMotor;
-                    yMotor = &bMotor;
-                } else {
-                    Serial.println("Found A = Y");
-
-                    xMotor = &bMotor;
-                    yMotor = &aMotor;
-                }
-
-                if(direction_correct) {
-                    Serial.println("Found + = +");
-                } else {
-                    Serial.println("Found + = -");
-                }
+                aMotor.set_inverted(true);
             }
         }
 
         // B -> Y+
         *b_resolved = resolve(&bMotor, b_escape_steps, Y_MASK, &axis_correct, POS_MASK, &direction_correct);
 
+        if(!(*b_resolved)) {
+            *b_resolved = resolve(&bMotor, -b_escape_steps, Y_MASK, &axis_correct, NEG_MASK, &direction_correct);
+        }
+
         if(*b_resolved) {
             if(axis_correct) {
                 Serial.println("Found B = Y");
+                xMotor = &aMotor;
+                yMotor = &bMotor;
             } else {
                 Serial.println("Found B = X");
+                xMotor = &bMotor;
+                yMotor = &aMotor;
             }
 
             if(direction_correct) {
                 Serial.println("Found + = +");
             } else {
                 Serial.println("Found + = -");
+                bMotor.set_inverted(true);
             }
-        } else {
-            *b_resolved = resolve(&bMotor, -b_escape_steps, Y_MASK, &axis_correct, NEG_MASK, &direction_correct);
-
-            if(*b_resolved) {
-                if(axis_correct) {
-                    Serial.println("Found B = Y");
-                } else {
-                    Serial.println("Found B = X");
-                }
-
-                if(direction_correct) {
-                    Serial.println("Found + = +");
-                } else {
-                    Serial.println("Found + = -");
-                }
-            }
-            //resolve_helper('B', 'Y', 'X', axis_correct, direction_correct);
         }
     } else {
         Serial.println("No switches are initially triggered.");
@@ -641,7 +601,7 @@ void calibration(void) {
     xMotor->set_direction(Motor::Forward);
     yMotor->set_direction(Motor::Forward);
 
-    xMotor->set_speed(25);
+    xMotor->set_speed(250);
     yMotor->set_speed(250);
 
     bool x_flipped = false;
@@ -668,28 +628,6 @@ void calibration(void) {
     if(b_resolved) {
         Serial.println("Resolved B");
     }
-
-    /*while(y_neg_limit()) {
-        yMotor->step();
-        y_distance++;
-    }
-
-    Serial.println(y_distance, DEC);
-
-    while(x_pos_limit()) {
-        xMotor->step();
-        x_distance++;
-    }
-
-    Serial.println(x_distance, DEC);*/
-
-    // Find an initial home position.
-
-    //Serial.println("  - Determining motor orientation.");
-
-    //clear_unknown_blockage();
-
-    //motors_flipped = detect_motors();
 
     return;
 
