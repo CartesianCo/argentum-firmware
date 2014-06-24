@@ -470,6 +470,25 @@ uint8_t switch_change(void) {
 const static int a_escape_steps = 400;
 const static int b_escape_steps = 400;
 
+void resolve_helper(char axis, char yes, char no, bool axis_correct, bool direction_correct) {
+    Serial.print("Found ");
+    Serial.print(axis);
+    Serial.print(" = ");
+
+    if(axis_correct) {
+        Serial.print(yes);
+    } else {
+        Serial.print(no);
+    }
+    Serial.println("");
+
+    if(direction_correct) {
+        Serial.println("Found + = +");
+    } else {
+        Serial.println("Found + = -");
+    }
+}
+
 /**
  * Attempt to resolve the direction and a axis of a motor.
  *
@@ -524,116 +543,96 @@ bool resolve(Motor *motor,
     return false;
 }
 
-uint8_t freedom(bool *a_resolved, bool *b_resolved) {
+void freedom(bool *a_resolved, bool *b_resolved) {
+    *a_resolved = false;
+    *b_resolved = false;
+
     if(any_limit()) {
-        uint8_t released, triggered;
+        bool axis_correct = false;
+        bool direction_correct = false;
 
-        see(&aMotor, a_escape_steps, &released, &triggered);
+        // A -> X+
+        *a_resolved = resolve(&aMotor, a_escape_steps, X_MASK, &axis_correct, POS_MASK, &direction_correct);
 
-        if(released || triggered) {
-            // This axis is now completely resolved, just have to figure out
-            // the details.
-            Serial.println("Resolved A");
-            *a_resolved = true;
+        if(*a_resolved) {
+            if(axis_correct) {
+                Serial.println("Found A = X");
 
-            if(released) {
-                Serial.print("Moving A + 100 released: ");
-                print_switch_status(released);
-                Serial.println("");
+                xMotor = &aMotor;
+                yMotor = &bMotor;
+            } else {
+                Serial.println("Found A = Y");
 
-                if(X_LIMIT(released)) {
-                    Serial.println("Axis is correct.");
-                } else {
-                    Serial.println("Axis is incorrect.");
-                }
+                xMotor = &bMotor;
+                yMotor = &aMotor;
+            }
 
-                if(POS_LIMIT(released)) {
-                    // Releasing a positive limit means we're moving -ve
-                    Serial.println("Direction is incorrect.");
-                } else {
-                    Serial.println("Direction is correct.");
-                }
-            } else if(triggered) {
-                Serial.print("Moving A + 100 triggered: ");
-                print_switch_status(triggered);
-                Serial.println("");
+            if(direction_correct) {
+                Serial.println("Found + = +");
+            } else {
+                Serial.println("Found + = -");
 
-                if(X_LIMIT(triggered)) {
-                    Serial.println("Axis is correct.");
-                } else {
-                    Serial.println("Axis is incorrect.");
-                }
-
-                if(POS_LIMIT(triggered)) {
-                    Serial.println("Direction is correct.");
-                } else {
-                    Serial.println("Direction is incorrect.");
-                }
             }
         } else {
-            Serial.println("Moving A + 100 did nothing.");
+            *a_resolved = resolve(&aMotor, -a_escape_steps, X_MASK, &axis_correct, NEG_MASK, &direction_correct);
+
+            if(*a_resolved) {
+                if(axis_correct) {
+                    Serial.println("Found A = X");
+
+                    xMotor = &aMotor;
+                    yMotor = &bMotor;
+                } else {
+                    Serial.println("Found A = Y");
+
+                    xMotor = &bMotor;
+                    yMotor = &aMotor;
+                }
+
+                if(direction_correct) {
+                    Serial.println("Found + = +");
+                } else {
+                    Serial.println("Found + = -");
+                }
+            }
         }
 
-        if(!(*a_resolved)) {
-            see(&aMotor, -a_escape_steps, &released, &triggered);
+        // B -> Y+
+        *b_resolved = resolve(&bMotor, b_escape_steps, Y_MASK, &axis_correct, POS_MASK, &direction_correct);
 
-            if(released) {
-                Serial.print("Moving A - 100 released: ");
-                print_switch_status(released);
-                Serial.println("");
+        if(*b_resolved) {
+            if(axis_correct) {
+                Serial.println("Found B = Y");
+            } else {
+                Serial.println("Found B = X");
             }
 
-            if(triggered) {
-                Serial.print("Moving A - 100 triggered: ");
-                print_switch_status(triggered);
-                Serial.println("");
+            if(direction_correct) {
+                Serial.println("Found + = +");
+            } else {
+                Serial.println("Found + = -");
             }
+        } else {
+            *b_resolved = resolve(&bMotor, -b_escape_steps, Y_MASK, &axis_correct, NEG_MASK, &direction_correct);
 
-            if(!triggered && !released) {
-                Serial.println("Moving A - 100 did nothing.");
+            if(*b_resolved) {
+                if(axis_correct) {
+                    Serial.println("Found B = Y");
+                } else {
+                    Serial.println("Found B = X");
+                }
+
+                if(direction_correct) {
+                    Serial.println("Found + = +");
+                } else {
+                    Serial.println("Found + = -");
+                }
             }
-        }
-
-        see(yMotor, b_escape_steps, &released, &triggered);
-
-        if(released) {
-            Serial.print("Moving Y + 100 released: ");
-            print_switch_status(released);
-            Serial.println("");
-        }
-
-        if(triggered) {
-            Serial.print("Moving Y + 100 triggered: ");
-            print_switch_status(triggered);
-            Serial.println("");
-        }
-
-        if(!triggered && !released) {
-            Serial.println("Moving Y + 100 did nothing.");
-        }
-
-        see(yMotor, -b_escape_steps, &released, &triggered);
-
-        if(released) {
-            Serial.print("Moving Y - 100 released: ");
-            print_switch_status(released);
-            Serial.println("");
-        }
-
-        if(triggered) {
-            Serial.print("Moving Y - 100 triggered: ");
-            print_switch_status(triggered);
-            Serial.println("");
-        }
-
-        if(!triggered && !released) {
-            Serial.println("Moving Y - 100 did nothing.");
+            //resolve_helper('B', 'Y', 'X', axis_correct, direction_correct);
         }
     } else {
-        Serial.println("No switches triggered.");
+        Serial.println("No switches are initially triggered.");
     }
-
-    return 0;
 }
 
 void calibration(void) {
@@ -642,7 +641,7 @@ void calibration(void) {
     xMotor->set_direction(Motor::Forward);
     yMotor->set_direction(Motor::Forward);
 
-    xMotor->set_speed(250);
+    xMotor->set_speed(25);
     yMotor->set_speed(250);
 
     bool x_flipped = false;
@@ -656,33 +655,19 @@ void calibration(void) {
     bool a_resolved = false;
     bool b_resolved = false;
 
-    bool axis_correct = false;
-    bool direction_correct = false;
+    freedom(&a_resolved, &b_resolved);
 
-        //freedom(&a_resolved, &b_resolved);
-    bool resolved = resolve(&bMotor, a_escape_steps, X_MASK, &axis_correct, POS_MASK, &direction_correct);
-
-    if(resolved) {
-        Serial.println("Results:");
-        Serial.print(axis_correct);
-        Serial.print(direction_correct);
-        Serial.println("");
-
-        if(axis_correct) {
-            Serial.println("Axis is correct.");
-        } else {
-            Serial.println("Axis is incorrect.");
-        }
-
-        if(direction_correct) {
-            Serial.println("Direction is correct.");
-        } else {
-            Serial.println("Direction is incorrect.");
-        }
-    } else {
-        Serial.println("Movement didn't resolve the axis.");
+    if(!(a_resolved || b_resolved)) {
+        Serial.println("Resolved nothing");
     }
 
+    if(a_resolved) {
+        Serial.println("Resolved A");
+    }
+
+    if(b_resolved) {
+        Serial.println("Resolved B");
+    }
 
     /*while(y_neg_limit()) {
         yMotor->step();
