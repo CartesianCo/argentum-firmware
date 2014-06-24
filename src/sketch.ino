@@ -406,6 +406,14 @@ bool y_neg_limit(void) {
     //return (PORTH & 0b00000100);
 }
 
+bool pos_limit(void) {
+    return (x_pos_limit() || y_pos_limit());
+}
+
+bool neg_limit(void) {
+    return (x_neg_limit() || y_neg_limit());
+}
+
 bool x_limit(void) {
     return (x_pos_limit() || x_neg_limit());
 }
@@ -450,21 +458,6 @@ void print_switch_status(void) {
     uint8_t switches = limit_switches();
 
     print_switch_status(switches);
-}
-
-uint8_t switch_change(void) {
-    static uint8_t old_switches = limit_switches();
-
-    uint8_t current_switches = limit_switches();
-
-    //Serial.println(old_switches, BIN);
-    //Serial.println(current_switches, BIN);
-
-    uint8_t diff = old_switches ^ current_switches;
-
-    old_switches = current_switches;
-
-    return diff;
 }
 
 const static int a_escape_steps = 400;
@@ -529,32 +522,39 @@ bool resolve(Motor *motor,
     return false;
 }
 
-void freedom(bool *a_resolved, bool *b_resolved) {
-    *a_resolved = false;
-    *b_resolved = false;
+bool freedom(bool *x_direction_resolved, bool *y_direction_resolved) {
+    *x_direction_resolved = false;
+    *y_direction_resolved = false;
+
+    bool a_resolved = false;
+    bool b_resolved = false;
 
     if(any_limit()) {
         bool axis_correct = false;
         bool direction_correct = false;
 
         // A -> X+
-        *a_resolved = resolve(&aMotor, a_escape_steps, X_MASK, &axis_correct, POS_MASK, &direction_correct);
+        a_resolved = resolve(&aMotor, a_escape_steps, X_MASK, &axis_correct, POS_MASK, &direction_correct);
 
-        if(!*a_resolved) {
-            *a_resolved = resolve(&aMotor, -a_escape_steps, X_MASK, &axis_correct, NEG_MASK, &direction_correct);
+        if(!a_resolved) {
+            a_resolved = resolve(&aMotor, -a_escape_steps, X_MASK, &axis_correct, NEG_MASK, &direction_correct);
         }
 
-        if(*a_resolved) {
+        if(a_resolved) {
             if(axis_correct) {
                 Serial.println("Found A = X");
 
                 xMotor = &aMotor;
                 yMotor = &bMotor;
+
+                *x_direction_resolved = true;
             } else {
                 Serial.println("Found A = Y");
 
                 xMotor = &bMotor;
                 yMotor = &aMotor;
+
+                *y_direction_resolved = true;
             }
 
             if(direction_correct) {
@@ -566,21 +566,25 @@ void freedom(bool *a_resolved, bool *b_resolved) {
         }
 
         // B -> Y+
-        *b_resolved = resolve(&bMotor, b_escape_steps, Y_MASK, &axis_correct, POS_MASK, &direction_correct);
+        b_resolved = resolve(&bMotor, b_escape_steps, Y_MASK, &axis_correct, POS_MASK, &direction_correct);
 
-        if(!(*b_resolved)) {
-            *b_resolved = resolve(&bMotor, -b_escape_steps, Y_MASK, &axis_correct, NEG_MASK, &direction_correct);
+        if(!b_resolved) {
+            b_resolved = resolve(&bMotor, -b_escape_steps, Y_MASK, &axis_correct, NEG_MASK, &direction_correct);
         }
 
-        if(*b_resolved) {
+        if(b_resolved) {
             if(axis_correct) {
                 Serial.println("Found B = Y");
                 xMotor = &aMotor;
                 yMotor = &bMotor;
+
+                *y_direction_resolved = true;
             } else {
                 Serial.println("Found B = X");
                 xMotor = &bMotor;
                 yMotor = &aMotor;
+
+                *x_direction_resolved = true;
             }
 
             if(direction_correct) {
@@ -593,6 +597,52 @@ void freedom(bool *a_resolved, bool *b_resolved) {
     } else {
         Serial.println("No switches are initially triggered.");
     }
+
+    return (a_resolved | b_resolved);
+}
+
+long y_axis_length(void) {
+    long y_distance = 0;
+
+    while(!y_limit()) {
+        yMotor->move(1);
+    }
+
+    if(y_pos_limit()) {
+        while(!y_neg_limit()) {
+            y_distance++;
+            yMotor->move(-1);
+        }
+    } else {
+        while(!y_pos_limit()) {
+            y_distance++;
+            yMotor->move(-1);
+        }
+    }
+
+    return y_distance;
+}
+
+long x_axis_length(void) {
+    long x_distance = 0;
+
+    while(!x_limit()) {
+        xMotor->move(1);
+    }
+
+    if(x_pos_limit()) {
+        while(!x_neg_limit()) {
+            x_distance++;
+            xMotor->move(-1);
+        }
+    } else {
+        while(!x_pos_limit()) {
+            x_distance++;
+            xMotor->move(-1);
+        }
+    }
+
+    return x_distance;
 }
 
 void calibration(void) {
@@ -604,36 +654,119 @@ void calibration(void) {
     xMotor->set_speed(250);
     yMotor->set_speed(250);
 
-    bool x_flipped = false;
-    bool y_flipped = false;
-
-    bool motors_flipped = false;
-
     long x_distance = 0L;
     long y_distance = 0L;
 
-    bool a_resolved = false;
-    bool b_resolved = false;
+    bool axes_resolved = false;
+    bool x_direction_resolved = false;
+    bool y_direction_resolved = false;
 
-    freedom(&a_resolved, &b_resolved);
+    axes_resolved = freedom(&x_direction_resolved, &y_direction_resolved);
 
-    if(!(a_resolved || b_resolved)) {
+    xMotor->set_speed(4000);
+    yMotor->set_speed(4000);
+
+    if(!axes_resolved) {
         Serial.println("Resolved nothing");
+        Serial.println("Finding X");
+
+        while(!any_limit()) {
+            xMotor->move(-1);
+        }
+
+        if(y_limit()) {
+            // Incorrect
+            Motor *temp = xMotor;
+
+            xMotor = yMotor;
+            yMotor = temp;
+        }
     }
 
-    if(a_resolved) {
-        Serial.println("Resolved A");
+    while(!(x_direction_resolved && y_direction_resolved)) {
+        if(!x_direction_resolved) {
+            if(!x_limit()) {
+                xMotor->move(-1);
+            } else {
+                if(x_pos_limit()) {
+                    // Inverted
+                    xMotor->set_inverted(true);
+                    x_direction_resolved = true;
+                }
+            }
+        }
+
+        if(!y_direction_resolved) {
+            if(!y_limit()) {
+                yMotor->move(-1);
+            } else {
+                if(y_pos_limit()) {
+                    // Inverted
+                    yMotor->set_inverted(true);
+                    y_direction_resolved = true;
+                }
+            }
+        }
     }
 
-    if(b_resolved) {
-        Serial.println("Resolved B");
+    // We know X and Y at this point. (And the direction of at least one)
+    /*if(!x_direction_resolved) {
+        Serial.println("Manually resolving X");
+        while(!x_limit()) {
+            xMotor->move(-1);
+        }
+
+        if(x_pos_limit()) {
+            // Inverted
+            xMotor->set_inverted(true);
+        }
     }
 
-    return;
+    if(!y_direction_resolved) {
+        Serial.println("Manually resolving Y");
+        while(!y_limit()) {
+            yMotor->move(-1);
+        }
+
+        if(y_pos_limit()) {
+            yMotor->set_inverted(true);
+        }
+    }*/
+
+    Serial.println("Homing");
+
+    while(!any_limit()) {
+        xMotor->move(1);
+        yMotor->move(1);
+    }
+
+    while(!x_pos_limit()) {
+        xMotor->move(1);
+    }
+
+    while(!y_pos_limit()) {
+        yMotor->move(1);
+    }
+
+    while(!neg_limit()) {
+        xMotor->move(-1);
+        yMotor->move(-1);
+
+        x_distance++;
+        y_distance++;
+    }
+
+    while(!x_neg_limit()) {
+        xMotor->move(-1);
+        x_distance++;
+    }
+
+    while(!y_neg_limit()) {
+        yMotor->move(-1);
+        y_distance++;
+    }
 
     Serial.println("Calibration procedure completed:");
-    Serial.println(x_flipped);
-    Serial.println(y_flipped);
     Serial.println(x_distance, DEC);
     Serial.println(y_distance, DEC);
 }
