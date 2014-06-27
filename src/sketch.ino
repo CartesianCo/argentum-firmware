@@ -18,6 +18,8 @@ Servo ServoL; // The left drying roller servo
 
 File myFile;
 
+SerialCommand serial_command;
+
 void setup() {
     Serial.begin(9600);
     Serial.flush();
@@ -44,6 +46,8 @@ void setup() {
     ServoR.write(20);
     ServoL.write(45);*/
 
+    serial_command.addCommand("proc", &proc);
+
     initLED();
 
     delay(1000);
@@ -58,39 +62,15 @@ void setup() {
     //xMotor.setSpeed(5000);
 }
 
-bool command_received = false;
-uint8_t command_buffer[COMMAND_BUFFER_SIZE];
-unsigned char *command_head = command_buffer;
+void proc(void) {
+    Serial.println("proc.");
+}
 
 void loop() {
-    if(command_received) {
-        Serial.println((char *)command_head);
-
-        parse_command(command_head);
-
-        for(uint8_t i = 0; i < COMMAND_BUFFER_SIZE; i++) {
-            command_buffer[i] = 0x00;
-        }
-
-        command_received = false;
-    }
 }
 
 void serialEvent(void) {
-    while(Serial.available()) {
-        uint8_t r = Serial.read();
-
-        *command_head = r;
-
-        Serial.print((char)*command_head);
-
-        if(*(command_head) == '\r') {
-            command_received = true;
-            command_head = command_buffer;
-        }
-
-        command_head++;
-    }
+    serial_command.readSerial();
 }
 
 void sserialEvent(void) {
