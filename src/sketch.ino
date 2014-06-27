@@ -46,10 +46,24 @@ void setup() {
     ServoR.write(20);
     ServoL.write(45);*/
 
+    // Calibration
     serial_command.addCommand("c", &calibration);
     serial_command.addCommand("calibrate", &calibration);
 
+    // Movement
     serial_command.addCommand("m", &move_command);
+    serial_command.addCommand("h", &home_command);
+
+    // Motor Power
+    serial_command.addCommand("x", &power_command);
+
+    // Roller Servo
+    serial_command.addCommand("l", &lower_command);
+
+    // Print
+    serial_command.addCommand("p", &print_command);
+    serial_command.addCommand("P", &pause_command);
+    serial_command.addCommand("R", &resume_command);
 
     initLED();
 
@@ -61,7 +75,22 @@ void setup() {
         Serial.println("SD card could not be accessed.");
     }
 
-    Serial.println("Press p to print Output.txt, S to stop, P to pause, R to resume");
+    Serial.println("Press p to print Output.hex, S to stop, P to pause, R to resume, c to calibrate.");
+}
+
+void home_command(void) {
+    while(!neg_limit()) {
+        xMotor->move(-1);
+        yMotor->move(-1);
+    }
+
+    while(!x_neg_limit()) {
+        xMotor->move(-1);
+    }
+
+    while(!y_neg_limit()) {
+        yMotor->move(-1);
+    }
 }
 
 void move_command(void) {
@@ -85,12 +114,6 @@ void move_command(void) {
 
     long steps = atol(arg);
 
-    Serial.print("Move Command: ");
-    Serial.print(axis);
-    Serial.print(" ");
-    Serial.print(steps, DEC);
-    Serial.println("");
-
     if (toupper(axis) == 'X') {
         if(steps == 0) {
             xMotor->reset_position();
@@ -106,15 +129,104 @@ void move_command(void) {
     }
 }
 
-void proc(void) {
-    Serial.println("proc.");
+void power_command(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(!arg) {
+        Serial.println("Missing axis parameter");
+        return;
+    }
+
+    char axis = arg[0];
+
+    arg = serial_command.next();
+
+    if(!arg) {
+        Serial.println("Missing power parameter");
+        return;
+    }
+
+    char power = arg[0];
+
+    Motor *motor = NULL;
+
+    if(toupper(axis) == 'X') {
+        motor = xMotor;
+    } else if(toupper(axis) == 'Y') {
+        motor = yMotor;
+    } else {
+        Serial.println("No axis");
+        return;
+    }
+
+    if(power == '0') {
+        motor->power(0);
+    } else if (power == '1') {
+        motor->power(1);
+    } else {
+        Serial.println("Unknown power");
+        return;
+    }
+}
+
+void lower_command(void) {
+    Serial.println("Lower/Raise");
+
+    // If it is already raised, lower it
+    if (ServoR.read() == 45) {
+        ServoR.write(20); //Raised
+        ServoL.write(45); //Left servo is opposite
+
+        Serial.println("Raise");
+
+        return;
+    }
+
+    // If it is lowered, raise it
+    if (ServoR.read() == 20) {
+        ServoR.write(45); //Raised
+        ServoL.write(20); //Left servo is opposite
+
+        Serial.println("Lower");
+
+        return;
+    }
+}
+
+void pause_command(void) {
+    Serial.println("Paused - enter R to resume");
+    while(Serial.read() != 'R');
+
+    Serial.println("Resuming");
+}
+
+void resume_command(void) {
+    Serial.println("Resuming");
+}
+
+void print_command(void) {
+    Serial.println("Printing file.");
+
+    for (int i=0; i <= 0; i++) {
+        readFile("Output.hex");
+    }
 }
 
 void loop() {
 }
 
 void serialEvent(void) {
-    serial_command.readSerial();
+    uint8_t input = Serial.read();
+
+    serial_command.add_byte(input);
+
+    if(input == '\r') {
+        Serial.println();
+    }
+    
+    Serial.print((char)input);
 }
 
 void sserialEvent(void) {
@@ -162,64 +274,12 @@ void sserialEvent(void) {
     }
 }
 
-
 void parse_command(byte* command) {
     int dist = 0;
 
     switch(command[0]) {
         case 0x01:
             fireHead((byte)command[1], (byte)command[2], (byte)command[5], (byte)command[6]);
-
-            break;
-
-        case 'p':
-            Serial.println("Printing file.");
-
-            for (int i=0; i <= 0; i++) {
-                readFile("Output.hex");
-            }
-
-            break;
-
-        case 'P': // P
-            Serial.println("Paused - enter R to resume");
-            while(Serial.read() != 'R');
-
-            Serial.println("Resuming");
-
-            break;
-
-        case 'm':
-        case 'M':
-            char cmdInt[5];
-
-            for(int i = 0; i < 5; i++) {
-                cmdInt[i] = command[4+i];
-            }
-
-            dist = atoi(cmdInt);
-
-            Serial.print("Moving ");
-            Serial.println(dist);
-
-            if (toupper(command[2]) == 'X') {
-                if(dist == 0) {
-                    xMotor->reset_position();
-                } else {
-                    xMotor->move(dist);
-                }
-            } else if (toupper(command[2]) == 'Y') {
-                if(dist == 0) {
-                    yMotor->reset_position();
-                } else {
-                    yMotor->move(dist);
-                }
-            }
-
-            break;
-
-        case 'C':
-            calibration();
 
             break;
 
@@ -234,54 +294,6 @@ void parse_command(byte* command) {
             Serial.println("Writing setting.");
 
             write_setting(command[1], command[2]);
-
-            break;
-
-        case 'x':
-        case 'X':
-            if(command[1] == '0') {
-                xMotor->power(0);
-            } else if (command[1] == '1') {
-                xMotor->power(1);
-            } else {
-                Serial.println(command[1]);
-            }
-
-            break;
-
-        case 'y':
-        case 'Y':
-            if(command[1] == '0') {
-                yMotor->power(0);
-            } else if (command[1] == '1') {
-                yMotor->power(1);
-            } else {
-                Serial.println(command[1]);
-            }
-
-            break;
-
-        case 'l':
-            Serial.println("Lower/Raise");
-
-            // If it is already raised, lower it
-            if (ServoR.read() == 45) {
-                ServoR.write(20); //Raised
-                ServoL.write(45); //Left servo is opposite
-
-                Serial.println("Raise");
-
-                break;
-            }
-
-            // If it is lowered, raise it
-            if (ServoR.read() == 20) {
-                ServoR.write(45); //Raised
-                ServoL.write(20); //Left servo is opposite
-
-                Serial.println("Lower");
-                break;
-            }
 
             break;
 

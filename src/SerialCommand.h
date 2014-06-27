@@ -51,7 +51,7 @@ public:
     void addCommand(const char *command, void(*function)());
     void setDefaultHandler(void (*function)(const char *));
 
-    void readSerial();
+    void add_byte(uint8_t inChar);
     void clearBuffer();
 
     // Returns pointer to next token found in command buffer
