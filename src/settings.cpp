@@ -33,10 +33,6 @@ uint8_t Settings::read_byte(uint8_t address) {
 }
 
 void Settings::write_byte(uint8_t address, uint8_t value) {
-    /*Serial.print(address);
-    Serial.print(" -> ");
-    Serial.println(value);*/
-
     EEPROM.write(address, value);
 }
 

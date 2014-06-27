@@ -4,6 +4,7 @@
 #include <Servo.h>
 #include "settings.h"
 #include "SerialCommand.h"
+#include "limit_switch.h"
 
 #define COMMAND_BUFFER_SIZE 64
 
@@ -42,6 +43,10 @@ void setup() {
 
     pinMode(A1, INPUT); // YMAX
     pinMode(6, INPUT); // YMIN
+
+    while(1) {
+        Serial.println(y_neg_limit());
+    }
 
     /*ServoR.attach(14);
     ServoL.attach(15);
@@ -517,152 +522,6 @@ void readFile(char* filename) {
     myFile.close();
 }
 
-const int x_pos_limit_pin = 5;
-const int x_neg_limit_pin = A0;
-const int y_pos_limit_pin = A1;
-const int y_neg_limit_pin = 6;
-
-/*
-#define x_pos_limit() digitalRead(x_pos_limit_pin)
-#define x_neg_limit() digitalRead(x_neg_limit_pin)
-
-#define y_pos_limit() digitalRead(y_pos_limit_pin)
-#define y_neg_limit() digitalRead(y_neg_limit_pin)
-
-#define x_limit() (x_pos_limit() || x_neg_limit())
-#define y_limit() (y_pos_limit() || y_neg_limit())
-
-#define any_limit() (x_limit() || y_limit())
-*/
-
-#define X_POS_BIT 0b00001000
-#define X_NEG_BIT 0b00000100
-#define Y_POS_BIT 0b00000010
-#define Y_NEG_BIT 0b00000001
-
-#define X_MASK    0b00001100
-#define Y_MASK    0b00000011
-#define POS_MASK  0b00001010
-#define NEG_MASK  0b00000101
-
-#define X_POS(switches) (switches & X_POS_BIT)
-#define X_NEG(switches) (switches & X_NEG_BIT)
-#define Y_POS(switches) (switches & Y_POS_BIT)
-#define Y_NEG(switches) (switches & Y_NEG_BIT)
-
-#define X_LIMIT(switches) (switches & X_MASK)
-#define Y_LIMIT(switches) (switches & Y_MASK)
-
-#define POS_LIMIT(switches) (switches & POS_MASK)
-#define NEG_LIMIT(switches) (switches & NEG_MASK)
-
-/*
-
-Pinout Reference: http://arduino.cc/en/uploads/Hacking/PinMap2560big.png
-
-X Positive Limit -> 5  (Port E, Bit 3)
-X Negative Limit -> A0 (Port F, Bit 0)
-Y Positive Limit -> A1 (Port F, Bit 1)
-Y Negative Limit -> 6  (Port H, Bit 3)
-
-*/
-
-uint8_t limit_switches(void) {
-    uint8_t switches = 0b00000000;
-
-    if(x_pos_limit()) {
-        switches |= 0b00001000;
-    }
-
-    if(x_neg_limit()) {
-        switches |= 0b00000100;
-    }
-
-    if(y_pos_limit()) {
-        switches |= 0b00000010;
-    }
-
-    if(y_neg_limit()) {
-        switches |= 0b00000001;
-    }
-
-    return switches;
-}
-
-bool x_pos_limit(void) {
-    return digitalRead(x_pos_limit_pin);
-    //return (PORTE & 0b00000100);
-}
-
-bool x_neg_limit(void) {
-    return digitalRead(x_neg_limit_pin);
-    //return (PORTF & 0b00000001);
-}
-
-bool y_pos_limit(void) {
-    return digitalRead(y_pos_limit_pin);
-    //return (PORTF & 0b00000010);
-}
-
-bool y_neg_limit(void) {
-    return digitalRead(y_neg_limit_pin);
-    //return (PORTH & 0b00000100);
-}
-
-bool pos_limit(void) {
-    return (x_pos_limit() || y_pos_limit());
-}
-
-bool neg_limit(void) {
-    return (x_neg_limit() || y_neg_limit());
-}
-
-bool x_limit(void) {
-    return (x_pos_limit() || x_neg_limit());
-}
-
-bool y_limit(void) {
-    return (y_pos_limit() || y_neg_limit());
-}
-
-bool any_limit(void) {
-    return (x_limit() || y_limit());
-}
-
-void swap_motors(void) {
-    xMotor = &bMotor;
-    yMotor = &aMotor;
-}
-
-void print_switch_status(uint8_t switches) {
-    //Serial.print("Switch binary: ");
-    //Serial.println(switches, BIN);
-
-    if(X_POS(switches)) {
-        Serial.print("X+ ");
-    }
-
-    if(X_NEG(switches)) {
-        Serial.print("X- ");
-    }
-
-    if(Y_POS(switches)) {
-        Serial.print("Y+ ");
-    }
-
-    if(Y_NEG(switches)) {
-        Serial.print("Y- ");
-    }
-
-    Serial.print("\r\n");
-}
-
-void print_switch_status(void) {
-    uint8_t switches = limit_switches();
-
-    print_switch_status(switches);
-}
-
 const static int a_escape_steps = 400;
 const static int b_escape_steps = 400;
 
@@ -802,50 +661,6 @@ bool freedom(bool *x_direction_resolved, bool *y_direction_resolved) {
     }
 
     return (a_resolved | b_resolved);
-}
-
-long y_axis_length(void) {
-    long y_distance = 0;
-
-    while(!y_limit()) {
-        yMotor->move(1);
-    }
-
-    if(y_pos_limit()) {
-        while(!y_neg_limit()) {
-            y_distance++;
-            yMotor->move(-1);
-        }
-    } else {
-        while(!y_pos_limit()) {
-            y_distance++;
-            yMotor->move(-1);
-        }
-    }
-
-    return y_distance;
-}
-
-long x_axis_length(void) {
-    long x_distance = 0;
-
-    while(!x_limit()) {
-        xMotor->move(1);
-    }
-
-    if(x_pos_limit()) {
-        while(!x_neg_limit()) {
-            x_distance++;
-            xMotor->move(-1);
-        }
-    } else {
-        while(!x_pos_limit()) {
-            x_distance++;
-            xMotor->move(-1);
-        }
-    }
-
-    return x_distance;
 }
 
 void calibration(void) {
