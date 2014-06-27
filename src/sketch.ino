@@ -46,7 +46,10 @@ void setup() {
     ServoR.write(20);
     ServoL.write(45);*/
 
-    serial_command.addCommand("proc", &proc);
+    serial_command.addCommand("c", &calibration);
+    serial_command.addCommand("calibrate", &calibration);
+
+    serial_command.addCommand("m", &move_command);
 
     initLED();
 
@@ -54,12 +57,53 @@ void setup() {
 
     setLEDToColour(COLOUR_HOME);
 
-    if(!SD.begin(53)) { //Initalise SD
+    if(!SD.begin(53)) {
         Serial.println("SD card could not be accessed.");
     }
 
     Serial.println("Press p to print Output.txt, S to stop, P to pause, R to resume");
-    //xMotor.setSpeed(5000);
+}
+
+void move_command(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        Serial.println("Missing axis parameter");
+        return;
+    }
+
+    char axis = arg[0];
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        Serial.println("Missing steps parameter");
+        return;
+    }
+
+    long steps = atol(arg);
+
+    Serial.print("Move Command: ");
+    Serial.print(axis);
+    Serial.print(" ");
+    Serial.print(steps, DEC);
+    Serial.println("");
+
+    if (toupper(axis) == 'X') {
+        if(steps == 0) {
+            xMotor->reset_position();
+        } else {
+            xMotor->move(steps);
+        }
+    } else if (toupper(axis) == 'Y') {
+        if(steps == 0) {
+            yMotor->reset_position();
+        } else {
+            yMotor->move(steps);
+        }
+    }
 }
 
 void proc(void) {
