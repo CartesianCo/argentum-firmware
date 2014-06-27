@@ -20,6 +20,8 @@ File myFile;
 
 SerialCommand serial_command;
 
+Settings settings;
+
 void setup() {
     Serial.begin(9600);
     Serial.flush();
@@ -54,8 +56,9 @@ void setup() {
     serial_command.addCommand("m", &move_command);
     serial_command.addCommand("h", &home_command);
 
-    // Motor Power
+    // Motor
     serial_command.addCommand("x", &power_command);
+    serial_command.addCommand("s", &speed_command);
 
     // Roller Servo
     serial_command.addCommand("l", &lower_command);
@@ -64,6 +67,13 @@ void setup() {
     serial_command.addCommand("p", &print_command);
     serial_command.addCommand("P", &pause_command);
     serial_command.addCommand("R", &resume_command);
+
+    // Settings
+    serial_command.addCommand("?", &read_setting_command);
+    serial_command.addCommand("!", &write_setting_command);
+
+    serial_command.addCommand("?L", &read_long_command);
+    serial_command.addCommand("!L", &write_long_command);
 
     initLED();
 
@@ -76,6 +86,133 @@ void setup() {
     }
 
     Serial.println("Press p to print Output.hex, S to stop, P to pause, R to resume, c to calibrate.");
+}
+
+void write_long_command(void) {
+    Serial.println("Writing long.");
+
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        Serial.println("Missing address parameter");
+        return;
+    }
+
+    uint8_t address = atoi(arg);
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        Serial.println("Missing value parameter");
+        return;
+    }
+
+    long value = atol(arg);
+
+    Serial.print(address);
+    Serial.print(" = ");
+    Serial.println(value);
+
+    settings.write_long(address, value);
+}
+
+void read_long_command(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        Serial.println("Missing address parameter");
+        return;
+    }
+
+    int address = atoi(arg);
+
+    Serial.print(address);
+    Serial.print(" = ");
+
+    long val = settings.read_long((uint8_t)address);
+    Serial.println(val);
+}
+
+void read_setting_command(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        Serial.println("Missing address parameter");
+        return;
+    }
+
+    int address = atoi(arg);
+
+    Serial.print(address);
+    Serial.print(" = 0x");
+
+    uint8_t val = settings.read_byte((uint8_t)address);
+    Serial.println(val, HEX);
+}
+
+void write_setting_command(void) {
+    Serial.println("Writing setting.");
+
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        Serial.println("Missing address parameter");
+        return;
+    }
+
+    uint8_t address = atoi(arg);
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        Serial.println("Missing value parameter");
+        return;
+    }
+
+    uint8_t value = atoi(arg);
+
+    Serial.print(address);
+    Serial.print(" = 0x");
+    Serial.println(value, HEX);
+
+    settings.write_byte(address, value);
+}
+
+void speed_command(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        Serial.println("Missing axis parameter");
+        return;
+    }
+
+    char axis = arg[0];
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        Serial.println("Missing speed parameter");
+        return;
+    }
+
+    long speed = atol(arg);
+
+    if(speed <= 0) {
+        speed = 1;
+    }
+
+    Motor *motor = motor_from_axis(axis);
+    motor->set_speed(speed);
 }
 
 void home_command(void) {
@@ -114,18 +251,24 @@ void move_command(void) {
 
     long steps = atol(arg);
 
+    move(axis, steps);
+}
+
+Motor * motor_from_axis(unsigned const char axis) {
     if (toupper(axis) == 'X') {
-        if(steps == 0) {
-            xMotor->reset_position();
-        } else {
-            xMotor->move(steps);
-        }
+        return xMotor;
     } else if (toupper(axis) == 'Y') {
-        if(steps == 0) {
-            yMotor->reset_position();
-        } else {
-            yMotor->move(steps);
-        }
+        return yMotor;
+    }
+}
+
+void move(unsigned const char axis, long steps) {
+    Motor *motor = motor_from_axis(axis);
+
+    if(steps == 0) {
+        motor->reset_position();
+    } else {
+        motor->move(steps);
     }
 }
 
@@ -225,7 +368,7 @@ void serialEvent(void) {
     if(input == '\r') {
         Serial.println();
     }
-    
+
     Serial.print((char)input);
 }
 
@@ -280,20 +423,6 @@ void parse_command(byte* command) {
     switch(command[0]) {
         case 0x01:
             fireHead((byte)command[1], (byte)command[2], (byte)command[5], (byte)command[6]);
-
-            break;
-
-        case '?':
-            Serial.print(command[1]);
-            Serial.print(" = ");
-            Serial.println(read_setting(command[1]));
-
-            break;
-
-        case '!':
-            Serial.println("Writing setting.");
-
-            write_setting(command[1], command[2]);
 
             break;
 
