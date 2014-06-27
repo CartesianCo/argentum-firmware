@@ -3,11 +3,29 @@
 #include <EEPROM.h>
 
 Settings::Settings() {
-
 }
 
 Settings::~Settings() {
+}
 
+void Settings::write_axis_settings(const unsigned char axis, AxisSettings *settings) {
+    uint8_t address = 0;
+
+    if(axis == 'Y') {
+        address = 10;
+    }
+
+    this->write_block(address, settings, sizeof(AxisSettings));
+}
+
+void Settings::read_axis_settings(const unsigned char axis, AxisSettings *settings) {
+    uint8_t address = 0;
+
+    if(axis == 'Y') {
+        address = 10;
+    }
+
+    this->read_block(address, settings, sizeof(AxisSettings));
 }
 
 uint8_t Settings::read_byte(uint8_t address) {

@@ -19,10 +19,19 @@ Limit Switches NC/NO (bool)
 
 */
 
+struct AxisSettings {
+    unsigned char axis;
+    bool flipped;
+    long length;
+};
+
 class Settings {
 public:
     Settings();
     ~Settings();
+
+    void write_axis_settings(const unsigned char axis, AxisSettings *settings);
+    void read_axis_settings(const unsigned char axis, AxisSettings *settings);
 
     uint8_t read_byte(uint8_t address);
     void write_byte(uint8_t address, uint8_t value);
