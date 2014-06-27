@@ -6,31 +6,47 @@
 
 /* Settings
 
-PortX Direction
-PortY Direction
-PortX Axis
-PortY Axis
+A Axis (char)
+A Flipped (bool)
+A Length (long)
 
-Limit Switches NC/NO
+B Axis (char)
+B Flipped (bool)
+B Length (long)
 
-(Calibrated Values)
-Bed Width
-Bed Depth
+Future Support:
+Limit Switches NC/NO (bool)
 
 */
 
-#define PORT_X_DIR 0
-#define PORT_Y_DIR 1
-#define PORT_X_AXIS 2
-#define PORT_Y_AXIS 3
-#define LIMIT_NC 4
-#define BED_WIDTH 5
-#define BED_DEPTH 6
+struct AxisSettings {
+    unsigned char axis;
+    bool flipped;
+    long length;
+};
 
 class Settings {
 public:
     Settings();
     ~Settings();
+
+    void write_axis_settings(const unsigned char axis, AxisSettings *settings);
+    void read_axis_settings(const unsigned char axis, AxisSettings *settings);
+
+    uint8_t read_byte(uint8_t address);
+    void write_byte(uint8_t address, uint8_t value);
+
+    void read_block(uint8_t address, void *buffer, uint8_t length);
+    void write_block(uint8_t address, void *buffer, uint8_t length);
+
+    bool read_bool(uint8_t address);
+    void write_bool(uint8_t address, bool value);
+
+    char read_char(uint8_t address);
+    void write_char(uint8_t address, char value);
+
+    long read_long(uint8_t address);
+    void write_long(uint8_t address, long value);
 };
 
 uint8_t read_setting(uint8_t id);

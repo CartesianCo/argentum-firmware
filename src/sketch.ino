@@ -4,6 +4,7 @@
 #include <Servo.h>
 #include "settings.h"
 #include "SerialCommand.h"
+#include "limit_switch.h"
 
 #define COMMAND_BUFFER_SIZE 64
 
@@ -17,6 +18,10 @@ Servo ServoR; // The right drying roller servo
 Servo ServoL; // The left drying roller servo
 
 File myFile;
+
+SerialCommand serial_command;
+
+Settings settings;
 
 void setup() {
     Serial.begin(9600);
@@ -39,58 +44,355 @@ void setup() {
     pinMode(A1, INPUT); // YMAX
     pinMode(6, INPUT); // YMIN
 
+    while(1) {
+        Serial.println(y_neg_limit());
+    }
+
     /*ServoR.attach(14);
     ServoL.attach(15);
     ServoR.write(20);
     ServoL.write(45);*/
 
+    // Calibration
+    serial_command.addCommand("c", &calibration);
+    serial_command.addCommand("calibrate", &calibration);
+
+    // Movement
+    serial_command.addCommand("m", &move_command);
+    serial_command.addCommand("h", &home_command);
+
+    // Motor
+    serial_command.addCommand("x", &power_command);
+    serial_command.addCommand("s", &speed_command);
+
+    // Roller Servo
+    serial_command.addCommand("l", &lower_command);
+
+    // Print
+    serial_command.addCommand("p", &print_command);
+    serial_command.addCommand("P", &pause_command);
+    serial_command.addCommand("R", &resume_command);
+
+    // Settings
+    serial_command.addCommand("?", &read_setting_command);
+    serial_command.addCommand("!", &write_setting_command);
+
+    serial_command.addCommand("?L", &read_long_command);
+    serial_command.addCommand("!L", &write_long_command);
+
     initLED();
 
-    delay(1000);
+    AxisSettings asettings;
+
+    /*asettings.axis = 'Z';
+    asettings.flipped = false;
+    asettings.length = 51234;*/
+
+    //settings.write_axis_settings('X', &asettings);
+    settings.read_axis_settings('X', &asettings);
+
+    print_settings(&asettings);
+
+    delay(100);
 
     setLEDToColour(COLOUR_HOME);
 
-    if(!SD.begin(53)) { //Initalise SD
+    if(!SD.begin(53)) {
         Serial.println("SD card could not be accessed.");
     }
 
-    Serial.println("Press p to print Output.txt, S to stop, P to pause, R to resume");
-    //xMotor.setSpeed(5000);
+    Serial.println("Press p to print Output.hex, S to stop, P to pause, R to resume, c to calibrate.");
 }
 
-bool command_received = false;
-uint8_t command_buffer[COMMAND_BUFFER_SIZE];
-unsigned char *command_head = command_buffer;
+void print_settings(AxisSettings *settings) {
+    Serial.println("Axis Settings:");
+    Serial.println(settings->axis);
+    Serial.println(settings->flipped);
+    Serial.println(settings->length);
+}
+
+void write_long_command(void) {
+    Serial.println("Writing long.");
+
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        Serial.println("Missing address parameter");
+        return;
+    }
+
+    uint8_t address = atoi(arg);
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        Serial.println("Missing value parameter");
+        return;
+    }
+
+    long value = atol(arg);
+
+    Serial.print(address);
+    Serial.print(" = ");
+    Serial.println(value);
+
+    settings.write_long(address, value);
+}
+
+void read_long_command(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        Serial.println("Missing address parameter");
+        return;
+    }
+
+    int address = atoi(arg);
+
+    Serial.print(address);
+    Serial.print(" = ");
+
+    long val = settings.read_long((uint8_t)address);
+    Serial.println(val);
+}
+
+void read_setting_command(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        Serial.println("Missing address parameter");
+        return;
+    }
+
+    int address = atoi(arg);
+
+    Serial.print(address);
+    Serial.print(" = 0x");
+
+    uint8_t val = settings.read_byte((uint8_t)address);
+    Serial.println(val, HEX);
+}
+
+void write_setting_command(void) {
+    Serial.println("Writing setting.");
+
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        Serial.println("Missing address parameter");
+        return;
+    }
+
+    uint8_t address = atoi(arg);
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        Serial.println("Missing value parameter");
+        return;
+    }
+
+    uint8_t value = atoi(arg);
+
+    Serial.print(address);
+    Serial.print(" = 0x");
+    Serial.println(value, HEX);
+
+    settings.write_byte(address, value);
+}
+
+void speed_command(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        Serial.println("Missing axis parameter");
+        return;
+    }
+
+    char axis = arg[0];
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        Serial.println("Missing speed parameter");
+        return;
+    }
+
+    long speed = atol(arg);
+
+    if(speed <= 0) {
+        speed = 1;
+    }
+
+    Motor *motor = motor_from_axis(axis);
+    motor->set_speed(speed);
+}
+
+void home_command(void) {
+    while(!neg_limit()) {
+        xMotor->move(-1);
+        yMotor->move(-1);
+    }
+
+    while(!x_neg_limit()) {
+        xMotor->move(-1);
+    }
+
+    while(!y_neg_limit()) {
+        yMotor->move(-1);
+    }
+}
+
+void move_command(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        Serial.println("Missing axis parameter");
+        return;
+    }
+
+    char axis = arg[0];
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        Serial.println("Missing steps parameter");
+        return;
+    }
+
+    long steps = atol(arg);
+
+    move(axis, steps);
+}
+
+Motor * motor_from_axis(unsigned const char axis) {
+    if (toupper(axis) == 'X') {
+        return xMotor;
+    } else if (toupper(axis) == 'Y') {
+        return yMotor;
+    }
+}
+
+void move(unsigned const char axis, long steps) {
+    Motor *motor = motor_from_axis(axis);
+
+    if(steps == 0) {
+        motor->reset_position();
+    } else {
+        motor->move(steps);
+    }
+}
+
+void power_command(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(!arg) {
+        Serial.println("Missing axis parameter");
+        return;
+    }
+
+    char axis = arg[0];
+
+    arg = serial_command.next();
+
+    if(!arg) {
+        Serial.println("Missing power parameter");
+        return;
+    }
+
+    char power = arg[0];
+
+    Motor *motor = NULL;
+
+    if(toupper(axis) == 'X') {
+        motor = xMotor;
+    } else if(toupper(axis) == 'Y') {
+        motor = yMotor;
+    } else {
+        Serial.println("No axis");
+        return;
+    }
+
+    if(power == '0') {
+        motor->power(0);
+    } else if (power == '1') {
+        motor->power(1);
+    } else {
+        Serial.println("Unknown power");
+        return;
+    }
+}
+
+void lower_command(void) {
+    Serial.println("Lower/Raise");
+
+    // If it is already raised, lower it
+    if (ServoR.read() == 45) {
+        ServoR.write(20); //Raised
+        ServoL.write(45); //Left servo is opposite
+
+        Serial.println("Raise");
+
+        return;
+    }
+
+    // If it is lowered, raise it
+    if (ServoR.read() == 20) {
+        ServoR.write(45); //Raised
+        ServoL.write(20); //Left servo is opposite
+
+        Serial.println("Lower");
+
+        return;
+    }
+}
+
+void pause_command(void) {
+    Serial.println("Paused - enter R to resume");
+    while(Serial.read() != 'R');
+
+    Serial.println("Resuming");
+}
+
+void resume_command(void) {
+    Serial.println("Resuming");
+}
+
+void print_command(void) {
+    Serial.println("Printing file.");
+
+    for (int i=0; i <= 0; i++) {
+        readFile("Output.hex");
+    }
+}
 
 void loop() {
-    if(command_received) {
-        Serial.println((char *)command_head);
-
-        parse_command(command_head);
-
-        for(uint8_t i = 0; i < COMMAND_BUFFER_SIZE; i++) {
-            command_buffer[i] = 0x00;
-        }
-
-        command_received = false;
-    }
 }
 
 void serialEvent(void) {
-    while(Serial.available()) {
-        uint8_t r = Serial.read();
+    uint8_t input = Serial.read();
 
-        *command_head = r;
+    serial_command.add_byte(input);
 
-        Serial.print((char)*command_head);
-
-        if(*(command_head) == '\r') {
-            command_received = true;
-            command_head = command_buffer;
-        }
-
-        command_head++;
+    if(input == '\r') {
+        Serial.println();
     }
+
+    Serial.print((char)input);
 }
 
 void sserialEvent(void) {
@@ -138,126 +440,12 @@ void sserialEvent(void) {
     }
 }
 
-
 void parse_command(byte* command) {
     int dist = 0;
 
     switch(command[0]) {
         case 0x01:
             fireHead((byte)command[1], (byte)command[2], (byte)command[5], (byte)command[6]);
-
-            break;
-
-        case 'p':
-            Serial.println("Printing file.");
-
-            for (int i=0; i <= 0; i++) {
-                readFile("Output.hex");
-            }
-
-            break;
-
-        case 'P': // P
-            Serial.println("Paused - enter R to resume");
-            while(Serial.read() != 'R');
-
-            Serial.println("Resuming");
-
-            break;
-
-        case 'm':
-        case 'M':
-            char cmdInt[5];
-
-            for(int i = 0; i < 5; i++) {
-                cmdInt[i] = command[4+i];
-            }
-
-            dist = atoi(cmdInt);
-
-            Serial.print("Moving ");
-            Serial.println(dist);
-
-            if (toupper(command[2]) == 'X') {
-                if(dist == 0) {
-                    xMotor->reset_position();
-                } else {
-                    xMotor->move(dist);
-                }
-            } else if (toupper(command[2]) == 'Y') {
-                if(dist == 0) {
-                    yMotor->reset_position();
-                } else {
-                    yMotor->move(dist);
-                }
-            }
-
-            break;
-
-        case 'C':
-            calibration();
-
-            break;
-
-        case '?':
-            Serial.print(command[1]);
-            Serial.print(" = ");
-            Serial.println(read_setting(command[1]));
-
-            break;
-
-        case '!':
-            Serial.println("Writing setting.");
-
-            write_setting(command[1], command[2]);
-
-            break;
-
-        case 'x':
-        case 'X':
-            if(command[1] == '0') {
-                xMotor->power(0);
-            } else if (command[1] == '1') {
-                xMotor->power(1);
-            } else {
-                Serial.println(command[1]);
-            }
-
-            break;
-
-        case 'y':
-        case 'Y':
-            if(command[1] == '0') {
-                yMotor->power(0);
-            } else if (command[1] == '1') {
-                yMotor->power(1);
-            } else {
-                Serial.println(command[1]);
-            }
-
-            break;
-
-        case 'l':
-            Serial.println("Lower/Raise");
-
-            // If it is already raised, lower it
-            if (ServoR.read() == 45) {
-                ServoR.write(20); //Raised
-                ServoL.write(45); //Left servo is opposite
-
-                Serial.println("Raise");
-
-                break;
-            }
-
-            // If it is lowered, raise it
-            if (ServoR.read() == 20) {
-                ServoR.write(45); //Raised
-                ServoL.write(20); //Left servo is opposite
-
-                Serial.println("Lower");
-                break;
-            }
 
             break;
 
@@ -332,152 +520,6 @@ void readFile(char* filename) {
 
     //close file
     myFile.close();
-}
-
-const int x_pos_limit_pin = 5;
-const int x_neg_limit_pin = A0;
-const int y_pos_limit_pin = A1;
-const int y_neg_limit_pin = 6;
-
-/*
-#define x_pos_limit() digitalRead(x_pos_limit_pin)
-#define x_neg_limit() digitalRead(x_neg_limit_pin)
-
-#define y_pos_limit() digitalRead(y_pos_limit_pin)
-#define y_neg_limit() digitalRead(y_neg_limit_pin)
-
-#define x_limit() (x_pos_limit() || x_neg_limit())
-#define y_limit() (y_pos_limit() || y_neg_limit())
-
-#define any_limit() (x_limit() || y_limit())
-*/
-
-#define X_POS_BIT 0b00001000
-#define X_NEG_BIT 0b00000100
-#define Y_POS_BIT 0b00000010
-#define Y_NEG_BIT 0b00000001
-
-#define X_MASK    0b00001100
-#define Y_MASK    0b00000011
-#define POS_MASK  0b00001010
-#define NEG_MASK  0b00000101
-
-#define X_POS(switches) (switches & X_POS_BIT)
-#define X_NEG(switches) (switches & X_NEG_BIT)
-#define Y_POS(switches) (switches & Y_POS_BIT)
-#define Y_NEG(switches) (switches & Y_NEG_BIT)
-
-#define X_LIMIT(switches) (switches & X_MASK)
-#define Y_LIMIT(switches) (switches & Y_MASK)
-
-#define POS_LIMIT(switches) (switches & POS_MASK)
-#define NEG_LIMIT(switches) (switches & NEG_MASK)
-
-/*
-
-Pinout Reference: http://arduino.cc/en/uploads/Hacking/PinMap2560big.png
-
-X Positive Limit -> 5  (Port E, Bit 3)
-X Negative Limit -> A0 (Port F, Bit 0)
-Y Positive Limit -> A1 (Port F, Bit 1)
-Y Negative Limit -> 6  (Port H, Bit 3)
-
-*/
-
-uint8_t limit_switches(void) {
-    uint8_t switches = 0b00000000;
-
-    if(x_pos_limit()) {
-        switches |= 0b00001000;
-    }
-
-    if(x_neg_limit()) {
-        switches |= 0b00000100;
-    }
-
-    if(y_pos_limit()) {
-        switches |= 0b00000010;
-    }
-
-    if(y_neg_limit()) {
-        switches |= 0b00000001;
-    }
-
-    return switches;
-}
-
-bool x_pos_limit(void) {
-    return digitalRead(x_pos_limit_pin);
-    //return (PORTE & 0b00000100);
-}
-
-bool x_neg_limit(void) {
-    return digitalRead(x_neg_limit_pin);
-    //return (PORTF & 0b00000001);
-}
-
-bool y_pos_limit(void) {
-    return digitalRead(y_pos_limit_pin);
-    //return (PORTF & 0b00000010);
-}
-
-bool y_neg_limit(void) {
-    return digitalRead(y_neg_limit_pin);
-    //return (PORTH & 0b00000100);
-}
-
-bool pos_limit(void) {
-    return (x_pos_limit() || y_pos_limit());
-}
-
-bool neg_limit(void) {
-    return (x_neg_limit() || y_neg_limit());
-}
-
-bool x_limit(void) {
-    return (x_pos_limit() || x_neg_limit());
-}
-
-bool y_limit(void) {
-    return (y_pos_limit() || y_neg_limit());
-}
-
-bool any_limit(void) {
-    return (x_limit() || y_limit());
-}
-
-void swap_motors(void) {
-    xMotor = &bMotor;
-    yMotor = &aMotor;
-}
-
-void print_switch_status(uint8_t switches) {
-    //Serial.print("Switch binary: ");
-    //Serial.println(switches, BIN);
-
-    if(X_POS(switches)) {
-        Serial.print("X+ ");
-    }
-
-    if(X_NEG(switches)) {
-        Serial.print("X- ");
-    }
-
-    if(Y_POS(switches)) {
-        Serial.print("Y+ ");
-    }
-
-    if(Y_NEG(switches)) {
-        Serial.print("Y- ");
-    }
-
-    Serial.print("\r\n");
-}
-
-void print_switch_status(void) {
-    uint8_t switches = limit_switches();
-
-    print_switch_status(switches);
 }
 
 const static int a_escape_steps = 400;
@@ -619,50 +661,6 @@ bool freedom(bool *x_direction_resolved, bool *y_direction_resolved) {
     }
 
     return (a_resolved | b_resolved);
-}
-
-long y_axis_length(void) {
-    long y_distance = 0;
-
-    while(!y_limit()) {
-        yMotor->move(1);
-    }
-
-    if(y_pos_limit()) {
-        while(!y_neg_limit()) {
-            y_distance++;
-            yMotor->move(-1);
-        }
-    } else {
-        while(!y_pos_limit()) {
-            y_distance++;
-            yMotor->move(-1);
-        }
-    }
-
-    return y_distance;
-}
-
-long x_axis_length(void) {
-    long x_distance = 0;
-
-    while(!x_limit()) {
-        xMotor->move(1);
-    }
-
-    if(x_pos_limit()) {
-        while(!x_neg_limit()) {
-            x_distance++;
-            xMotor->move(-1);
-        }
-    } else {
-        while(!x_pos_limit()) {
-            x_distance++;
-            xMotor->move(-1);
-        }
-    }
-
-    return x_distance;
 }
 
 void calibration(void) {
