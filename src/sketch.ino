@@ -6,6 +6,7 @@
 #include "SerialCommand.h"
 #include "limit_switch.h"
 #include "calibration.h"
+#include "cartridge.h"
 
 #define COMMAND_BUFFER_SIZE 64
 
@@ -56,6 +57,7 @@ void setup() {
 
     // Movement
     serial_command.addCommand("m", &move_command);
+    serial_command.addCommand("M", &move_command);
     serial_command.addCommand("h", &home_command);
 
     // Motor
@@ -95,8 +97,10 @@ void setup() {
     setLEDToColour(COLOUR_HOME);
 
     if(!SD.begin(53)) {
-        Serial.println("SD card could not be accessed.");
+        Serial.println("SD card could not be accessed..");
     }
+
+    //uint8_t *firing_buffer = (uint8_t*)malloc(4096);
 
     Serial.println("Press p to print Output.hex, S to stop, P to pause, R to resume, c to calibrate.");
 }
@@ -377,7 +381,16 @@ void print_command(void) {
     }
 }
 
+int free_ram () {
+  extern int __heap_start, *__brkval;
+  int v;
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+}
+
 void loop() {
+    Serial.print("RAM: ");
+    Serial.println(free_ram());
+    delay(500);
 }
 
 void serialEvent(void) {
@@ -392,13 +405,13 @@ void serialEvent(void) {
     Serial.print((char)input);
 }
 
-/*
+
 void parse_command(byte* command) {
     int dist = 0;
 
     switch(command[0]) {
         case 0x01:
-            fireHead((byte)command[1], (byte)command[2], (byte)command[5], (byte)command[6]);
+            fire_head((byte)command[1], (byte)command[2], (byte)command[5], (byte)command[6]);
 
             break;
 
@@ -406,7 +419,7 @@ void parse_command(byte* command) {
             break;
     }
 }
-*/
+
 void readFile(char* filename) {
     byte command[10];
 
@@ -453,7 +466,7 @@ void readFile(char* filename) {
                 break;
         }
 
-        //parse_command(command);
+        parse_command(command);
 
         //Check if Any serial commands have been received
         if(Serial.available()) {
@@ -473,40 +486,4 @@ void readFile(char* filename) {
 
     //close file
     myFile.close();
-}
-
-// PORT C is [R1, R2, R3, R4, L1, L2, L3, L4] (Multiplexer)
-// PORT L is Left (MOSFET Drivers)
-// PORT A is Right (MOSFET Drivers)
-
-// Put in to a printhead class
-void fireHead(byte rPrim, byte rAddr, byte lPrim, byte lAddr) {
-    int x1, x2;
-
-    if (rPrim || rAddr || lPrim || lAddr) {
-        PORTC = (PORTC | int(lAddr)); //Assign this to port C to load it into the cannon.
-
-        //x1 = int(rAddr) << 4 | int(rAddr) >4; //Reverse
-        //x2 = (x1 & 0x33) << 2 | (x1 & 0xcc) >2;
-        //PORTC = (PORTC | ((x2 & 0x55) << 1 | (x2 & 0xaa) >1);
-
-        PORTC = (PORTC | (int(rAddr) << 4));
-
-        __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-
-        PORTL = int(lPrim);
-        PORTA = int(rPrim);
-
-        delayMicroseconds(6);
-
-        __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-
-        PORTA = 0;
-        PORTL = 0;
-
-        __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t""nop\n\t");
-
-        PORTC = 0;
-        //delayMicroseconds(500);
-    }
 }
