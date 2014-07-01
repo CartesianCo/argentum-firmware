@@ -54,6 +54,8 @@ public:
     void add_byte(uint8_t inChar);
     void clearBuffer();
 
+    void installed_commands(void);
+
     // Returns pointer to next token found in command buffer
     // (for getting arguments to commands).
     char *next();

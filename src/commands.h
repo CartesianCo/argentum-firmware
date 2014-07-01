@@ -2,6 +2,7 @@
 #define _COMMANDS_H_
 
 #include <Arduino.h>
+#include <SD.h>
 
 #include "Motor.h"
 
@@ -21,5 +22,7 @@ void pause_command(void);
 void resume_command(void);
 void print_command(void);
 void print_ram(void);
+void ls(void);
+bool is_printer_file(File file);
 
 #endif

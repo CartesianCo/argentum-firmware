@@ -47,7 +47,6 @@ void setup() {
 
     // Calibration
     serial_command.addCommand("c", &calibration);
-    serial_command.addCommand("calibrate", &calibration);
 
     // Movement
     serial_command.addCommand("m", &move_command);
@@ -77,6 +76,8 @@ void setup() {
 
     serial_command.addCommand("ram", &print_ram);
 
+    serial_command.addCommand("ls", &ls);
+
     initLED();
 
     setLEDToColour(COLOUR_HOME);
@@ -87,7 +88,10 @@ void setup() {
 
     //uint8_t *firing_buffer = (uint8_t*)malloc(4096);
 
-    Serial.println("Press p to print Output.hex, S to stop, P to pause, R to resume, c to calibrate.");
+    Serial.println("Press p to print output.hex");
+    Serial.println("S to stop, P to pause, R to resume, c to calibrate.");
+    Serial.println("Additional commands: ");
+    serial_command.installed_commands();
 }
 
 void loop() {

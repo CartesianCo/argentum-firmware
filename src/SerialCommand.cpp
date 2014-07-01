@@ -104,8 +104,12 @@ void SerialCommand::add_byte(uint8_t inChar) {
                 #endif
 
                 // Execute the stored handler function for the command
-                (*commandList[i].function)();
+                // Clear the buffer first, since we might be executing a print
+                // command and parsing through here again.
+                clearBuffer();
                 matched = true;
+                (*commandList[i].function)();
+
                 break;
                 }
             }
@@ -138,6 +142,18 @@ void SerialCommand::add_byte(uint8_t inChar) {
 void SerialCommand::clearBuffer() {
     buffer[0] = '\0';
     bufPos = 0;
+}
+
+void SerialCommand::installed_commands(void) {
+    for(uint8_t i = 0; i < commandCount; i++) {
+        Serial.print(commandList[i].command);
+
+        if(i < commandCount - 1) {
+            Serial.print(", ");
+        }
+    }
+
+    Serial.println();
 }
 
 /**

@@ -332,9 +332,19 @@ void resume_command(void) {
 }
 
 void print_command(void) {
-    Serial.println("Printing file.");
+    char *arg;
 
-    readFile("Output.hex");
+    arg = serial_command.next();
+
+    if(!arg) {
+        Serial.println("No filename supplied, using 'output.hex'");
+        arg = "output.hex";
+    }
+
+    Serial.print("Printing ");
+    Serial.println(arg);
+
+    readFile(arg);
 }
 
 void print_ram(void) {
@@ -346,4 +356,30 @@ void print_ram(void) {
     Serial.print(" bytes out of 8192 (");
     Serial.print(utilisation);
     Serial.println("%)");
+}
+
+void ls(void) {
+    File root = SD.open("/");
+
+    File file = root.openNextFile();
+
+    while(file) {
+        if(is_printer_file(file)) {
+            Serial.println(file.name());
+        }
+
+        file.close();
+
+        file = root.openNextFile();
+    }
+}
+
+bool is_printer_file(File file) {
+    char *file_name = file.name();
+
+    if(strstr(file_name, ".HEX")) {
+        return true;
+    }
+
+    return false;
 }
