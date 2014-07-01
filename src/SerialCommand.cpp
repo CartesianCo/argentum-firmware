@@ -121,8 +121,11 @@ void SerialCommand::add_byte(uint8_t inChar) {
         clearBuffer();
     } else {
         if(inChar == 0x08) {
-            bufPos--;
-            buffer[bufPos] = 0x00;
+
+            if(bufPos > 0) {
+                bufPos--;
+                buffer[bufPos] = 0x00;
+            }
         } else {
             if (bufPos < SERIALCOMMAND_BUFFER) {
                 buffer[bufPos++] = inChar;  // Put character into buffer

@@ -13,7 +13,11 @@
 
 class Motor {
 public:
-    //constructor:
+    enum Motors {
+        A = 'A',
+        B = 'B',
+    };
+
     Motor(int step_pin, int dir_pin, int power_pin, int steps_per_rev);
     Motor();
     void power(bool state);
@@ -24,6 +28,7 @@ public:
     void set_direction(uint8_t direction);
     void swap_direction(void);
     void set_inverted(bool inverted);
+    bool is_inverted(void);
 
     void step();
     void steps(long steps);

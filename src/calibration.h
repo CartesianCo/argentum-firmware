@@ -12,6 +12,6 @@ extern Motor *yMotor;
 extern Motor aMotor;
 extern Motor bMotor;
 
-void calibration(void);
+void calibration(bool write_calibration);
 
 #endif

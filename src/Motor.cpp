@@ -88,6 +88,10 @@ void Motor::set_inverted(bool inverted) {
     this->set_direction(this->direction);
 }
 
+bool Motor::is_inverted(void) {
+    return this->inverted;
+}
+
 void Motor::steps(long steps) {
     while(steps--) {
         this->step();

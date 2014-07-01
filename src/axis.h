@@ -31,6 +31,11 @@ SOFTWARE.
 
 class Axis {
 public:
+    enum Axes {
+        X = 'X',
+        Y = 'Y',
+    };
+
     enum {
         Positive = 0,
         Negative = 1

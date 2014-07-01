@@ -6,10 +6,9 @@
 #include "settings.h"
 #include "limit_switch.h"
 #include "utils.h"
+#include "calibration.h"
 
 extern void readFile(char* filename);
-
-extern Settings settings;
 
 extern SerialCommand serial_command;
 
@@ -66,6 +65,9 @@ void acc(void) {
             }
         }
 
+        if(Serial.available()) {
+            return;
+        }
     }
 }
 
@@ -97,7 +99,7 @@ void write_long_command(void) {
     Serial.print(" = ");
     Serial.println(value);
 
-    settings.write_long(address, value);
+    write_long(address, value);
 }
 
 void read_long_command(void) {
@@ -115,7 +117,7 @@ void read_long_command(void) {
     Serial.print(address);
     Serial.print(" = ");
 
-    long val = settings.read_long((uint8_t)address);
+    long val = read_long((uint8_t)address);
     Serial.println(val);
 }
 
@@ -134,7 +136,7 @@ void read_setting_command(void) {
     Serial.print(address);
     Serial.print(" = 0x");
 
-    uint8_t val = settings.read_byte((uint8_t)address);
+    uint8_t val = read_byte((uint8_t)address);
     Serial.println(val, HEX);
 }
 
@@ -165,7 +167,7 @@ void write_setting_command(void) {
     Serial.print(" = 0x");
     Serial.println(value, HEX);
 
-    settings.write_byte(address, value);
+    write_byte(address, value);
 }
 
 void speed_command(void) {
@@ -348,11 +350,11 @@ void print_command(void) {
 }
 
 void print_ram(void) {
-    uint16_t free = ram_free();
+    uint16_t used = ram_used();
     double utilisation = ram_utilisation();
 
-    Serial.print("RAM: ");
-    Serial.print(free);
+    Serial.print("Using ");
+    Serial.print(used);
     Serial.print(" bytes out of 8192 (");
     Serial.print(utilisation);
     Serial.println("%)");
@@ -382,4 +384,24 @@ bool is_printer_file(File file) {
     }
 
     return false;
+}
+
+void help_command(void) {
+    Serial.println("Press p to print output.hex");
+    Serial.println("S to stop, P to pause, R to resume, c to calibrate.");
+    Serial.println("Additional commands: ");
+    serial_command.installed_commands();
+    Serial.println();
+
+    Serial.println("Available Files: ");
+    ls();
+    Serial.println();
+}
+
+void calibrate_command(void) {
+    calibration(false);
+}
+
+void calibrate_save_command(void) {
+    calibration(true);
 }

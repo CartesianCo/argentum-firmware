@@ -24,5 +24,8 @@ void print_command(void);
 void print_ram(void);
 void ls(void);
 bool is_printer_file(File file);
+void help_command(void);
+void calibrate_command(void);
+void calibrate_save_command(void);
 
 #endif

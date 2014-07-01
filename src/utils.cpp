@@ -18,7 +18,16 @@ double ram_utilisation(void) {
 
 void print_settings(AxisSettings *settings) {
     Serial.println("Axis Settings:");
-    Serial.println(settings->axis);
-    Serial.println(settings->flipped);
-    Serial.println(settings->length);
+    Serial.print(settings->axis);
+    Serial.print(" -> ");
+    Serial.print(settings->motor);
+
+    if(settings->flipped) {
+        Serial.print(" Flipped, ");
+    } else {
+        Serial.print(" Not Flipped, ");
+    }
+
+    Serial.print(settings->length);
+    Serial.println(" steps");
 }

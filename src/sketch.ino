@@ -22,8 +22,6 @@ File myFile;
 
 SerialCommand serial_command;
 
-Settings settings;
-
 void setup() {
     Serial.begin(9600);
     Serial.flush();
@@ -46,7 +44,8 @@ void setup() {
     pinMode(6, INPUT); // YMIN
 
     // Calibration
-    serial_command.addCommand("c", &calibration);
+    serial_command.addCommand("c", &calibrate_command);
+    serial_command.addCommand("cs", &calibrate_save_command);
 
     // Movement
     serial_command.addCommand("m", &move_command);
@@ -78,6 +77,8 @@ void setup() {
 
     serial_command.addCommand("ls", &ls);
 
+    serial_command.addCommand("help", &help_command);
+
     initLED();
 
     setLEDToColour(COLOUR_HOME);
@@ -87,11 +88,7 @@ void setup() {
     }
 
     //uint8_t *firing_buffer = (uint8_t*)malloc(4096);
-
-    Serial.println("Press p to print output.hex");
-    Serial.println("S to stop, P to pause, R to resume, c to calibrate.");
-    Serial.println("Additional commands: ");
-    serial_command.installed_commands();
+    help_command();
 }
 
 void loop() {
@@ -113,6 +110,11 @@ void serialEvent(void) {
     serial_command.add_byte(input);
 }
 
+void swap_motors(void) {
+    Motor *temp = xMotor;
+    xMotor = yMotor;
+    yMotor = temp;
+}
 
 void parse_command(byte* command) {
     int dist = 0;
@@ -130,6 +132,8 @@ void parse_command(byte* command) {
 
 void readFile(char* filename) {
     byte command[10];
+
+    swap_motors();
 
     // Open File
     myFile = SD.open(filename);
@@ -203,6 +207,8 @@ void readFile(char* filename) {
             if(Serial.peek() == 'S') {
                 myFile.close();
 
+                swap_motors();
+
                 Serial.println("Stopping.");
 
                 home_command();
@@ -217,4 +223,6 @@ void readFile(char* filename) {
 
     //close file
     myFile.close();
+
+    swap_motors();
 }

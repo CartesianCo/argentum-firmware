@@ -1,6 +1,9 @@
 #include "calibration.h"
 #include "limit_switch.h"
 
+#include "settings.h"
+#include "axis.h"
+
 /**
  * Attempt to resolve the direction and a axis of a motor.
  *
@@ -139,7 +142,7 @@ bool freedom(bool *x_direction_resolved, bool *y_direction_resolved) {
     return (a_resolved | b_resolved);
 }
 
-void calibration(void) {
+void calibration(bool write_calibration) {
     Serial.println("Calibration beginning.");
 
     xMotor->set_direction(Motor::Forward);
@@ -157,8 +160,8 @@ void calibration(void) {
 
     axes_resolved = freedom(&x_direction_resolved, &y_direction_resolved);
 
-    xMotor->set_speed(4000);
-    yMotor->set_speed(4000);
+    xMotor->set_speed(3500);
+    yMotor->set_speed(3500);
 
     if(!axes_resolved) {
         Serial.println("Resolved nothing");
@@ -239,6 +242,55 @@ void calibration(void) {
     }
 
     Serial.println("Calibration procedure completed:");
+
+    if(xMotor == &aMotor) {
+        Serial.println("X = A, Y = B");
+    } else {
+        Serial.println("X = B, Y = A");
+    }
+
+    if(xMotor->is_inverted()) {
+        Serial.println("X Inverted");
+    }
+
+    if(yMotor->is_inverted()) {
+        Serial.println("Y Inverted");
+    }
+
     Serial.println(x_distance, DEC);
     Serial.println(y_distance, DEC);
+
+    if(write_calibration) {
+        Serial.println("Writing calibration...");
+
+        AxisSettings as;
+
+        as.axis = Axis::X;
+
+        if(xMotor == &aMotor) {
+            as.motor = Motor::A;
+        } else {
+            as.motor = Motor::B;
+        }
+
+        as.flipped = xMotor->is_inverted();
+        as.length = x_distance;
+
+        write_axis_settings(Axis::X, &as);
+
+        as.axis = Axis::Y;
+
+        if(yMotor == &aMotor) {
+            as.motor = Motor::A;
+        } else {
+            as.motor = Motor::B;
+        }
+
+        as.flipped = yMotor->is_inverted();
+        as.length = y_distance;
+
+        write_axis_settings(Axis::Y, &as);
+
+        Serial.println("Calibration saved");
+    }
 }
