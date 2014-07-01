@@ -20,5 +20,6 @@ void lower_command(void);
 void pause_command(void);
 void resume_command(void);
 void print_command(void);
+void print_ram(void);
 
 #endif

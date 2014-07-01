@@ -8,19 +8,15 @@
 #include "calibration.h"
 #include "cartridge.h"
 #include "commands.h"
+#include "utils.h"
 
 #include "AccelStepper.h"
-
-#define COMMAND_BUFFER_SIZE 64
 
 Motor aMotor(15, 14, 16, 0); // X
 Motor bMotor(18, 17, 19, 0); // Y
 
 Motor *xMotor = &bMotor;
 Motor *yMotor = &aMotor;
-
-Servo ServoR; // The right drying roller servo
-Servo ServoL; // The left drying roller servo
 
 File myFile;
 
@@ -48,11 +44,6 @@ void setup() {
 
     pinMode(A1, INPUT); // YMAX
     pinMode(6, INPUT); // YMIN
-
-    /*ServoR.attach(14);
-    ServoL.attach(15);
-    ServoR.write(20);
-    ServoL.write(45);*/
 
     // Calibration
     serial_command.addCommand("c", &calibration);
@@ -84,6 +75,8 @@ void setup() {
 
     serial_command.addCommand("@", &acc);
 
+    serial_command.addCommand("ram", &print_ram);
+
     initLED();
 
     AxisSettings asettings;
@@ -110,35 +103,19 @@ void setup() {
     Serial.println("Press p to print Output.hex, S to stop, P to pause, R to resume, c to calibrate.");
 }
 
-void print_settings(AxisSettings *settings) {
-    Serial.println("Axis Settings:");
-    Serial.println(settings->axis);
-    Serial.println(settings->flipped);
-    Serial.println(settings->length);
-}
-
-int free_ram () {
-  extern int __heap_start, *__brkval;
-  int v;
-  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
-}
-
 void loop() {
-    /*Serial.print("RAM: ");
-    Serial.println(free_ram());
-    delay(500);*/
 }
 
 void serialEvent(void) {
     uint8_t input = Serial.read();
 
-    serial_command.add_byte(input);
-
     if(input == '\r') {
-        Serial.println();
+        Serial.print("\r\n");
+    } else {
+        Serial.print((char)input);
     }
 
-    Serial.print((char)input);
+    serial_command.add_byte(input);
 }
 
 

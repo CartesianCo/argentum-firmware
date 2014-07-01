@@ -5,6 +5,7 @@
 #include "SerialCommand.h"
 #include "settings.h"
 #include "limit_switch.h"
+#include "utils.h"
 
 extern void readFile(char* filename);
 
@@ -334,4 +335,15 @@ void print_command(void) {
     Serial.println("Printing file.");
 
     readFile("Output.hex");
+}
+
+void print_ram(void) {
+    uint16_t free = ram_free();
+    double utilisation = ram_utilisation();
+
+    Serial.print("RAM: ");
+    Serial.print(free);
+    Serial.print(" bytes out of 8192 (");
+    Serial.print(utilisation);
+    Serial.println("%)");
 }
