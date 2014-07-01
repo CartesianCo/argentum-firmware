@@ -1,4 +1,4 @@
-all: console
+all: build 
 
 build: ./src/*
 	ino build
