@@ -116,13 +116,18 @@ void SerialCommand::add_byte(uint8_t inChar) {
 
         clearBuffer();
     } else {
-        if (bufPos < SERIALCOMMAND_BUFFER) {
-            buffer[bufPos++] = inChar;  // Put character into buffer
-            buffer[bufPos] = '\0';      // Null terminate
+        if(inChar == 0x08) {
+            bufPos--;
+            buffer[bufPos] = 0x00;
         } else {
-            #ifdef SERIALCOMMAND_DEBUG
-                Serial.println("Line buffer is full - increase SERIALCOMMAND_BUFFER");
-            #endif
+            if (bufPos < SERIALCOMMAND_BUFFER) {
+                buffer[bufPos++] = inChar;  // Put character into buffer
+                buffer[bufPos] = '\0';      // Null terminate
+            } else {
+                #ifdef SERIALCOMMAND_DEBUG
+                    Serial.println("Line buffer is full - increase SERIALCOMMAND_BUFFER");
+                #endif
+            }
         }
     }
 }

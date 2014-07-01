@@ -79,19 +79,6 @@ void setup() {
 
     initLED();
 
-    AxisSettings asettings;
-
-    /*asettings.axis = 'Z';
-    asettings.flipped = false;
-    asettings.length = 51234;*/
-
-    //settings.write_axis_settings('X', &asettings);
-    settings.read_axis_settings('X', &asettings);
-
-    print_settings(&asettings);
-
-    delay(100);
-
     setLEDToColour(COLOUR_HOME);
 
     if(!SD.begin(53)) {
@@ -108,6 +95,10 @@ void loop() {
 
 void serialEvent(void) {
     uint8_t input = Serial.read();
+
+    if(input == 0x08) {
+        Serial.print("\x08 ");
+    }
 
     if(input == '\r') {
         Serial.print("\r\n");

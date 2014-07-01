@@ -8,8 +8,12 @@ int ram_free(void) {
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 }
 
+int ram_used(void) {
+    return RAM_TOTAL - ram_free();
+}
+
 double ram_utilisation(void) {
-    return (ram_free() / 81.92); // 8192 bytes total * 100 to be percent.
+    return (ram_used() / 81.92); // 8192 bytes total * 100 to be percent.
 }
 
 void print_settings(AxisSettings *settings) {
