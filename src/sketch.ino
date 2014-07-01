@@ -199,9 +199,6 @@ void readFile(char* filename) {
             if(Serial.peek() == 'S') {
                 myFile.close();
 
-                //xMotor->reset_position();
-                //yMotor->reset_position();
-
                 Serial.println("Stopping.");
 
                 home_command();
