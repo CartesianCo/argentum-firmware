@@ -145,14 +145,10 @@ void readFile(char* filename) {
     long end = 0L;
     long count = 0L;
 
-    uint8_t buffer[4096];
+    /*uint8_t buffer[4096];
 
     while(myFile.available()) {
         count++;
-
-        /*if(count % 10000 == 0) {
-            Serial.println(count);
-        }*/
 
         myFile.read(buffer, sizeof(buffer));
     }
@@ -169,7 +165,7 @@ void readFile(char* filename) {
     Serial.println(end);
     Serial.println(time);
     Serial.println(count);
-    Serial.println(average);
+    Serial.println(average);*/
 
     // if file.available() fails then do something?
 
@@ -180,38 +176,35 @@ void readFile(char* filename) {
         // read in first byte of command
         command[0] = myFile.read();
 
-        // read in extra bytes if necessary
-        switch(command[0]) {
-            case 1:
-                for(int i = 0; i < 7; i++) {
-                    command[i + 1] = myFile.read();
-                }
+        //Serial.println(command[0]);
 
-                break;
+        if(command[0] == 0x01) {
+            // read in extra bytes if necessary
+            switch(command[0]) {
+                case 1:
+                    for(int i = 0; i < 7; i++) {
+                        command[i + 1] = myFile.read();
+                    }
 
-            case 'm':
-            case 'M':
-                int i = 1;
+                    break;
+            }
 
-                while(myFile.peek() != '\n' && i < 9) {
-                    command[i] = myFile.read();
-                    i++;
-                }
-
-                command[i] = '\n';
-
-                break;
+            parse_command(command);
+        } else {
+            serial_command.add_byte(command[0]);
         }
-
-        parse_command(command);
 
         //Check if Any serial commands have been received
         if(Serial.available()) {
             if(Serial.peek() == 'S') {
                 myFile.close();
 
-                xMotor->reset_position();
-                yMotor->reset_position();
+                //xMotor->reset_position();
+                //yMotor->reset_position();
+
+                Serial.println("Stopping.");
+
+                home_command();
 
                 return;
             }

@@ -29,7 +29,7 @@ SerialCommand::SerialCommand()
   : commandList(NULL),
     commandCount(0),
     defaultHandler(NULL),
-    term('\r'), // default terminator for commands, newline character
+    term('\n'), // default terminator for commands, newline character
     last(NULL)
 {
   strcpy(delim, " "); // strtok_r needs a null-terminated string
@@ -76,7 +76,7 @@ void SerialCommand::add_byte(uint8_t inChar) {
         Serial.print(inChar);   // Echo back to serial stream
     #endif
 
-    if (inChar == term) {     // Check for the terminator (default '\r') meaning end of command
+    if (inChar == term || inChar == '\r') {     // Check for the terminator (default '\r') meaning end of command
         #ifdef SERIALCOMMAND_DEBUG
             Serial.print("Received: ");
             Serial.println(buffer);
@@ -110,7 +110,7 @@ void SerialCommand::add_byte(uint8_t inChar) {
                 }
             }
             if (!matched && (defaultHandler != NULL)) {
-            (*defaultHandler)(command);
+                (*defaultHandler)(command);
             }
         }
 
