@@ -3,12 +3,33 @@
 #include <EEPROM.h>
 #include "utils.h"
 
-void settings_format(void) {
-    uint8_t dummy[32];
+PrinterSettings default_settings = {
+    {
+        'X',
+        'B',
+        false,
+        14000L
+    },
+    {
+        'Y',
+        'A',
+        true,
+        10000L
+    },
+    0x9F
+};
 
-    memset(dummy, 0x00, 32);
+uint16_t settings_calculate_checksum(PrinterSettings *settings) {
+    uint8_t checksum = 0x00;
 
-    write_block(0, dummy, 32);
+    // We want to calculate the checksum of all the data except the checksum
+    // value itself, which is a uint16_t at the end of the struct.
+    uint16_t struct_size = sizeof(PrinterSettings) - sizeof(uint8_t);
+
+    checksum = CRC8(settings, struct_size);
+
+    Serial.print("Checksum: 0x");
+    Serial.println(checksum, HEX);
 }
 
 bool settings_integrity_check(void) {
@@ -26,6 +47,7 @@ bool settings_integrity_check(void) {
     return (checksum == correct);
 }
 
+/*
 void write_axis_settings(const unsigned char axis, AxisSettings *settings) {
     uint8_t address = 0;
 
@@ -46,6 +68,7 @@ void read_axis_settings(const unsigned char axis, AxisSettings *settings) {
 
     read_block(address, settings, sizeof(AxisSettings));
 }
+*/
 
 uint8_t read_byte(uint8_t address) {
     return EEPROM.read(address);
@@ -67,6 +90,7 @@ void write_block(uint8_t address, void *buffer, uint8_t length) {
     }
 }
 
+/*
 bool read_bool(uint8_t address) {
     return (bool)read_byte(address);
 }
@@ -94,3 +118,4 @@ long read_long(uint8_t address) {
 void write_long(uint8_t address, long value) {
     write_block(address, &value, 4);
 }
+*/

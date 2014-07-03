@@ -31,6 +31,23 @@ void setup() {
     DDRL = 0xFF;
     DDRA = 0xFF;
 
+    Serial.println(sizeof(PrinterSettings));
+
+    PrinterSettings ps;
+    memset(&ps, 0x00, sizeof(PrinterSettings));
+
+    ps.x_axis.axis = 'X';
+    ps.x_axis.motor = 'B';
+    ps.x_axis.flipped = false;
+    ps.x_axis.length = 14000L;
+
+    ps.y_axis.axis = 'Y';
+    ps.y_axis.motor = 'A';
+    ps.y_axis.flipped = true;
+    ps.y_axis.length = 10000L;
+
+    settings_calculate_checksum(&ps);
+
     // Configure Input Pins
     pinMode(A12, INPUT); // General Analog Inputs
     pinMode(A13, INPUT);

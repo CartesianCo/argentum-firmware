@@ -31,3 +31,31 @@ void print_settings(AxisSettings *settings) {
     Serial.print(settings->length);
     Serial.println(" steps");
 }
+
+uint8_t CRC8(const void *buffer, const uint16_t length) {
+    uint8_t crc = 0x00;
+
+    for(uint16_t i = 0; i < length; i++) {
+        uint8_t data = ((uint8_t *)buffer)[i];
+
+        crc = CRC8_add_byte(data, crc);
+    }
+
+    return crc;
+}
+
+uint8_t CRC8_add_byte(uint8_t data, uint8_t crc) {
+    for(uint8_t i = 8; i > 0; i--) {
+        uint8_t sum = (crc ^ data) & 0x01;
+
+        crc = crc >> 1;
+
+        if (sum) {
+            crc ^= 0x8C;
+        }
+
+        data = data >> 1;
+    }
+
+    return crc;
+}

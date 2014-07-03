@@ -19,6 +19,9 @@ Limit Switches NC/NO (bool)
 
 */
 
+// Insist that our structs are 1-byte boundary aligned. (No padding)
+#pragma pack(push, 1)
+
 struct AxisSettings {
     uint8_t axis;
     uint8_t motor;
@@ -26,10 +29,21 @@ struct AxisSettings {
     long length;
 };
 
-void settings_integrity_check(void);
+struct PrinterSettings {
+    AxisSettings x_axis;
+    AxisSettings y_axis;
+    uint8_t checksum;
+};
 
-void write_axis_settings(const unsigned char axis, AxisSettings *settings);
-void read_axis_settings(const unsigned char axis, AxisSettings *settings);
+#pragma pack(pop)
+
+extern PrinterSettings default_settings;
+
+bool settings_integrity_check(void);
+uint16_t settings_calculate_checksum(PrinterSettings *settings);
+
+//void write_axis_settings(const unsigned char axis, AxisSettings *settings);
+//void read_axis_settings(const unsigned char axis, AxisSettings *settings);
 
 uint8_t read_byte(uint8_t address);
 void write_byte(uint8_t address, uint8_t value);
@@ -37,6 +51,7 @@ void write_byte(uint8_t address, uint8_t value);
 void read_block(uint8_t address, void *buffer, uint8_t length);
 void write_block(uint8_t address, void *buffer, uint8_t length);
 
+/*
 bool read_bool(uint8_t address);
 void write_bool(uint8_t address, bool value);
 
@@ -48,5 +63,6 @@ void write_long(uint8_t address, long value);
 
 uint8_t read_setting(uint8_t id);
 void write_setting(uint8_t id, uint8_t value);
+*/
 
 #endif
