@@ -142,7 +142,7 @@ bool freedom(bool *x_direction_resolved, bool *y_direction_resolved) {
     return (a_resolved | b_resolved);
 }
 
-void calibration(bool write_calibration) {
+void calibrate(CalibrationData *calibration) {
     Serial.println("Calibration beginning.");
 
     xMotor->set_direction(Motor::Forward);
@@ -241,79 +241,13 @@ void calibration(bool write_calibration) {
         y_distance++;
     }
 
-    Serial.println("Calibration procedure completed:");
+    if(calibration) {
+        calibration->x_axis.motor = (xMotor == &aMotor) ? Motor::A : Motor::B;
+        calibration->x_axis.flipped = xMotor->is_inverted();
+        calibration->x_axis.length = x_distance;
 
-    if(xMotor == &aMotor) {
-        Serial.println("X = A, Y = B");
-    } else {
-        Serial.println("X = B, Y = A");
-    }
-
-    if(xMotor->is_inverted()) {
-        Serial.println("X Inverted");
-    }
-
-    if(yMotor->is_inverted()) {
-        Serial.println("Y Inverted");
-    }
-
-    Serial.println(x_distance, DEC);
-    Serial.println(y_distance, DEC);
-
-    if(write_calibration) {
-        Serial.println("Writing calibration...");
-
-        PrinterSettings settings = {
-            {
-            // X Axis
-                {
-                    (xMotor == &aMotor) ? Motor::A : Motor::B, // Motor
-                    xMotor->is_inverted(),                     // Flipped
-                    x_distance                                 // Axis Length
-                },
-
-                // Y Axis
-                {
-                    (yMotor == &aMotor) ? Motor::A : Motor::B, // Motor
-                    yMotor->is_inverted(),                     // Flipped
-                    y_distance                                 // Axis Length
-                }
-            },
-            0x00                                           // CRC
-        };
-
-        settings.crc = settings_calculate_crc(&settings);
-
-        settings_print_settings(&settings);
-
-        /*AxisSettings as;
-
-        as.axis = Axis::X;
-
-        if(xMotor == &aMotor) {
-            as.motor = Motor::A;
-        } else {
-            as.motor = Motor::B;
-        }
-
-        as.flipped = xMotor->is_inverted();
-        as.length = x_distance;
-
-        //write_axis_settings(Axis::X, &as);
-
-        as.axis = Axis::Y;
-
-        if(yMotor == &aMotor) {
-            as.motor = Motor::A;
-        } else {
-            as.motor = Motor::B;
-        }
-
-        as.flipped = yMotor->is_inverted();
-        as.length = y_distance;
-
-        //write_axis_settings(Axis::Y, &as);*/
-
-        Serial.println("Calibration saved");
+        calibration->y_axis.motor = (yMotor == &aMotor) ? Motor::A : Motor::B;
+        calibration->y_axis.flipped = yMotor->is_inverted();
+        calibration->y_axis.length = y_distance;
     }
 }

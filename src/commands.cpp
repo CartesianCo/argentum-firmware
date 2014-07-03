@@ -71,103 +71,20 @@ void acc(void) {
     }
 }
 
-
-void write_long_command(void) {
-    Serial.println("Writing long.");
-
-    char *arg;
-
-    arg = serial_command.next();
-
-    if(arg == NULL) {
-        Serial.println("Missing address parameter");
-        return;
-    }
-
-    uint8_t address = atoi(arg);
-
-    arg = serial_command.next();
-
-    if(arg == NULL) {
-        Serial.println("Missing value parameter");
-        return;
-    }
-
-    long value = atol(arg);
-
-    Serial.print(address);
-    Serial.print(" = ");
-    Serial.println(value);
-
-    //write_long(address, value);
-}
-
-void read_long_command(void) {
-    char *arg;
-
-    arg = serial_command.next();
-
-    if(arg == NULL) {
-        Serial.println("Missing address parameter");
-        return;
-    }
-
-    int address = atoi(arg);
-
-    Serial.print(address);
-    Serial.print(" = ");
-
-    long val = 0xDEAD; //read_long((uint8_t)address);
-    Serial.println(val);
-}
-
 void read_setting_command(void) {
-    char *arg;
+    settings_print_settings(&global_settings);
+}
 
-    arg = serial_command.next();
+void read_saved_setting_command(void) {
+    PrinterSettings settings;
 
-    if(arg == NULL) {
-        Serial.println("Missing address parameter");
-        return;
-    }
-
-    int address = atoi(arg);
-
-    Serial.print(address);
-    Serial.print(" = 0x");
-
-    uint8_t val = read_byte((uint8_t)address);
-    Serial.println(val, HEX);
+    settings_read_settings(&settings);
+    
+    settings_print_settings(&settings);
 }
 
 void write_setting_command(void) {
-    Serial.println("Writing setting.");
-
-    char *arg;
-
-    arg = serial_command.next();
-
-    if(arg == NULL) {
-        Serial.println("Missing address parameter");
-        return;
-    }
-
-    uint8_t address = atoi(arg);
-
-    arg = serial_command.next();
-
-    if(arg == NULL) {
-        Serial.println("Missing value parameter");
-        return;
-    }
-
-    uint8_t value = atoi(arg);
-
-    Serial.print(address);
-    Serial.print(" = 0x");
-    Serial.println(value, HEX);
-
-    write_byte(address, value);
+    settings_write_settings(&global_settings);
 }
 
 void speed_command(void) {
@@ -399,9 +316,8 @@ void help_command(void) {
 }
 
 void calibrate_command(void) {
-    calibration(false);
-}
+    CalibrationData calibration;
+    calibrate(&calibration);
 
-void calibrate_save_command(void) {
-    calibration(true);
+    settings_update_calibration(&calibration);
 }

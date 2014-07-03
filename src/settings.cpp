@@ -41,11 +41,12 @@ bool settings_initialise(bool correct) {
 }
 
 void settings_restore_defaults(void) {
+    Serial.println("Restoring default settings.");
     settings_update_settings(&default_settings);
 }
 
 void settings_print_settings(PrinterSettings *settings) {
-    settings_print_calibration_data(&(settings->calibration));
+    settings_print_calibration(&(settings->calibration));
 
     uint8_t crc = settings_calculate_crc(settings);
 
@@ -61,7 +62,7 @@ void settings_print_settings(PrinterSettings *settings) {
     }
 }
 
-void settings_print_calibration_data(CalibrationData *calibration) {
+void settings_print_calibration(CalibrationData *calibration) {
     Serial.print("X axis: ");
     settings_print_axis_data(&(calibration->x_axis));
 
@@ -74,9 +75,9 @@ void settings_print_axis_data(AxisData *axis) {
     Serial.print(" motor, ");
 
     if(axis->flipped) {
-        Serial.print(" flipped, ");
+        Serial.print("flipped, ");
     } else {
-        Serial.print(" not flipped, ");
+        Serial.print("not flipped, ");
     }
 
     Serial.print(axis->length);
@@ -106,6 +107,9 @@ void settings_read_settings(PrinterSettings *settings) {
 }
 
 void settings_write_settings(PrinterSettings *settings) {
+    // Make sure the CRC will be valid
+    settings_update_crc();
+
     PrinterSettings existing_settings;
     settings_read_settings(&existing_settings);
 
@@ -118,40 +122,54 @@ void settings_write_settings(PrinterSettings *settings) {
 
 void settings_update_settings(PrinterSettings *settings) {
     memcpy(&global_settings, settings, sizeof(PrinterSettings));
+
+    settings_update_crc();
 }
 
 void settings_update_calibration(CalibrationData *calibration) {
     memcpy(&(global_settings.calibration),
            calibration,
            sizeof(CalibrationData));
+
+    settings_update_crc();
 }
 
 void settings_update_x_data(AxisData *axis_data) {
     memcpy(&(global_settings.calibration.x_axis), axis_data, sizeof(AxisData));
+
+    settings_update_crc();
 }
 
 void settings_update_y_data(AxisData *axis_data) {
     memcpy(&(global_settings.calibration.y_axis), axis_data, sizeof(AxisData));
+
+    settings_update_crc();
+}
+
+void settings_update_crc(void) {
+    global_settings.crc = settings_calculate_crc(&global_settings);
 }
 
 // Base EEPROM Functions
 
 uint8_t read_byte(const uint16_t address) {
     return EEPROM.read(address);
-    /*uint8_t value = EEPROM.read(address);
-
-    Serial.print('W');
-    Serial.print(value, HEX);
-    Serial.print('|');
-
-    return value;*/
 }
 
-void write_byte(const uint16_t address, const uint8_t value) {
-    //EEPROM.write(address, value);
+void write_byte(const uint16_t address, const uint8_t value, bool reduce_wear = true) {
     Serial.print('R');
     Serial.print(value, HEX);
     Serial.print('|');
+
+    if(reduce_wear) {
+        uint8_t existing = read_byte(address);
+
+        if(value == existing) {
+            return;
+        }
+    }
+
+    //EEPROM.write(address, value);
 }
 
 void read_block(const uint16_t address, void *buffer, const uint16_t length) {
@@ -170,7 +188,7 @@ void write_block(const uint16_t address, void *buffer, const uint16_t length) {
 void replace_block(const uint16_t address, void *buffer, void *existing, const uint16_t length) {
     for(uint16_t i = 0; i < length; i++) {
         if(((uint8_t *)buffer)[i] != ((uint8_t *)existing)[i]) {
-            write_byte((address + i), ((uint8_t *)buffer)[i]);
+            write_byte((address + i), ((uint8_t *)buffer)[i], false);
         }
     }
 }

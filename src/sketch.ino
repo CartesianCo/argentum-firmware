@@ -27,7 +27,6 @@ void setup() {
     Serial.flush();
 
     settings_initialise(false);
-    settings_restore_defaults();
 
     // Configure Cartridge Ports
     DDRC = 0xFF;
@@ -48,7 +47,6 @@ void setup() {
 
     // Calibration
     serial_command.addCommand("c", &calibrate_command);
-    serial_command.addCommand("cs", &calibrate_save_command);
 
     // Movement
     serial_command.addCommand("m", &move_command);
@@ -69,17 +67,18 @@ void setup() {
 
     // Settings
     serial_command.addCommand("?", &read_setting_command);
+    serial_command.addCommand("??", &read_saved_setting_command);
     serial_command.addCommand("!", &write_setting_command);
 
-    serial_command.addCommand("?L", &read_long_command);
-    serial_command.addCommand("!L", &write_long_command);
-
+    // Experimentals
     serial_command.addCommand("@", &acc);
 
     serial_command.addCommand("ram", &print_ram);
 
+    // SD Card
     serial_command.addCommand("ls", &ls);
 
+    // Common
     serial_command.addCommand("help", &help_command);
 
     initLED();

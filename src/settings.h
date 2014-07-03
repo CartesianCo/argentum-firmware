@@ -34,7 +34,7 @@ bool settings_initialise(bool correct);
 void settings_restore_defaults(void);
 
 void settings_print_settings(PrinterSettings *settings);
-void settings_print_calibration_data(CalibrationData *calibration);
+void settings_print_calibration(CalibrationData *calibration);
 void settings_print_axis_data(AxisData *settings);
 
 uint8_t settings_calculate_crc(PrinterSettings *settings);
@@ -47,9 +47,10 @@ void settings_update_settings(PrinterSettings *settings);
 void settings_update_calibration(CalibrationData *calibration);
 void settings_update_x_data(AxisData *axis_data);
 void settings_update_y_data(AxisData *axis_data);
+void settings_update_crc(void);
 
 uint8_t read_byte(uint16_t address);
-void write_byte(uint16_t address, uint8_t value);
+void write_byte(const uint16_t address, const uint8_t value, bool reduce_wear);
 
 void read_block(uint16_t address, void *buffer, uint16_t length);
 void write_block(uint16_t address, void *buffer, uint16_t length);

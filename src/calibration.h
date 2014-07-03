@@ -2,6 +2,7 @@
 #define _CALIBRATION_H_
 
 #include "Motor.h"
+#include "settings.h"
 
 const static int a_escape_steps = 400;
 const static int b_escape_steps = 400;
@@ -12,6 +13,6 @@ extern Motor *yMotor;
 extern Motor aMotor;
 extern Motor bMotor;
 
-void calibration(bool write_calibration);
+void calibrate(CalibrationData *calibration);
 
 #endif

@@ -7,9 +7,8 @@
 #include "Motor.h"
 
 void acc(void);
-void write_long_command(void);
-void read_long_command(void);
 void read_setting_command(void);
+void read_saved_setting_command(void);
 void write_setting_command(void);
 void speed_command(void);
 void home_command(void);
