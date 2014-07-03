@@ -99,7 +99,7 @@ void write_long_command(void) {
     Serial.print(" = ");
     Serial.println(value);
 
-    write_long(address, value);
+    //write_long(address, value);
 }
 
 void read_long_command(void) {
@@ -117,7 +117,7 @@ void read_long_command(void) {
     Serial.print(address);
     Serial.print(" = ");
 
-    long val = read_long((uint8_t)address);
+    long val = 0xDEAD; //read_long((uint8_t)address);
     Serial.println(val);
 }
 

@@ -19,6 +19,8 @@ Limit Switches NC/NO (bool)
 
 */
 
+const uint16_t SETTINGS_ADDRESS = 0;
+
 // Insist that our structs are 1-byte boundary aligned. (No padding)
 #pragma pack(push, 1)
 
@@ -26,43 +28,37 @@ struct AxisSettings {
     uint8_t axis;
     uint8_t motor;
     bool flipped;
-    long length;
+    uint16_t length;
 };
 
 struct PrinterSettings {
     AxisSettings x_axis;
     AxisSettings y_axis;
-    uint8_t checksum;
+    uint8_t crc;
 };
 
 #pragma pack(pop)
 
 extern PrinterSettings default_settings;
+extern PrinterSettings global_settings;
 
-bool settings_integrity_check(void);
-uint16_t settings_calculate_checksum(PrinterSettings *settings);
+bool settings_initialise(bool correct);
+void settings_restore_defaults(void);
 
-//void write_axis_settings(const unsigned char axis, AxisSettings *settings);
-//void read_axis_settings(const unsigned char axis, AxisSettings *settings);
+void settings_print_settings(PrinterSettings *settings);
+void settings_print_axis_settings(AxisSettings *settings);
 
-uint8_t read_byte(uint8_t address);
-void write_byte(uint8_t address, uint8_t value);
+uint8_t settings_calculate_crc(PrinterSettings *settings);
+bool settings_integrity_check(PrinterSettings *settings);
 
-void read_block(uint8_t address, void *buffer, uint8_t length);
-void write_block(uint8_t address, void *buffer, uint8_t length);
+void settings_read_settings(PrinterSettings *settings);
+void settings_write_settings(PrinterSettings *settings);
 
-/*
-bool read_bool(uint8_t address);
-void write_bool(uint8_t address, bool value);
+uint8_t read_byte(uint16_t address);
+void write_byte(uint16_t address, uint8_t value);
 
-char read_char(uint8_t address);
-void write_char(uint8_t address, char value);
+void read_block(uint16_t address, void *buffer, uint16_t length);
+void write_block(uint16_t address, void *buffer, uint16_t length);
 
-long read_long(uint8_t address);
-void write_long(uint8_t address, long value);
-
-uint8_t read_setting(uint8_t id);
-void write_setting(uint8_t id, uint8_t value);
-*/
 
 #endif

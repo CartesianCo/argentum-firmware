@@ -16,106 +16,123 @@ PrinterSettings default_settings = {
         true,
         10000L
     },
-    0x9F
+    0xFA
 };
 
-uint16_t settings_calculate_checksum(PrinterSettings *settings) {
-    uint8_t checksum = 0x00;
+PrinterSettings global_settings;
 
+// Settings helpers
+
+bool settings_initialise(bool correct) {
+    settings_read_settings(&global_settings);
+
+    bool valid = settings_integrity_check(&global_settings);
+
+    if(!valid && correct) {
+        settings_restore_defaults();
+    }
+
+    if(!valid) {
+        settings_print_settings(&global_settings);
+    }
+
+    return valid;
+}
+
+void settings_restore_defaults(void) {
+    memcpy(&global_settings, &default_settings, sizeof(PrinterSettings));
+
+    settings_write_settings(&global_settings);
+}
+
+void settings_print_settings(PrinterSettings *settings) {
+    settings_print_axis_settings(&(settings->x_axis));
+    settings_print_axis_settings(&(settings->y_axis));
+
+    uint8_t crc = settings_calculate_crc(settings);
+
+    Serial.print("CRC: ");
+    Serial.print(settings->crc, HEX);
+    Serial.print(", Calculated: ");
+    Serial.print(crc, HEX);
+
+    if(crc == settings->crc) {
+        Serial.println(" [GOOD \xFB]");
+    } else {
+        Serial.println(" [CORRUPT \xB0]");
+    }
+}
+
+void settings_print_axis_settings(AxisSettings *settings) {
+    Serial.print((char)settings->axis);
+    Serial.print(" axis -> ");
+    Serial.print((char)settings->motor);
+    Serial.print(" motor, ");
+
+    if(settings->flipped) {
+        Serial.print(" flipped, ");
+    } else {
+        Serial.print(" not flipped, ");
+    }
+
+    Serial.print(settings->length);
+    Serial.println(" steps");
+}
+
+// Settings CRC Utilities
+
+uint8_t settings_calculate_crc(PrinterSettings *settings) {
     // We want to calculate the checksum of all the data except the checksum
     // value itself, which is a uint16_t at the end of the struct.
     uint16_t struct_size = sizeof(PrinterSettings) - sizeof(uint8_t);
 
-    checksum = CRC8(settings, struct_size);
-
-    Serial.print("Checksum: 0x");
-    Serial.println(checksum, HEX);
+    return CRC8(settings, struct_size);
 }
 
-bool settings_integrity_check(void) {
-    uint8_t size = 32;
+bool settings_integrity_check(PrinterSettings *settings) {
+    uint8_t crc = settings_calculate_crc(settings);
 
-    uint8_t checksum = 0x00;
-    uint8_t correct = read_char(33);
-
-    for(uint8_t i = 0; i < size; i++) {
-        uint8_t value = read_char(i);
-
-        checksum ^= value;
-    }
-
-    return (checksum == correct);
+    return (crc == settings->crc);
 }
 
-/*
-void write_axis_settings(const unsigned char axis, AxisSettings *settings) {
-    uint8_t address = 0;
+// Settings Read and Write
 
-    if(axis == 'Y') {
-        address = 10;
-    }
-
-    print_settings(settings);
-    //write_block(address, settings, sizeof(AxisSettings));
+void settings_read_settings(PrinterSettings *settings) {
+    read_block(SETTINGS_ADDRESS, &global_settings, sizeof(PrinterSettings));
 }
 
-void read_axis_settings(const unsigned char axis, AxisSettings *settings) {
-    uint8_t address = 0;
-
-    if(axis == 'Y') {
-        address = 10;
-    }
-
-    read_block(address, settings, sizeof(AxisSettings));
-}
-*/
-
-uint8_t read_byte(uint8_t address) {
-    return EEPROM.read(address);
+void settings_write_settings(PrinterSettings *settings) {
+    write_block(SETTINGS_ADDRESS, &global_settings, sizeof(PrinterSettings));
 }
 
-void write_byte(uint8_t address, uint8_t value) {
-    EEPROM.write(address, value);
-}
+// Base EEPROM Functions
 
-void read_block(uint8_t address, void *buffer, uint8_t length) {
-    for(uint8_t i = 0; i < length; i++) {
+void read_block(const uint16_t address, void *buffer, const uint16_t length) {
+    for(uint16_t i = 0; i < length; i++) {
         ((uint8_t *)buffer)[i] = read_byte(address + i);
     }
 }
 
-void write_block(uint8_t address, void *buffer, uint8_t length) {
-    for(uint8_t i = 0; i < length; i++) {
+void write_block(const uint16_t address, void *buffer, const uint16_t length) {
+    for(uint16_t i = 0; i < length; i++) {
         write_byte((address + i), ((uint8_t *)buffer)[i]);
     }
 }
 
-/*
-bool read_bool(uint8_t address) {
-    return (bool)read_byte(address);
-}
+uint8_t read_byte(const uint16_t address) {
+    //return EEPROM.read(address);
+    uint8_t value = EEPROM.read(address);
 
-void write_bool(uint8_t address, bool value) {
-    write_byte(address, (uint8_t)value);
-}
-
-char read_char(uint8_t address) {
-    return (char)read_byte(address);
-}
-
-void write_char(uint8_t address, char value) {
-    write_byte(address, (uint8_t)value);
-}
-
-long read_long(uint8_t address) {
-    long value = 0L;
-
-    read_block(address, &value, 4);
+    Serial.print('W');
+    Serial.print(value, HEX);
+    Serial.print('|');
 
     return value;
 }
 
-void write_long(uint8_t address, long value) {
-    write_block(address, &value, 4);
+void write_byte(const uint16_t address, const uint8_t value) {
+    //EEPROM.write(address, value);
+    Serial.print('R');
+    Serial.print(value, HEX);
+    Serial.print('|');
 }
-*/

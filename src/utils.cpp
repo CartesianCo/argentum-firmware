@@ -16,22 +16,6 @@ double ram_utilisation(void) {
     return (ram_used() / (RAM_TOTAL / 100.0)); // 8192 bytes total * 100 to be percent.
 }
 
-void print_settings(AxisSettings *settings) {
-    Serial.println("Axis Settings:");
-    Serial.print(settings->axis);
-    Serial.print(" -> ");
-    Serial.print(settings->motor);
-
-    if(settings->flipped) {
-        Serial.print(" Flipped, ");
-    } else {
-        Serial.print(" Not Flipped, ");
-    }
-
-    Serial.print(settings->length);
-    Serial.println(" steps");
-}
-
 uint8_t CRC8(const void *buffer, const uint16_t length) {
     uint8_t crc = 0x00;
 

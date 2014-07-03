@@ -276,7 +276,7 @@ void calibration(bool write_calibration) {
         as.flipped = xMotor->is_inverted();
         as.length = x_distance;
 
-        write_axis_settings(Axis::X, &as);
+        //write_axis_settings(Axis::X, &as);
 
         as.axis = Axis::Y;
 
@@ -289,7 +289,7 @@ void calibration(bool write_calibration) {
         as.flipped = yMotor->is_inverted();
         as.length = y_distance;
 
-        write_axis_settings(Axis::Y, &as);
+        //write_axis_settings(Axis::Y, &as);
 
         Serial.println("Calibration saved");
     }

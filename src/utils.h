@@ -8,7 +8,6 @@
 int ram_free(void);
 int ram_used(void);
 double ram_utilisation(void);
-void print_settings(AxisSettings *settings);
 
 uint8_t CRC8(const void *buffer, const uint16_t length);
 uint8_t CRC8_add_byte(uint8_t data, uint8_t seed_crc);
