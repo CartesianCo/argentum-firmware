@@ -79,7 +79,7 @@ void read_saved_setting_command(void) {
     PrinterSettings settings;
 
     settings_read_settings(&settings);
-    
+
     settings_print_settings(&settings);
 }
 
