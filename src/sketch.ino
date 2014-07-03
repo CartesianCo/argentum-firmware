@@ -23,25 +23,16 @@ File myFile;
 SerialCommand serial_command;
 
 void setup() {
-    Serial.begin(9600);
+    Serial.begin(115200);
     Serial.flush();
+
+    settings_initialise(false);
+    settings_restore_defaults();
 
     // Configure Cartridge Ports
     DDRC = 0xFF;
     DDRL = 0xFF;
     DDRA = 0xFF;
-
-    Serial.println(sizeof(PrinterSettings));
-
-    bool success = settings_initialise(false);
-
-    settings_print_settings(&global_settings);
-
-    if(!success) {
-        Serial.println("Settings corrupt");
-    } else {
-        Serial.println("Settings good");
-    }
 
     // Configure Input Pins
     pinMode(A12, INPUT); // General Analog Inputs

@@ -263,7 +263,30 @@ void calibration(bool write_calibration) {
     if(write_calibration) {
         Serial.println("Writing calibration...");
 
-        AxisSettings as;
+        PrinterSettings settings = {
+            {
+            // X Axis
+                {
+                    (xMotor == &aMotor) ? Motor::A : Motor::B, // Motor
+                    xMotor->is_inverted(),                     // Flipped
+                    x_distance                                 // Axis Length
+                },
+
+                // Y Axis
+                {
+                    (yMotor == &aMotor) ? Motor::A : Motor::B, // Motor
+                    yMotor->is_inverted(),                     // Flipped
+                    y_distance                                 // Axis Length
+                }
+            },
+            0x00                                           // CRC
+        };
+
+        settings.crc = settings_calculate_crc(&settings);
+
+        settings_print_settings(&settings);
+
+        /*AxisSettings as;
 
         as.axis = Axis::X;
 
@@ -289,7 +312,7 @@ void calibration(bool write_calibration) {
         as.flipped = yMotor->is_inverted();
         as.length = y_distance;
 
-        //write_axis_settings(Axis::Y, &as);
+        //write_axis_settings(Axis::Y, &as);*/
 
         Serial.println("Calibration saved");
     }

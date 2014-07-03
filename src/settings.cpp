@@ -5,16 +5,16 @@
 
 PrinterSettings default_settings = {
     {
-        'X',
-        'B',
-        false,
-        14000L
-    },
-    {
-        'Y',
-        'A',
-        true,
-        10000L
+        {
+            'B',
+            false,
+            14000L
+        },
+        {
+            'A',
+            true,
+            10000L
+        },
     },
     0xFA
 };
@@ -33,6 +33,7 @@ bool settings_initialise(bool correct) {
     }
 
     if(!valid) {
+        Serial.println("Settings corrupt.");
         settings_print_settings(&global_settings);
     }
 
@@ -40,14 +41,11 @@ bool settings_initialise(bool correct) {
 }
 
 void settings_restore_defaults(void) {
-    memcpy(&global_settings, &default_settings, sizeof(PrinterSettings));
-
-    settings_write_settings(&global_settings);
+    settings_update_settings(&default_settings);
 }
 
 void settings_print_settings(PrinterSettings *settings) {
-    settings_print_axis_settings(&(settings->x_axis));
-    settings_print_axis_settings(&(settings->y_axis));
+    settings_print_calibration_data(&(settings->calibration));
 
     uint8_t crc = settings_calculate_crc(settings);
 
@@ -57,25 +55,31 @@ void settings_print_settings(PrinterSettings *settings) {
     Serial.print(crc, HEX);
 
     if(crc == settings->crc) {
-        Serial.println(" [GOOD \xFB]");
+        Serial.println(" [GOOD]");
     } else {
-        Serial.println(" [CORRUPT \xB0]");
+        Serial.println(" [CORRUPT]");
     }
 }
 
-void settings_print_axis_settings(AxisSettings *settings) {
-    Serial.print((char)settings->axis);
-    Serial.print(" axis -> ");
-    Serial.print((char)settings->motor);
+void settings_print_calibration_data(CalibrationData *calibration) {
+    Serial.print("X axis: ");
+    settings_print_axis_data(&(calibration->x_axis));
+
+    Serial.print("Y axis: ");
+    settings_print_axis_data(&(calibration->y_axis));
+}
+
+void settings_print_axis_data(AxisData *axis) {
+    Serial.print((char)axis->motor);
     Serial.print(" motor, ");
 
-    if(settings->flipped) {
+    if(axis->flipped) {
         Serial.print(" flipped, ");
     } else {
         Serial.print(" not flipped, ");
     }
 
-    Serial.print(settings->length);
+    Serial.print(axis->length);
     Serial.println(" steps");
 }
 
@@ -98,14 +102,57 @@ bool settings_integrity_check(PrinterSettings *settings) {
 // Settings Read and Write
 
 void settings_read_settings(PrinterSettings *settings) {
-    read_block(SETTINGS_ADDRESS, &global_settings, sizeof(PrinterSettings));
+    read_block(SETTINGS_ADDRESS, settings, sizeof(PrinterSettings));
 }
 
 void settings_write_settings(PrinterSettings *settings) {
-    write_block(SETTINGS_ADDRESS, &global_settings, sizeof(PrinterSettings));
+    PrinterSettings existing_settings;
+    settings_read_settings(&existing_settings);
+
+    replace_block(SETTINGS_ADDRESS,
+                  settings,
+                  &existing_settings,
+                  sizeof(PrinterSettings));
+}
+
+
+void settings_update_settings(PrinterSettings *settings) {
+    memcpy(&global_settings, settings, sizeof(PrinterSettings));
+}
+
+void settings_update_calibration(CalibrationData *calibration) {
+    memcpy(&(global_settings.calibration),
+           calibration,
+           sizeof(CalibrationData));
+}
+
+void settings_update_x_data(AxisData *axis_data) {
+    memcpy(&(global_settings.calibration.x_axis), axis_data, sizeof(AxisData));
+}
+
+void settings_update_y_data(AxisData *axis_data) {
+    memcpy(&(global_settings.calibration.y_axis), axis_data, sizeof(AxisData));
 }
 
 // Base EEPROM Functions
+
+uint8_t read_byte(const uint16_t address) {
+    return EEPROM.read(address);
+    /*uint8_t value = EEPROM.read(address);
+
+    Serial.print('W');
+    Serial.print(value, HEX);
+    Serial.print('|');
+
+    return value;*/
+}
+
+void write_byte(const uint16_t address, const uint8_t value) {
+    //EEPROM.write(address, value);
+    Serial.print('R');
+    Serial.print(value, HEX);
+    Serial.print('|');
+}
 
 void read_block(const uint16_t address, void *buffer, const uint16_t length) {
     for(uint16_t i = 0; i < length; i++) {
@@ -119,20 +166,11 @@ void write_block(const uint16_t address, void *buffer, const uint16_t length) {
     }
 }
 
-uint8_t read_byte(const uint16_t address) {
-    //return EEPROM.read(address);
-    uint8_t value = EEPROM.read(address);
-
-    Serial.print('W');
-    Serial.print(value, HEX);
-    Serial.print('|');
-
-    return value;
-}
-
-void write_byte(const uint16_t address, const uint8_t value) {
-    //EEPROM.write(address, value);
-    Serial.print('R');
-    Serial.print(value, HEX);
-    Serial.print('|');
+// This function is to reduce write wear on the EEPROM
+void replace_block(const uint16_t address, void *buffer, void *existing, const uint16_t length) {
+    for(uint16_t i = 0; i < length; i++) {
+        if(((uint8_t *)buffer)[i] != ((uint8_t *)existing)[i]) {
+            write_byte((address + i), ((uint8_t *)buffer)[i]);
+        }
+    }
 }
