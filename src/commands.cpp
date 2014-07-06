@@ -72,6 +72,7 @@ void acc(void) {
 }
 
 void read_setting_command(void) {
+    Serial.println("Current Global Settings:");
     settings_print_settings(&global_settings);
 }
 
@@ -80,6 +81,7 @@ void read_saved_setting_command(void) {
 
     settings_read_settings(&settings);
 
+    Serial.println("EEPROM Settings:");
     settings_print_settings(&settings);
 }
 

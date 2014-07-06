@@ -156,7 +156,7 @@ uint8_t read_byte(const uint16_t address) {
     return EEPROM.read(address);
 }
 
-void write_byte(const uint16_t address, const uint8_t value, bool reduce_wear = true) {
+void write_byte(const uint16_t address, const uint8_t value, bool reduce_wear) {
     Serial.print('R');
     Serial.print(value, HEX);
     Serial.print('|');
@@ -180,7 +180,7 @@ void read_block(const uint16_t address, void *buffer, const uint16_t length) {
 
 void write_block(const uint16_t address, void *buffer, const uint16_t length) {
     for(uint16_t i = 0; i < length; i++) {
-        write_byte((address + i), ((uint8_t *)buffer)[i]);
+        write_byte((address + i), ((uint8_t *)buffer)[i], true);
     }
 }
 
