@@ -12,15 +12,28 @@
 
 #include "AccelStepper.h"
 
+// step_pin, dir_pin, power_pin, steps_per_rev
 Motor aMotor(15, 14, 16, 0); // X
 Motor bMotor(18, 17, 19, 0); // Y
 
-Motor *xMotor = &bMotor;
-Motor *yMotor = &aMotor;
+Motor *xMotor = &aMotor;
+Motor *yMotor = &bMotor;
 
 File myFile;
 
 SerialCommand serial_command;
+
+class Printer {
+public:
+    enum States {
+        Idle,
+        Calibrating,
+        Moving,
+        Printing,
+    };
+};
+
+uint8_t current_state = Printer::Idle;
 
 void setup() {
     Serial.begin(115200);
@@ -45,6 +58,19 @@ void setup() {
     pinMode(A1, INPUT); // YMAX
     pinMode(6, INPUT); // YMIN
 
+    // Disable FETs by default
+    pinMode(7, OUTPUT);
+    digitalWrite(7, HIGH);
+    //analogWrite(7, 128);
+
+    pinMode(8, OUTPUT);
+    digitalWrite(8, HIGH);
+    //analogWrite(8, 128);
+
+    pinMode(9, OUTPUT);
+    digitalWrite(9, HIGH);
+    //analogWrite(9, 128);
+
     // Calibration
     serial_command.addCommand("c", &calibrate_command);
 
@@ -53,9 +79,18 @@ void setup() {
     serial_command.addCommand("M", &move_command);
     serial_command.addCommand("h", &home_command);
 
+    serial_command.addCommand("0", &goto_zero_command);
+    serial_command.addCommand(")", &zero_position_command);
+    serial_command.addCommand("pos", &current_position_command);
+
     // Motor
     serial_command.addCommand("x", &power_command);
     serial_command.addCommand("s", &speed_command);
+
+    serial_command.addCommand("+", &motors_on_command);
+    serial_command.addCommand("=", &motors_on_command);
+    serial_command.addCommand("-", &motors_off_command);
+    serial_command.addCommand("_", &motors_off_command);
 
     // Roller Servo
     serial_command.addCommand("l", &lower_command);
@@ -72,11 +107,16 @@ void setup() {
 
     // Experimentals
     serial_command.addCommand("@", &acc);
-
+    serial_command.addCommand("lim", &limit_switch_command);
     serial_command.addCommand("ram", &print_ram);
+
+    serial_command.addCommand("digital", &digital_command);
+    serial_command.addCommand("analog", &analog_command);
 
     // SD Card
     serial_command.addCommand("ls", &ls);
+    serial_command.addCommand("sd", &init_sd_command);
+
 
     // Common
     serial_command.addCommand("help", &help_command);
@@ -85,15 +125,30 @@ void setup() {
 
     setLEDToColour(COLOUR_HOME);
 
-    if(!SD.begin(53)) {
-        Serial.println("SD card could not be accessed..");
-    }
+    init_sd_command();
 
     //uint8_t *firing_buffer = (uint8_t*)malloc(4096);
     help_command();
 }
 
 void loop() {
+    switch(current_state) {
+        case Printer::Idle:
+        break;
+
+        case Printer::Calibrating:
+        break;
+
+        case Printer::Moving:
+        break;
+
+        case Printer::Printing:
+        break;
+
+        default:
+            current_state = Printer::Idle;
+            break;
+    }
 }
 
 void serialEvent(void) {

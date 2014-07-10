@@ -21,21 +21,26 @@ public:
     Motor(int step_pin, int dir_pin, int power_pin, int steps_per_rev);
     Motor();
     void power(bool state);
-    long get_position();
-    void reset_position();
     void switch_power();
+
+    long get_position(void);
+    void set_position(long position);
+    void reset_position(void);
 
     void set_direction(uint8_t direction);
     void swap_direction(void);
+
     void set_inverted(bool inverted);
     bool is_inverted(void);
 
     void step();
     void steps(long steps);
+    void move(long steps);
+    void go_home(void);
 
     void set_speed(int mm_per_minute); //set to 0 for instantaneous movement
     int  get_speed();
-    void move(long steps);
+
     long last_step_time;
 
     static const uint8_t Forward = 0;

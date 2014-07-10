@@ -160,8 +160,8 @@ void calibrate(CalibrationData *calibration) {
 
     axes_resolved = freedom(&x_direction_resolved, &y_direction_resolved);
 
-    xMotor->set_speed(3500);
-    yMotor->set_speed(3500);
+    xMotor->set_speed(2500);
+    yMotor->set_speed(2500);
 
     if(!axes_resolved) {
         Serial.println("Resolved nothing");
@@ -208,20 +208,28 @@ void calibrate(CalibrationData *calibration) {
         }
     }
 
-    Serial.println("Homing");
+    Serial.print("Homing: ");
+
+    Serial.print("1");
 
     while(!pos_limit()) {
         xMotor->move(1);
         yMotor->move(1);
     }
 
+    Serial.print("2");
+
     while(!x_pos_limit()) {
         xMotor->move(1);
     }
 
+    Serial.print("3");
+
     while(!y_pos_limit()) {
         yMotor->move(1);
     }
+
+    Serial.print("4");
 
     while(!neg_limit()) {
         xMotor->move(-1);
@@ -231,15 +239,24 @@ void calibrate(CalibrationData *calibration) {
         y_distance++;
     }
 
+    Serial.print("5");
+
     while(!x_neg_limit()) {
         xMotor->move(-1);
         x_distance++;
     }
 
+    Serial.print("6");
+
     while(!y_neg_limit()) {
         yMotor->move(-1);
         y_distance++;
     }
+
+    xMotor->reset_position();
+    yMotor->reset_position();
+
+    Serial.println();
 
     if(calibration) {
         calibration->x_axis.motor = (xMotor == &aMotor) ? Motor::A : Motor::B;

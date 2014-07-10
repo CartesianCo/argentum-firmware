@@ -48,16 +48,16 @@ void Motor::power(bool state) {
     }
 }
 
-long Motor::get_position() {
+long Motor::get_position(void) {
     return position;
 }
 
-void Motor::reset_position() {
-    int current_direction = this->direction;
+void Motor::set_position(long position) {
+    this->position = position;
+}
 
-    move(position);
-
-    set_direction(current_direction);
+void Motor::reset_position(void) {
+    set_position(0L);
 }
 
 void Motor::swap_direction(void) {
@@ -130,6 +130,17 @@ void Motor::move(long steps) {
     for (long i = 0; i < steps; i++) {
         step();
     }
+}
+
+void Motor::go_home(void) {
+    int current_direction = this->direction;
+
+    Serial.print("Motor starting at: ");
+    Serial.println(position);
+
+    move(-position);
+
+    set_direction(current_direction);
 }
 
 void Motor::set_speed(int mm_per_minute) {

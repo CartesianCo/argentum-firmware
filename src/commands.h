@@ -26,5 +26,20 @@ bool is_printer_file(File file);
 void help_command(void);
 void calibrate_command(void);
 void calibrate_save_command(void);
+void motors_off_command(void);
+void motors_on_command(void);
+
+void zero_position_command(void);
+void goto_zero_command(void);
+void current_position_command(void);
+
+void continuous_move(void);
+
+void init_sd_command(void);
+
+void limit_switch_command(void);
+
+void analog_command(void);
+void digital_command(void);
 
 #endif

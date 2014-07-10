@@ -7,6 +7,7 @@
 #include "limit_switch.h"
 #include "utils.h"
 #include "calibration.h"
+#include <SD.h>
 
 extern void readFile(char* filename);
 
@@ -71,6 +72,18 @@ void acc(void) {
     }
 }
 
+void motors_off_command(void) {
+    Serial.println("Motors off");
+    xMotor->power(0);
+    yMotor->power(0);
+}
+
+void motors_on_command(void) {
+    Serial.println("Motors on");
+    xMotor->power(1);
+    yMotor->power(1);
+}
+
 void read_setting_command(void) {
     Serial.println("Current Global Settings:");
     settings_print_settings(&global_settings);
@@ -118,6 +131,26 @@ void speed_command(void) {
     motor->set_speed(speed);
 }
 
+void zero_position_command(void) {
+    Serial.println("Setting new zero position");
+    xMotor->set_position(0L);
+    yMotor->set_position(0L);
+}
+
+void goto_zero_command(void) {
+    Serial.println("Returning to 0.000, 0.000");
+    xMotor->go_home();
+    yMotor->go_home();
+}
+
+void current_position_command(void) {
+    Serial.print("Current position (steps): (");
+    Serial.print(xMotor->get_position());
+    Serial.print(", ");
+    Serial.print(yMotor->get_position());
+    Serial.println(")");
+}
+
 void home_command(void) {
     while(!neg_limit()) {
         xMotor->move(-1);
@@ -163,13 +196,58 @@ Motor * motor_from_axis(unsigned const char axis) {
     } else if (toupper(axis) == 'Y') {
         return yMotor;
     }
+
+    return NULL;
+}
+
+void continuous_move(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        Serial.println("Missing axis parameter");
+        return;
+    }
+
+    char axis = arg[0];
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        Serial.println("Missing direction parameter");
+        return;
+    }
+
+    char direction = arg[0];
+
+    Motor *motor = motor_from_axis(axis);
+
+    while(!Serial.read() == 'c') {
+        if(direction == '+') {
+            motor->move(1);
+        } else {
+            motor->move(-1);
+        }
+    }
 }
 
 void move(unsigned const char axis, long steps) {
     Motor *motor = motor_from_axis(axis);
 
+    if(!motor) {
+        return;
+    }
+
+    /*Serial.print("Moving ");
+    Serial.write(axis);
+    Serial.print(" -> ");
+    Serial.print(steps);
+    Serial.println();*/
+
     if(steps == 0) {
-        motor->reset_position();
+        //motor->reset_position();
+        motor->go_home();
     } else {
         motor->move(steps);
     }
@@ -322,4 +400,72 @@ void calibrate_command(void) {
     calibrate(&calibration);
 
     settings_update_calibration(&calibration);
+}
+
+void init_sd_command(void) {
+    if(!SD.begin(53)) {
+        Serial.println("SD card could not be accessed..");
+    }
+}
+
+void limit_switch_command(void) {
+    print_switch_status();
+}
+
+void analog_command(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(!arg) {
+        Serial.println("No pin supplied");
+        return;
+    }
+
+    int pin = atoi(arg);
+
+    arg = serial_command.next();
+
+    if(!arg) {
+        Serial.println("No value supplied");
+        return;
+    }
+
+    int value = atoi(arg);
+
+    Serial.print("Setting ");
+    Serial.print(pin);
+    Serial.print(" to ");
+    Serial.println(value);
+
+    analogWrite(pin, value);
+}
+
+void digital_command(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(!arg) {
+        Serial.println("No pin supplied");
+        return;
+    }
+
+    int pin = atoi(arg);
+
+    arg = serial_command.next();
+
+    if(!arg) {
+        Serial.println("No value supplied");
+        return;
+    }
+
+    int value = atoi(arg);
+
+    Serial.print("Setting ");
+    Serial.print(pin);
+    Serial.print(" to ");
+    Serial.println(value);
+
+    digitalWrite(pin, value);
 }

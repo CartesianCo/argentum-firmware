@@ -4,19 +4,19 @@ uint8_t limit_switches(void) {
     uint8_t switches = 0b00000000;
 
     if(x_pos_limit()) {
-        switches |= 0b00001000;
+        switches |= X_POS_BIT;
     }
 
     if(x_neg_limit()) {
-        switches |= 0b00000100;
+        switches |= X_NEG_BIT;
     }
 
     if(y_pos_limit()) {
-        switches |= 0b00000010;
+        switches |= Y_POS_BIT;
     }
 
     if(y_neg_limit()) {
-        switches |= 0b00000001;
+        switches |= Y_NEG_BIT;
     }
 
     return switches;
@@ -25,6 +25,9 @@ uint8_t limit_switches(void) {
 void print_switch_status(uint8_t switches) {
     //Serial.print("Switch binary: ");
     //Serial.println(switches, BIN);
+    if(switches == 0b00000000) {
+        Serial.print("None triggered.");
+    }
 
     if(X_POS(switches)) {
         Serial.print("X+ ");
