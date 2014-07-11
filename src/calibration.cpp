@@ -4,6 +4,8 @@
 #include "settings.h"
 #include "axis.h"
 
+#include "utils.h"
+
 /**
  * Attempt to resolve the direction and a axis of a motor.
  *
@@ -208,28 +210,33 @@ void calibrate(CalibrationData *calibration) {
         }
     }
 
-    Serial.print("Homing: ");
+    //Serial.print("Homing: ");
+    info("Homing :");
 
-    Serial.print("1");
+    //Serial.print("1");
+    info("1");
 
     while(!pos_limit()) {
         xMotor->move(1);
         yMotor->move(1);
     }
 
-    Serial.print("2");
+    //Serial.print("2");
+    info("2");
 
     while(!x_pos_limit()) {
         xMotor->move(1);
     }
 
-    Serial.print("3");
+    //Serial.print("3");
+    info("3");
 
     while(!y_pos_limit()) {
         yMotor->move(1);
     }
 
-    Serial.print("4");
+    //Serial.print("4");
+    info("4");
 
     while(!neg_limit()) {
         xMotor->move(-1);
@@ -239,14 +246,16 @@ void calibrate(CalibrationData *calibration) {
         y_distance++;
     }
 
-    Serial.print("5");
+    //Serial.print("5");
+    info("5");
 
     while(!x_neg_limit()) {
         xMotor->move(-1);
         x_distance++;
     }
 
-    Serial.print("6");
+    //Serial.print("6");
+    info("6");
 
     while(!y_neg_limit()) {
         yMotor->move(-1);
@@ -256,7 +265,8 @@ void calibrate(CalibrationData *calibration) {
     xMotor->reset_position();
     yMotor->reset_position();
 
-    Serial.println();
+    //Serial.println();
+    infoln();
 
     if(calibration) {
         calibration->x_axis.motor = (xMotor == &aMotor) ? Motor::A : Motor::B;

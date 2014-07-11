@@ -60,15 +60,15 @@ void setup() {
 
     // Disable FETs by default
     pinMode(7, OUTPUT);
-    digitalWrite(7, HIGH);
+    digitalWrite(7, LOW);
     //analogWrite(7, 128);
 
     pinMode(8, OUTPUT);
-    digitalWrite(8, HIGH);
+    digitalWrite(8, LOW);
     //analogWrite(8, 128);
 
     pinMode(9, OUTPUT);
-    digitalWrite(9, HIGH);
+    digitalWrite(9, LOW);
     //analogWrite(9, 128);
 
     // Calibration

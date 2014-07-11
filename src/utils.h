@@ -5,6 +5,16 @@
 
 #define RAM_TOTAL 8192
 
+#define INFO
+
+#ifdef INFO
+    #define info(a)     Serial.print(a)
+    #define infoln(a)   Serial.println(a)
+#else
+    #define info(a)
+    #define infonl(a)
+#endif
+
 int ram_free(void);
 int ram_used(void);
 double ram_utilisation(void);

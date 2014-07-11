@@ -3,6 +3,8 @@
 
 #include "Arduino.h"
 
+//#define LIMITS_NC
+
 #define X_POS_BIT 0b00001000
 #define X_NEG_BIT 0b00000100
 #define Y_POS_BIT 0b00000010
@@ -24,10 +26,17 @@
 #define POS_LIMIT(switches) (switches & POS_MASK)
 #define NEG_LIMIT(switches) (switches & NEG_MASK)
 
-#define x_pos_limit() !(PINE & 0b00001000)
-#define x_neg_limit() !(PINF & 0b00000001)
-#define y_pos_limit() !(PINF & 0b00000010)
-#define y_neg_limit() !(PINH & 0b00001000)
+#ifndef LIMITS_NC
+    #define x_pos_limit() (PINE & 0b00001000)
+    #define x_neg_limit() (PINF & 0b00000001)
+    #define y_pos_limit() (PINF & 0b00000010)
+    #define y_neg_limit() (PINH & 0b00001000)
+#else
+    #define x_pos_limit() !(PINE & 0b00001000)
+    #define x_neg_limit() !(PINF & 0b00000001)
+    #define y_pos_limit() !(PINF & 0b00000010)
+    #define y_neg_limit() !(PINH & 0b00001000)
+#endif
 
 #define pos_limit() (x_pos_limit() || y_pos_limit())
 #define neg_limit() (x_neg_limit() || y_neg_limit())
