@@ -3,7 +3,7 @@
 
 #include "Arduino.h"
 
-//#define LIMITS_NC
+#define LIMITS_NC
 
 #define X_POS_BIT 0b00001000
 #define X_NEG_BIT 0b00000100

@@ -84,6 +84,20 @@ void settings_print_axis_data(AxisData *axis) {
     Serial.println(" steps");
 }
 
+void settings_print_axis_data_minimal(AxisData *axis) {
+    Serial.print((char)axis->motor);
+    /*Serial.print(", ");
+
+    if(axis->flipped) {
+        Serial.print("!, ");
+    } else {
+        Serial.print(" , ");
+    }*/
+
+    Serial.print(axis->length);
+    //Serial.println("");
+}
+
 // Settings CRC Utilities
 
 uint8_t settings_calculate_crc(PrinterSettings *settings) {
@@ -169,7 +183,7 @@ void write_byte(const uint16_t address, const uint8_t value, bool reduce_wear) {
         }
     }
 
-    //EEPROM.write(address, value);
+    EEPROM.write(address, value);
 }
 
 void read_block(const uint16_t address, void *buffer, const uint16_t length) {

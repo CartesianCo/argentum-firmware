@@ -73,6 +73,7 @@ void setup() {
 
     // Calibration
     serial_command.addCommand("c", &calibrate_command);
+    serial_command.addCommand("cl", &calibrate_loop_command);
 
     // Movement
     serial_command.addCommand("m", &move_command);
@@ -117,6 +118,13 @@ void setup() {
     serial_command.addCommand("ls", &ls);
     serial_command.addCommand("sd", &init_sd_command);
 
+    // Colour
+    serial_command.addCommand("red", &red_command);
+    serial_command.addCommand("green", &green_command);
+    serial_command.addCommand("blue", &blue_command);
+
+    serial_command.addCommand("pwm", &pwm_command);
+
 
     // Common
     serial_command.addCommand("help", &help_command);
@@ -131,7 +139,30 @@ void setup() {
     help_command();
 }
 
+static int white = 0;
+static long old_time = 0;
+static bool dir = false;
+
 void loop() {
+    /*if(millis() - old_time > 10) {
+        if(!dir) {
+            white++;
+        } else {
+            white--;
+        }
+
+        if(white >= 255) {
+            dir = true;
+        }
+
+        if(white <= 0) {
+            dir = false;
+        }
+
+        old_time = millis();
+        analogWrite(8, white);
+    }*/
+
     switch(current_state) {
         case Printer::Idle:
         break;

@@ -23,7 +23,8 @@ void setLED(uint8_t red, uint8_t green, uint8_t blue) {
 
 void setRed(uint8_t red) {
 	if(red > 0) {
-		digitalWrite(RED_CHANNEL_PIN, HIGH);
+		//digitalWrite(RED_CHANNEL_PIN, HIGH);
+        analogWrite(RED_CHANNEL_PIN, red);
 	} else {
 		digitalWrite(RED_CHANNEL_PIN, LOW);
 	}

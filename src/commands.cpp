@@ -7,6 +7,7 @@
 #include "limit_switch.h"
 #include "utils.h"
 #include "calibration.h"
+#include "LEDStrip.h"
 #include <SD.h>
 
 extern void readFile(char* filename);
@@ -399,7 +400,32 @@ void calibrate_command(void) {
     CalibrationData calibration;
     calibrate(&calibration);
 
-    settings_update_calibration(&calibration);
+    log_info("C ");
+    settings_print_axis_data_minimal(&calibration.x_axis);
+    log_info_np(" ");
+    settings_print_axis_data_minimal(&calibration.y_axis);
+    log_info("\r\n");
+}
+
+void calibrate_loop_command(void) {
+    CalibrationData calibration;
+
+    while(true) {
+        if(Serial.available()) {
+            if(Serial.read() == 'S') {
+                return;
+            }
+        }
+
+        CalibrationData calibration;
+        calibrate(&calibration);
+
+        log_info("C ");
+        settings_print_axis_data_minimal(&calibration.x_axis);
+        log_info_np(" ");
+        settings_print_axis_data_minimal(&calibration.y_axis);
+        log_info("\r\n");
+    }
 }
 
 void init_sd_command(void) {
@@ -468,4 +494,78 @@ void digital_command(void) {
     Serial.println(value);
 
     digitalWrite(pin, value);
+}
+
+void red_command(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(!arg) {
+        Serial.println("No value (0 .. 255) supplied");
+        return;
+    }
+
+    int value = atoi(arg);
+
+    setRed(value);
+}
+
+void green_command(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(!arg) {
+        Serial.println("No value (0 .. 255) supplied");
+        return;
+    }
+
+    int value = atoi(arg);
+
+    setGreen(value);
+}
+
+void blue_command(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(!arg) {
+        Serial.println("No value (0 .. 255) supplied");
+        return;
+    }
+
+    int value = atoi(arg);
+
+    setBlue(value);
+}
+
+void pwm_command(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(!arg) {
+        Serial.println("No pin (7, 8, 9) supplied");
+        return;
+    }
+
+    int pin = atoi(arg);
+
+    if(pin < 7 || pin > 9) {
+        log_warn("Pin out of PWM range.");
+        return;
+    }
+
+    arg = serial_command.next();
+
+    if(!arg) {
+        Serial.println("No value (0 .. 255) supplied");
+        return;
+    }
+
+    int value = atoi(arg);
+
+    analogWrite(pin, value);
 }

@@ -36,6 +36,7 @@ void settings_restore_defaults(void);
 void settings_print_settings(PrinterSettings *settings);
 void settings_print_calibration(CalibrationData *calibration);
 void settings_print_axis_data(AxisData *settings);
+void settings_print_axis_data_minimal(AxisData *axis);
 
 uint8_t settings_calculate_crc(PrinterSettings *settings);
 bool settings_integrity_check(PrinterSettings *settings);

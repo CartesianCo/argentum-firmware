@@ -25,7 +25,7 @@ void ls(void);
 bool is_printer_file(File file);
 void help_command(void);
 void calibrate_command(void);
-void calibrate_save_command(void);
+void calibrate_loop_command(void);
 void motors_off_command(void);
 void motors_on_command(void);
 
@@ -41,5 +41,10 @@ void limit_switch_command(void);
 
 void analog_command(void);
 void digital_command(void);
+
+void red_command(void);
+void green_command(void);
+void blue_command(void);
+void pwm_command(void);
 
 #endif

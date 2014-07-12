@@ -85,14 +85,14 @@ bool freedom(bool *x_direction_resolved, bool *y_direction_resolved) {
 
         if(a_resolved) {
             if(axis_correct) {
-                Serial.println("Found A = X");
+            //    infoln("Found A = X");
 
                 xMotor = &aMotor;
                 yMotor = &bMotor;
 
                 *x_direction_resolved = true;
             } else {
-                Serial.println("Found A = Y");
+            //    infoln("Found A = Y");
 
                 xMotor = &bMotor;
                 yMotor = &aMotor;
@@ -101,9 +101,9 @@ bool freedom(bool *x_direction_resolved, bool *y_direction_resolved) {
             }
 
             if(direction_correct) {
-                Serial.println("Found + = +");
+            //    infoln("Found + = +");
             } else {
-                Serial.println("Found + = -");
+            //    infoln("Found + = -");
                 aMotor.set_inverted(true);
             }
         }
@@ -117,13 +117,13 @@ bool freedom(bool *x_direction_resolved, bool *y_direction_resolved) {
 
         if(b_resolved) {
             if(axis_correct) {
-                Serial.println("Found B = Y");
+            //    infoln("Found B = Y");
                 xMotor = &aMotor;
                 yMotor = &bMotor;
 
                 *y_direction_resolved = true;
             } else {
-                Serial.println("Found B = X");
+            //    infoln("Found B = X");
                 xMotor = &bMotor;
                 yMotor = &aMotor;
 
@@ -131,21 +131,21 @@ bool freedom(bool *x_direction_resolved, bool *y_direction_resolved) {
             }
 
             if(direction_correct) {
-                Serial.println("Found + = +");
+            //    infoln("Found + = +");
             } else {
-                Serial.println("Found + = -");
+                //infoln("Found + = -");
                 bMotor.set_inverted(true);
             }
         }
     } else {
-        Serial.println("No switches are initially triggered.");
+        //infoln("No switches are initially triggered.");
     }
 
     return (a_resolved | b_resolved);
 }
 
 void calibrate(CalibrationData *calibration) {
-    Serial.println("Calibration beginning.");
+    //infoln("Calibration beginning.");
 
     xMotor->set_direction(Motor::Forward);
     yMotor->set_direction(Motor::Forward);
@@ -166,8 +166,8 @@ void calibrate(CalibrationData *calibration) {
     yMotor->set_speed(2500);
 
     if(!axes_resolved) {
-        Serial.println("Resolved nothing");
-        Serial.println("Finding X");
+        //infoln("Resolved nothing");
+    //    infoln("Finding X");
 
         while(!any_limit()) {
             xMotor->move(-1);
@@ -210,35 +210,59 @@ void calibrate(CalibrationData *calibration) {
         }
     }
 
-    //Serial.print("Homing: ");
-    info("Homing :");
+    log_info("Homing :");
 
-    //Serial.print("1");
-    info("1");
+    log_info_np("1");
 
-    while(!pos_limit()) {
+    int expected_x = 13791;
+    int expected_y = 10764;
+    int tolerance = 50;
+
+    while(!pos_limit() && x_distance < (expected_x + tolerance) && y_distance < (expected_y + tolerance)) {
         xMotor->move(1);
         yMotor->move(1);
+
+        x_distance++;
+        y_distance++;
     }
 
-    //Serial.print("2");
-    info("2");
+    if(!(x_distance < (expected_x + tolerance) || y_distance < (expected_y + tolerance))) {
+        log_info("JAMMED");
+        while(1);
+    }
 
-    while(!x_pos_limit()) {
+    log_info_np("2");
+
+    while(!x_pos_limit() && x_distance < (expected_x + tolerance)) {
         xMotor->move(1);
+
+        x_distance++;
     }
 
-    //Serial.print("3");
-    info("3");
+    if(!(x_distance < (expected_x + tolerance) || y_distance < (expected_y + tolerance))) {
+        log_info("JAMMED");
+        while(1);
+    }
 
-    while(!y_pos_limit()) {
+    log_info_np("3");
+
+    while(!y_pos_limit() && y_distance < (expected_y + tolerance)) {
         yMotor->move(1);
+
+        y_distance++;
     }
 
-    //Serial.print("4");
-    info("4");
+    if(!(x_distance < (expected_x + tolerance) || y_distance < (expected_y + tolerance))) {
+        log_info("JAMMED");
+        while(1);
+    }
 
-    while(!neg_limit()) {
+    log_info_np("4");
+
+    x_distance = 0;
+    y_distance = 0;
+
+    while(!neg_limit() && x_distance < (expected_x + tolerance) && y_distance < (expected_y + tolerance)) {
         xMotor->move(-1);
         yMotor->move(-1);
 
@@ -246,27 +270,39 @@ void calibrate(CalibrationData *calibration) {
         y_distance++;
     }
 
-    //Serial.print("5");
-    info("5");
+    if(!(x_distance < (expected_x + tolerance) || y_distance < (expected_y + tolerance))) {
+        log_info("JAMMED");
+        while(1);
+    }
 
-    while(!x_neg_limit()) {
+    log_info_np("5");
+
+    while(!x_neg_limit() && x_distance < (expected_x + tolerance)) {
         xMotor->move(-1);
         x_distance++;
     }
 
-    //Serial.print("6");
-    info("6");
+    if(!(x_distance < (expected_x + tolerance) || y_distance < (expected_y + tolerance))) {
+        log_info("JAMMED");
+        while(1);
+    }
 
-    while(!y_neg_limit()) {
+    //infonp("6");
+
+    while(!y_neg_limit() && y_distance < (expected_y + tolerance)) {
         yMotor->move(-1);
         y_distance++;
+    }
+
+    if(!(x_distance < (expected_x + tolerance) || y_distance < (expected_y + tolerance))) {
+        log_info("JAMMED");
+        while(1);
     }
 
     xMotor->reset_position();
     yMotor->reset_position();
 
-    //Serial.println();
-    infoln();
+    log_info("\r\n");
 
     if(calibration) {
         calibration->x_axis.motor = (xMotor == &aMotor) ? Motor::A : Motor::B;
