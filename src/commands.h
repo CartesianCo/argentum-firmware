@@ -53,4 +53,6 @@ void pwm_command(void);
 void sweep_command(void);
 void sweep(long width, long height);
 
+void proto_move(void);
+
 #endif

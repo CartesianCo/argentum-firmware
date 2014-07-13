@@ -24,34 +24,31 @@ SOFTWARE.
 
 */
 
-#ifndef _MOTOR_H_
-#define _MOTOR_H_
+#ifndef _PROTO_MOTOR_H_
+#define _PROTO_MOTOR_H_
 
 #include "Arduino.h"
 
-class Motor {
+class ProtoMotor {
 public:
     enum {
         CW = 0,
-        Clockwise = 0,
-
-        CCW = 1,
-        CounterClockwise = 1
+        CCW = 1
     };
 
-    Motor(int step_pin, int dir_pin, int enable_pin);
+    ProtoMotor(int step_pin, int dir_pin, int enable_pin);
 
     void enable(bool enabled);
 
     void set_direction(uint8_t direction);
     uint8_t swap_direction(void);
 
-    void step();
+    bool step();
 
     void set_speed(int mm_per_minute); //set to 0 for instantaneous movement
     int  get_speed();
 
-    static const long steps_per_meter = 80000; //0.0125 mm per step
+    static const long steps_per_mm = 80;
 
 private:
     int step_pin;
@@ -60,7 +57,7 @@ private:
 
     long last_step_time;
     int direction;
-    int speed;
+    int step_delay;
 };
 
 #endif

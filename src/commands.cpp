@@ -12,6 +12,8 @@
 #include <Servo.h>
 #include <SD.h>
 
+#include "Axis.h"
+
 #include "logging.h"
 
 extern void readFile(char* filename);
@@ -21,6 +23,8 @@ extern Rollers rollers;
 
 extern Motor *xMotor;
 extern Motor *yMotor;
+
+extern Axis x_axis;
 
 void forward(void) {
     xMotor->move(1);
@@ -636,7 +640,7 @@ void sweep(long width, long height) {
 
     for(int pass = 0; pass < passes; pass++) {
         logger.info() << "Pass: " << pass + 1 << "\\" << passes << Logger::endl;
-        
+
         // 1. Lower rollers
         rollers.deploy();
         delay(100);
@@ -664,4 +668,19 @@ void sweep(long width, long height) {
     int y_offset = delta_y * passes;
 
     move('y', -y_offset);
+}
+
+void proto_move(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        logger.error("Missing goal position (double)");
+        return;
+    }
+
+    double position = atof(arg);
+
+    x_axis.move_absolute(position);
 }

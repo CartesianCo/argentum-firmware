@@ -9,6 +9,7 @@
 #include "cartridge.h"
 #include "commands.h"
 #include "utils.h"
+#include "axis.h"
 
 #include "logging.h"
 
@@ -19,6 +20,8 @@
 // step_pin, dir_pin, power_pin, steps_per_rev
 Motor aMotor(15, 14, 16, 0); // X
 Motor bMotor(18, 17, 19, 0); // Y
+
+ProtoMotor xProto(15, 14, 16);
 
 Motor *xMotor = &aMotor;
 Motor *yMotor = &bMotor;
@@ -41,9 +44,17 @@ public:
 
 uint8_t current_state = Printer::Idle;
 
+bool dummy_limit(void) {
+    return false;
+}
+
+Axis x_axis(Axis::X, &xProto, &dummy_limit, &dummy_limit);
+
 void setup() {
     Serial.begin(115200);
     Serial.flush();
+
+    x_axis.move_absolute(1.00);
 
     logger.minimum_log_level = Logger::Info;
 
@@ -147,6 +158,8 @@ void setup() {
 
     serial_command.addCommand("sweep", &sweep_command);
 
+    serial_command.addCommand("abs", &proto_move);
+
 
     // Common
     serial_command.addCommand("help", &help_command);
@@ -166,6 +179,7 @@ static long old_time = 0;
 static bool dir = false;
 
 void loop() {
+    x_axis.run();
     /*if(millis() - old_time > 10) {
         if(!dir) {
             white++;

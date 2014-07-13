@@ -27,7 +27,7 @@ SOFTWARE.
 #ifndef _AXIS_H_
 #define _AXIS_H_
 
-#include "Motor.h"
+#include "ProtoMotor.h"
 
 class Axis {
 public:
@@ -36,31 +36,36 @@ public:
         Y = 'Y',
     };
 
-    enum {
+    enum StepDirection {
         Positive = 0,
         Negative = 1
     };
 
-    // Enumeration for the mapping of this axis' direction to the underlying
-    // motor direction.
+    // Motor Mapping for POSITIVE steps.
     enum MotorMapping {
         NonInverted = 0,
         Inverted = 1
     };
 
-    Axis();
+    Axis(const char axis, ProtoMotor *motor, bool (*positive_limit_function)(void), bool (*negative_limit_function)(void));
     ~Axis();
 
     bool run(void);
 
-    void move_to(uint32_t position);
-    void set_direction(uint8_t direction);
+    void move_absolute(double position);
+    void move_absolute(uint32_t position);
+
+    static const long steps_per_mm = 80;
 
 private:
+    bool step(void);
+    void set_direction(uint8_t direction);
 
-    void step(void);
+    char axis;
+    ProtoMotor *motor;
+    bool (*positive_limit)(void);
+    bool (*negative_limit)(void);
 
-    Motor *motor;
     uint8_t direction;
     uint32_t length;
 

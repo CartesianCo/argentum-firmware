@@ -43,7 +43,8 @@ LoggerWrapper & Logger::error(void) {
 }
 
 void Logger::prefix_for_level(uint8_t level) {
-    log_for_level("[", level);
+    log_for_level(millis(), level);
+    log_for_level(" - [", level);
     log_for_level(level_prefixes[level], level);
     log_for_level("] ", level);
 }
