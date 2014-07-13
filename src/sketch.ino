@@ -23,6 +23,7 @@ Motor aMotor(15, 14, 16, 0); // X
 Motor bMotor(18, 17, 19, 0); // Y
 
 ProtoMotor xProto(15, 14, 16);
+ProtoMotor yProto(18, 17, 19);
 
 Motor *xMotor = &aMotor;
 Motor *yMotor = &bMotor;
@@ -49,15 +50,12 @@ bool dummy_limit(void) {
     return false;
 }
 
-Axis x_axis(Axis::X, &xProto, &dummy_limit, &dummy_limit);
+Axis x_axis(Axis::X, &xProto, &Limit::x_positive, &Limit::x_negative);
+Axis y_axis(Axis::Y, &yProto, &Limit::y_positive, &Limit::y_negative);
 
 void setup() {
     Serial.begin(115200);
     Serial.flush();
-
-    x_axis.move_absolute(1.00);
-
-    Limit::switches();
 
     logger.minimum_log_level = Logger::Info;
 
@@ -182,8 +180,13 @@ static int white = 0;
 static long old_time = 0;
 static bool dir = false;
 
+
+// Note: This loop _should_ execute three times faster than the motors can step
+// at 5000 speed. Measured.
 void loop() {
     x_axis.run();
+    y_axis.run();
+
     /*if(millis() - old_time > 10) {
         if(!dir) {
             white++;

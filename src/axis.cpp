@@ -28,8 +28,14 @@ bool Axis::run(void) {
         return false;
     } else {
         //logger.info() << current_position << " -> " << desired_position << Logger::endl;
-        if(positive_limit() || negative_limit()) {
-            logger.warn("Tried to step with a limit triggered.");
+        if(((current_position < desired_position) && positive_limit())
+                || ((current_position > desired_position) && negative_limit())) {
+            logger.warn() << axis
+                    << " tried to step in a limited direction, holding."
+                    << Logger::endl;
+
+            desired_position = current_position;
+
             return false;
         }
 
@@ -41,7 +47,7 @@ bool Axis::step(void) {
     bool did_step = motor->step();
 
     if(did_step) {
-        //logger.info("Step");
+        //logger.info() << axis << " step" << Logger::endl;
         if(direction == Axis::Positive) {
             current_position++;
         } else {

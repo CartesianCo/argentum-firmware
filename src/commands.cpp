@@ -25,6 +25,7 @@ extern Motor *xMotor;
 extern Motor *yMotor;
 
 extern Axis x_axis;
+extern Axis y_axis;
 
 void forward(void) {
     xMotor->move(1);
@@ -676,15 +677,27 @@ void proto_move(void) {
     arg = serial_command.next();
 
     if(arg == NULL) {
-        logger.error("Missing goal position (double)");
+        logger.error("Missing x position (double)");
         return;
     }
 
-    double position = atof(arg);
+    double x_position = atof(arg);
 
-    x_axis.move_absolute(position);
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        logger.error("Missing y position (double)");
+        return;
+    }
+
+    double y_position = atof(arg);
+
+    x_axis.move_absolute(x_position);
+    y_axis.move_absolute(y_position);
 }
 
 void axis_pos(void) {
-    logger.info() << x_axis.get_current_position() << " mm" << Logger::endl;
+    logger.info() << "X: " << x_axis.get_current_position() << " mm, "
+            << "Y: " << y_axis.get_current_position() << " mm"
+            << Logger::endl;
 }
