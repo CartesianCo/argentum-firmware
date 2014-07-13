@@ -10,6 +10,10 @@
 #include "commands.h"
 #include "utils.h"
 
+#include "logging.h"
+
+#include "rollers.h"
+
 #include "AccelStepper.h"
 
 // step_pin, dir_pin, power_pin, steps_per_rev
@@ -18,6 +22,8 @@ Motor bMotor(18, 17, 19, 0); // Y
 
 Motor *xMotor = &aMotor;
 Motor *yMotor = &bMotor;
+
+Rollers rollers;
 
 File myFile;
 
@@ -38,6 +44,20 @@ uint8_t current_state = Printer::Idle;
 void setup() {
     Serial.begin(115200);
     Serial.flush();
+
+    logger.minimum_log_level = Logger::Info;
+
+    logger.info() << "Information" << Logger::endl;
+    logger.warn() << "Warning" << Logger::endl;
+    logger.error() << "Error" << Logger::endl;
+
+    //pinMode(12, OUTPUT);
+
+    rollers.disable();
+    rollers.enable();
+
+    xMotor->set_speed(1500);
+    yMotor->set_speed(1500);
 
     settings_initialise(false);
 
@@ -94,7 +114,7 @@ void setup() {
     serial_command.addCommand("_", &motors_off_command);
 
     // Roller Servo
-    serial_command.addCommand("l", &lower_command);
+    serial_command.addCommand("l", &rollers_command);
 
     // Print
     serial_command.addCommand("p", &print_command);
@@ -124,6 +144,8 @@ void setup() {
     serial_command.addCommand("blue", &blue_command);
 
     serial_command.addCommand("pwm", &pwm_command);
+
+    serial_command.addCommand("sweep", &sweep_command);
 
 
     // Common

@@ -8,11 +8,16 @@
 #include "utils.h"
 #include "calibration.h"
 #include "LEDStrip.h"
+#include "rollers.h"
+#include <Servo.h>
 #include <SD.h>
+
+#include "logging.h"
 
 extern void readFile(char* filename);
 
 extern SerialCommand serial_command;
+extern Rollers rollers;
 
 extern Motor *xMotor;
 extern Motor *yMotor;
@@ -173,7 +178,7 @@ void move_command(void) {
     arg = serial_command.next();
 
     if(arg == NULL) {
-        Serial.println("Missing axis parameter");
+        logger.error("Missing axis parameter");
         return;
     }
 
@@ -182,7 +187,7 @@ void move_command(void) {
     arg = serial_command.next();
 
     if(arg == NULL) {
-        Serial.println("Missing steps parameter");
+        logger.error("Missing steps parameter");
         return;
     }
 
@@ -207,7 +212,7 @@ void continuous_move(void) {
     arg = serial_command.next();
 
     if(arg == NULL) {
-        Serial.println("Missing axis parameter");
+        logger.error("Missing axis parameter");
         return;
     }
 
@@ -216,7 +221,7 @@ void continuous_move(void) {
     arg = serial_command.next();
 
     if(arg == NULL) {
-        Serial.println("Missing direction parameter");
+        logger.error("Missing direction parameter");
         return;
     }
 
@@ -233,7 +238,7 @@ void continuous_move(void) {
     }
 }
 
-void move(unsigned const char axis, long steps) {
+void move(const char axis, long steps) {
     Motor *motor = motor_from_axis(axis);
 
     if(!motor) {
@@ -245,6 +250,7 @@ void move(unsigned const char axis, long steps) {
     Serial.print(" -> ");
     Serial.print(steps);
     Serial.println();*/
+    logger.info() << "Moving " << axis << " axis " << steps << "steps" << Logger::endl;
 
     if(steps == 0) {
         //motor->reset_position();
@@ -260,7 +266,7 @@ void power_command(void) {
     arg = serial_command.next();
 
     if(!arg) {
-        Serial.println("Missing axis parameter");
+        logger.error("Missing axis parameter");
         return;
     }
 
@@ -269,7 +275,7 @@ void power_command(void) {
     arg = serial_command.next();
 
     if(!arg) {
-        Serial.println("Missing power parameter");
+        logger.error("Missing power parameter");
         return;
     }
 
@@ -282,7 +288,7 @@ void power_command(void) {
     } else if(toupper(axis) == 'Y') {
         motor = yMotor;
     } else {
-        Serial.println("No axis");
+        logger.error("No axis");
         return;
     }
 
@@ -291,7 +297,7 @@ void power_command(void) {
     } else if (power == '1') {
         motor->power(1);
     } else {
-        Serial.println("Unknown power");
+        logger.error("Unknown power");
         return;
     }
 }
@@ -337,7 +343,7 @@ void print_command(void) {
     arg = serial_command.next();
 
     if(!arg) {
-        Serial.println("No filename supplied, using 'output.hex'");
+        logger.info("No filename supplied, using 'output.hex'");
         arg = "output.hex";
     }
 
@@ -400,16 +406,18 @@ void calibrate_command(void) {
     CalibrationData calibration;
     calibrate(&calibration);
 
-    log_info("C ");
+    /*log_info("C ");
     settings_print_axis_data_minimal(&calibration.x_axis);
     log_info_np(" ");
     settings_print_axis_data_minimal(&calibration.y_axis);
-    log_info("\r\n");
+    log_info("\r\n");*/
+
+    /*logger.info() << settings_print_axis_data_minimal(&calibration.x_axis)
+            << " " << settings_print_axis_data_minimal(&calibration.y_axis)
+            << Logger::endl;*/
 }
 
 void calibrate_loop_command(void) {
-    CalibrationData calibration;
-
     while(true) {
         if(Serial.available()) {
             if(Serial.read() == 'S') {
@@ -420,17 +428,15 @@ void calibrate_loop_command(void) {
         CalibrationData calibration;
         calibrate(&calibration);
 
-        log_info("C ");
-        settings_print_axis_data_minimal(&calibration.x_axis);
-        log_info_np(" ");
-        settings_print_axis_data_minimal(&calibration.y_axis);
-        log_info("\r\n");
+        logger.info() << calibration.x_axis.motor << " "
+                << calibration.x_axis.length << ", " << calibration.x_axis.motor
+                << " " << calibration.x_axis.length << Logger::endl;
     }
 }
 
 void init_sd_command(void) {
     if(!SD.begin(53)) {
-        Serial.println("SD card could not be accessed..");
+        logger.warn("Failed to initialise SD card.");
     }
 }
 
@@ -444,7 +450,7 @@ void analog_command(void) {
     arg = serial_command.next();
 
     if(!arg) {
-        Serial.println("No pin supplied");
+        logger.error("No pin supplied");
         return;
     }
 
@@ -453,16 +459,13 @@ void analog_command(void) {
     arg = serial_command.next();
 
     if(!arg) {
-        Serial.println("No value supplied");
+        logger.error("No value supplied");
         return;
     }
 
     int value = atoi(arg);
 
-    Serial.print("Setting ");
-    Serial.print(pin);
-    Serial.print(" to ");
-    Serial.println(value);
+    logger.info() << "Setting " << pin << " to " << value << Logger::endl;
 
     analogWrite(pin, value);
 }
@@ -473,7 +476,7 @@ void digital_command(void) {
     arg = serial_command.next();
 
     if(!arg) {
-        Serial.println("No pin supplied");
+        logger.error("No pin supplied");
         return;
     }
 
@@ -482,16 +485,13 @@ void digital_command(void) {
     arg = serial_command.next();
 
     if(!arg) {
-        Serial.println("No value supplied");
+        logger.error("No value supplied");
         return;
     }
 
     int value = atoi(arg);
 
-    Serial.print("Setting ");
-    Serial.print(pin);
-    Serial.print(" to ");
-    Serial.println(value);
+    logger.info() << "Setting " << pin << " to " << value << Logger::endl;
 
     digitalWrite(pin, value);
 }
@@ -502,7 +502,7 @@ void red_command(void) {
     arg = serial_command.next();
 
     if(!arg) {
-        Serial.println("No value (0 .. 255) supplied");
+        logger.error("No value (0 .. 255) supplied");
         return;
     }
 
@@ -517,7 +517,7 @@ void green_command(void) {
     arg = serial_command.next();
 
     if(!arg) {
-        Serial.println("No value (0 .. 255) supplied");
+        logger.error("No value (0 .. 255) supplied");
         return;
     }
 
@@ -532,7 +532,7 @@ void blue_command(void) {
     arg = serial_command.next();
 
     if(!arg) {
-        Serial.println("No value (0 .. 255) supplied");
+        logger.error("No value (0 .. 255) supplied");
         return;
     }
 
@@ -541,31 +541,127 @@ void blue_command(void) {
     setBlue(value);
 }
 
+void rollers_command(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(!arg) {
+        logger.error("Missing position argument");
+        return;
+    }
+
+    int value = atoi(arg);
+
+    if(value == 0) {
+        logger.info("Retracting");
+        rollers.retract();
+    } else {
+        logger.info("Deploying");
+        rollers.deploy();
+    }
+}
+
 void pwm_command(void) {
     char *arg;
 
     arg = serial_command.next();
 
     if(!arg) {
-        Serial.println("No pin (7, 8, 9) supplied");
+        logger.error("No pin supplied");
+        logger.info("Valid options are 7, 8, and 9");
         return;
     }
 
     int pin = atoi(arg);
 
     if(pin < 7 || pin > 9) {
-        log_warn("Pin out of PWM range.");
+        logger.error("Hey... That's not a PWM pin!");
         return;
     }
 
     arg = serial_command.next();
 
     if(!arg) {
-        Serial.println("No value (0 .. 255) supplied");
+        logger.error("No PWM value supplied");
         return;
     }
 
     int value = atoi(arg);
 
+    if(value < 0 || value > 255) {
+        logger.error("Value out of range (0:255)");
+    }
+
     analogWrite(pin, value);
+}
+
+void sweep_command(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(!arg) {
+        logger.error("Missing width");
+        return;
+    }
+
+    int width = atoi(arg);
+
+    arg = serial_command.next();
+
+    if(!arg) {
+        logger.error("Missing height");
+        return;
+    }
+
+    int height = atoi(arg);
+
+    sweep(width, height);
+}
+
+void sweep(long width, long height) {
+    // 1. Calculate number of passes and pass height
+
+    unsigned int pass_width = rollers.width_with_overlap(0.5) / 2;
+
+    unsigned int passes =  ceil(height / pass_width);
+    unsigned int delta_y = floor(height / passes);
+
+    logger.info() << "Coverage per pass: " << pass_width << Logger::endl;
+    logger.info() << "Total Width: " << width << Logger::endl;
+    logger.info() << "Total Height: " << height << Logger::endl;
+    logger.info() << "Passes: " << passes << " Delta Y: " << delta_y
+            << Logger::endl;
+
+    for(int pass = 0; pass < passes; pass++) {
+        logger.info() << "Pass: " << pass + 1 << "\\" << passes << Logger::endl;
+        
+        // 1. Lower rollers
+        rollers.deploy();
+        delay(100);
+
+        // 2. Make first x pass
+        move('x', width);
+        rollers.retract();
+
+        move('x', -width);
+        rollers.deploy();
+
+        move('x', width);
+        rollers.retract();
+
+        move('x', -width);
+
+        // 3. Raise rollers
+        rollers.retract();
+        delay(100);
+
+        // 4. Advance Y position
+        move('y', delta_y);
+    }
+
+    int y_offset = delta_y * passes;
+
+    move('y', -y_offset);
 }

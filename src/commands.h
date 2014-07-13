@@ -14,9 +14,12 @@ void speed_command(void);
 void home_command(void);
 void move_command(void);
 Motor * motor_from_axis(unsigned const char axis);
-void move(unsigned const char axis, long steps);
+void move(const char axis, long steps);
 void power_command(void);
+
 void lower_command(void);
+void rollers_command(void);
+
 void pause_command(void);
 void resume_command(void);
 void print_command(void);
@@ -46,5 +49,8 @@ void red_command(void);
 void green_command(void);
 void blue_command(void);
 void pwm_command(void);
+
+void sweep_command(void);
+void sweep(long width, long height);
 
 #endif

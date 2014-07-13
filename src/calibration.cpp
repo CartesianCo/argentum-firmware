@@ -4,7 +4,7 @@
 #include "settings.h"
 #include "axis.h"
 
-#include "utils.h"
+#include "logging.h"
 
 /**
  * Attempt to resolve the direction and a axis of a motor.
@@ -85,14 +85,14 @@ bool freedom(bool *x_direction_resolved, bool *y_direction_resolved) {
 
         if(a_resolved) {
             if(axis_correct) {
-            //    infoln("Found A = X");
+                logger.info("Found A = X");
 
                 xMotor = &aMotor;
                 yMotor = &bMotor;
 
                 *x_direction_resolved = true;
             } else {
-            //    infoln("Found A = Y");
+                logger.info("Found A = Y");
 
                 xMotor = &bMotor;
                 yMotor = &aMotor;
@@ -101,9 +101,9 @@ bool freedom(bool *x_direction_resolved, bool *y_direction_resolved) {
             }
 
             if(direction_correct) {
-            //    infoln("Found + = +");
+                logger.info("Found + = +");
             } else {
-            //    infoln("Found + = -");
+                logger.info("Found + = -");
                 aMotor.set_inverted(true);
             }
         }
@@ -117,13 +117,13 @@ bool freedom(bool *x_direction_resolved, bool *y_direction_resolved) {
 
         if(b_resolved) {
             if(axis_correct) {
-            //    infoln("Found B = Y");
+                logger.info("Found B = Y");
                 xMotor = &aMotor;
                 yMotor = &bMotor;
 
                 *y_direction_resolved = true;
             } else {
-            //    infoln("Found B = X");
+                logger.info("Found B = X");
                 xMotor = &bMotor;
                 yMotor = &aMotor;
 
@@ -131,21 +131,21 @@ bool freedom(bool *x_direction_resolved, bool *y_direction_resolved) {
             }
 
             if(direction_correct) {
-            //    infoln("Found + = +");
+                logger.info("Found + = +");
             } else {
-                //infoln("Found + = -");
+                logger.info("Found + = -");
                 bMotor.set_inverted(true);
             }
         }
     } else {
-        //infoln("No switches are initially triggered.");
+        logger.info("No switches are initially triggered.");
     }
 
     return (a_resolved | b_resolved);
 }
 
 void calibrate(CalibrationData *calibration) {
-    //infoln("Calibration beginning.");
+    logger.info("Calibration beginning.");
 
     xMotor->set_direction(Motor::Forward);
     yMotor->set_direction(Motor::Forward);
@@ -162,12 +162,11 @@ void calibrate(CalibrationData *calibration) {
 
     axes_resolved = freedom(&x_direction_resolved, &y_direction_resolved);
 
-    xMotor->set_speed(2500);
-    yMotor->set_speed(2500);
+    xMotor->set_speed(1500);
+    yMotor->set_speed(1500);
 
     if(!axes_resolved) {
-        //infoln("Resolved nothing");
-    //    infoln("Finding X");
+        logger.info("Resolved nothing, finding X");
 
         while(!any_limit()) {
             xMotor->move(-1);
@@ -210,9 +209,10 @@ void calibrate(CalibrationData *calibration) {
         }
     }
 
-    log_info("Homing :");
 
-    log_info_np("1");
+    LoggerWrapper &info = logger.info() << "Homing: ";
+
+    info << "1";
 
     int expected_x = 13791;
     int expected_y = 10764;
@@ -227,11 +227,11 @@ void calibrate(CalibrationData *calibration) {
     }
 
     if(!(x_distance < (expected_x + tolerance) || y_distance < (expected_y + tolerance))) {
-        log_info("JAMMED");
-        while(1);
+        logger.error("Jammed");
+        return;
     }
 
-    log_info_np("2");
+    info << "2";
 
     while(!x_pos_limit() && x_distance < (expected_x + tolerance)) {
         xMotor->move(1);
@@ -240,11 +240,11 @@ void calibrate(CalibrationData *calibration) {
     }
 
     if(!(x_distance < (expected_x + tolerance) || y_distance < (expected_y + tolerance))) {
-        log_info("JAMMED");
-        while(1);
+        logger.error("Jammed.");
+        return;
     }
 
-    log_info_np("3");
+    info << "3";
 
     while(!y_pos_limit() && y_distance < (expected_y + tolerance)) {
         yMotor->move(1);
@@ -253,11 +253,11 @@ void calibrate(CalibrationData *calibration) {
     }
 
     if(!(x_distance < (expected_x + tolerance) || y_distance < (expected_y + tolerance))) {
-        log_info("JAMMED");
-        while(1);
+        logger.error("Jammed.");
+        return;
     }
 
-    log_info_np("4");
+    info << "4";
 
     x_distance = 0;
     y_distance = 0;
@@ -271,11 +271,11 @@ void calibrate(CalibrationData *calibration) {
     }
 
     if(!(x_distance < (expected_x + tolerance) || y_distance < (expected_y + tolerance))) {
-        log_info("JAMMED");
-        while(1);
+        logger.error("Jammed.");
+        return;
     }
 
-    log_info_np("5");
+    info << "5";
 
     while(!x_neg_limit() && x_distance < (expected_x + tolerance)) {
         xMotor->move(-1);
@@ -283,11 +283,11 @@ void calibrate(CalibrationData *calibration) {
     }
 
     if(!(x_distance < (expected_x + tolerance) || y_distance < (expected_y + tolerance))) {
-        log_info("JAMMED");
-        while(1);
+        logger.error("Jammed.");
+        return;
     }
 
-    //infonp("6");
+    info << "6";
 
     while(!y_neg_limit() && y_distance < (expected_y + tolerance)) {
         yMotor->move(-1);
@@ -295,14 +295,14 @@ void calibrate(CalibrationData *calibration) {
     }
 
     if(!(x_distance < (expected_x + tolerance) || y_distance < (expected_y + tolerance))) {
-        log_info("JAMMED");
-        while(1);
+        logger.error("Jammed.");
+        return;
     }
 
     xMotor->reset_position();
     yMotor->reset_position();
 
-    log_info("\r\n");
+    info << Logger::endl;
 
     if(calibration) {
         calibration->x_axis.motor = (xMotor == &aMotor) ? Motor::A : Motor::B;
