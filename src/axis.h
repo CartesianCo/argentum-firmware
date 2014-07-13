@@ -55,6 +55,12 @@ public:
     void move_absolute(double position);
     void move_absolute(uint32_t position);
 
+    void move_incremental(double increment);
+    void move_incremental(uint32_t increment);
+
+    double get_current_position(void);
+    double get_desired_position(void);
+
     static const long steps_per_mm = 80;
 
 private:

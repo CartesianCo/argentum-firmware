@@ -76,14 +76,33 @@ void Axis::move_absolute(uint32_t position) {
         return;
     }
 
-    // Ensure we don't set a negative goal
+    // Constrain the possible positions
     desired_position = max(position, 0);
+    desired_position = min(desired_position, 100000); // This could really be ~14000
 
-    logger.info() << "Setting new desired position to " << position << Logger::endl;
+    logger.info() << "Setting new desired position to " << desired_position << Logger::endl;
 
     if(desired_position > current_position) {
         set_direction(Axis::Positive);
     } else {
         set_direction(Axis::Negative);
     }
+}
+
+void Axis::move_incremental(double increment) {
+    uint32_t steps = increment * steps_per_mm;
+
+    move_incremental(steps);
+}
+
+void Axis::move_incremental(uint32_t increment) {
+    move_absolute(desired_position + increment);
+}
+
+double Axis::get_current_position(void) {
+    return ((double)current_position) / steps_per_mm;
+}
+
+double Axis::get_desired_position(void) {
+    return ((double)desired_position) / steps_per_mm;
 }

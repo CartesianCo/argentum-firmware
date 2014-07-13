@@ -4,7 +4,7 @@
 #include <Servo.h>
 #include "settings.h"
 #include "SerialCommand.h"
-#include "limit_switch.h"
+//#include "limit_switch.h"
 #include "calibration.h"
 #include "cartridge.h"
 #include "commands.h"
@@ -14,6 +14,7 @@
 #include "logging.h"
 
 #include "rollers.h"
+#include "limit.h"
 
 #include "AccelStepper.h"
 
@@ -55,6 +56,8 @@ void setup() {
     Serial.flush();
 
     x_axis.move_absolute(1.00);
+
+    Limit::switches();
 
     logger.minimum_log_level = Logger::Info;
 
@@ -159,6 +162,7 @@ void setup() {
     serial_command.addCommand("sweep", &sweep_command);
 
     serial_command.addCommand("abs", &proto_move);
+    serial_command.addCommand("xpos", &axis_pos);
 
 
     // Common

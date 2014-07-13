@@ -684,3 +684,7 @@ void proto_move(void) {
 
     x_axis.move_absolute(position);
 }
+
+void axis_pos(void) {
+    logger.info() << x_axis.get_current_position() << " mm" << Logger::endl;
+}
