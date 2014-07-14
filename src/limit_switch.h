@@ -61,7 +61,7 @@ const int x_neg_limit_pin = A0;
 const int y_pos_limit_pin = A1;
 const int y_neg_limit_pin = 6;
 
-uint8_t limit_switches(void);
+uint8_t __limit_switches(void);
 
 void print_switch_status(void);
 void print_switch_status(uint8_t switches);

@@ -18,6 +18,7 @@
 #define POS_MASK  0b00001010
 #define NEG_MASK  0b00000101
 
+/*
 class LimitSwitch {
 public:
     LimitSwitch(volatile uint8_t *port, uint8_t bit);
@@ -29,24 +30,21 @@ private:
     volatile uint8_t *port;
     uint8_t bit;
 };
+*/
 
-namespace Limit {
-    uint8_t switches(void);
+uint8_t limit_switches(void);
 
-    bool x_positive(void);
-    bool x_negative(void);
-    bool y_positive(void);
-    bool y_negative(void);
+bool limit_x_positive(void);
+bool limit_x_negative(void);
+bool limit_y_positive(void);
+bool limit_y_negative(void);
 
-    bool x(void);
-    bool y(void);
+bool limit_x(void);
+bool limit_y(void);
 
-    bool positive(void);
-    bool negative(void);
+bool limit_positive(void);
+bool limit_negative(void);
 
-    bool any(void);
-}
-
-extern LimitSwitch x_positive;
+bool limit_any(void);
 
 #endif

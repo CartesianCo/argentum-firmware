@@ -1,10 +1,13 @@
 #include "calibration.h"
-#include "limit_switch.h"
+//#include "limit_switch.h"
+#include "limit.h"
 
 #include "settings.h"
 #include "axis.h"
 
 #include "logging.h"
+
+#include "argentum.h"
 
 /**
  * Attempt to resolve the direction and a axis of a motor.
@@ -72,7 +75,7 @@ bool freedom(bool *x_direction_resolved, bool *y_direction_resolved) {
     bool a_resolved = false;
     bool b_resolved = false;
 
-    if(any_limit()) {
+    if(limit_any()) {
         bool axis_correct = false;
         bool direction_correct = false;
 
@@ -168,11 +171,11 @@ void calibrate(CalibrationData *calibration) {
     if(!axes_resolved) {
         logger.info("Resolved nothing, finding X");
 
-        while(!any_limit()) {
+        while(!limit_any()) {
             xMotor->move(-1);
         }
 
-        if(y_limit()) {
+        if(limit_y()) {
             // Incorrect
             Motor *temp = xMotor;
 
@@ -183,12 +186,12 @@ void calibrate(CalibrationData *calibration) {
 
     while(!(x_direction_resolved && y_direction_resolved)) {
         if(!x_direction_resolved) {
-            if(!x_limit()) {
+            if(!limit_x()) {
                 xMotor->move(-1);
             } else {
                 x_direction_resolved = true;
 
-                if(x_pos_limit()) {
+                if(limit_x_positive()) {
                     // Inverted
                     xMotor->set_inverted(true);
                 }
@@ -196,12 +199,12 @@ void calibrate(CalibrationData *calibration) {
         }
 
         if(!y_direction_resolved) {
-            if(!y_limit()) {
+            if(!limit_y()) {
                 yMotor->move(-1);
             } else {
                 y_direction_resolved = true;
 
-                if(y_pos_limit()) {
+                if(limit_y_positive()) {
                     // Inverted
                     yMotor->set_inverted(true);
                 }
@@ -218,43 +221,28 @@ void calibrate(CalibrationData *calibration) {
     int expected_y = 10764;
     int tolerance = 50;
 
-    while(!pos_limit() && x_distance < (expected_x + tolerance) && y_distance < (expected_y + tolerance)) {
+    while(!limit_positive() && x_distance < (expected_x + tolerance) && y_distance < (expected_y + tolerance)) {
         xMotor->move(1);
         yMotor->move(1);
 
         x_distance++;
         y_distance++;
-    }
-
-    if(!(x_distance < (expected_x + tolerance) || y_distance < (expected_y + tolerance))) {
-        logger.error("Jammed");
-        return;
     }
 
     info << "2";
 
-    while(!x_pos_limit() && x_distance < (expected_x + tolerance)) {
+    while(!limit_x_positive() && x_distance < (expected_x + tolerance)) {
         xMotor->move(1);
 
         x_distance++;
     }
 
-    if(!(x_distance < (expected_x + tolerance) || y_distance < (expected_y + tolerance))) {
-        logger.error("Jammed.");
-        return;
-    }
-
     info << "3";
 
-    while(!y_pos_limit() && y_distance < (expected_y + tolerance)) {
+    while(!limit_y_positive() && y_distance < (expected_y + tolerance)) {
         yMotor->move(1);
 
         y_distance++;
-    }
-
-    if(!(x_distance < (expected_x + tolerance) || y_distance < (expected_y + tolerance))) {
-        logger.error("Jammed.");
-        return;
     }
 
     info << "4";
@@ -262,41 +250,167 @@ void calibrate(CalibrationData *calibration) {
     x_distance = 0;
     y_distance = 0;
 
-    while(!neg_limit() && x_distance < (expected_x + tolerance) && y_distance < (expected_y + tolerance)) {
+    while(!limit_negative() && x_distance < (expected_x + tolerance) && y_distance < (expected_y + tolerance)) {
         xMotor->move(-1);
         yMotor->move(-1);
 
         x_distance++;
         y_distance++;
-    }
-
-    if(!(x_distance < (expected_x + tolerance) || y_distance < (expected_y + tolerance))) {
-        logger.error("Jammed.");
-        return;
     }
 
     info << "5";
 
-    while(!x_neg_limit() && x_distance < (expected_x + tolerance)) {
+    while(!limit_x_negative() && x_distance < (expected_x + tolerance)) {
         xMotor->move(-1);
         x_distance++;
     }
 
-    if(!(x_distance < (expected_x + tolerance) || y_distance < (expected_y + tolerance))) {
-        logger.error("Jammed.");
-        return;
-    }
-
     info << "6";
 
-    while(!y_neg_limit() && y_distance < (expected_y + tolerance)) {
+    while(!limit_y_negative() && y_distance < (expected_y + tolerance)) {
         yMotor->move(-1);
         y_distance++;
     }
 
-    if(!(x_distance < (expected_x + tolerance) || y_distance < (expected_y + tolerance))) {
-        logger.error("Jammed.");
-        return;
+    xMotor->reset_position();
+    yMotor->reset_position();
+
+    info << Logger::endl;
+
+    if(calibration) {
+        calibration->x_axis.motor = (xMotor == &aMotor) ? Motor::A : Motor::B;
+        calibration->x_axis.flipped = xMotor->is_inverted();
+        calibration->x_axis.length = x_distance;
+
+        calibration->y_axis.motor = (yMotor == &aMotor) ? Motor::A : Motor::B;
+        calibration->y_axis.flipped = yMotor->is_inverted();
+        calibration->y_axis.length = y_distance;
+    }
+}
+
+void calibrate2(CalibrationData *calibration) {
+    logger.info("Calibration 2 beginning.");
+
+    /*xMotor->set_direction(Motor::Forward);
+    yMotor->set_direction(Motor::Forward);
+
+    xMotor->set_speed(250);
+    yMotor->set_speed(250);*/
+
+    long x_distance = 0L;
+    long y_distance = 0L;
+
+    bool axes_resolved = false;
+    bool x_direction_resolved = false;
+    bool y_direction_resolved = false;
+
+    axes_resolved = freedom(&x_direction_resolved, &y_direction_resolved);
+
+    xMotor->set_speed(1500);
+    yMotor->set_speed(1500);
+
+    if(!axes_resolved) {
+        logger.info("Resolved nothing, finding X");
+
+        while(!limit_any()) {
+            xMotor->move(-1);
+        }
+
+        if(limit_y()) {
+            // Incorrect
+            Motor *temp = xMotor;
+
+            xMotor = yMotor;
+            yMotor = temp;
+        }
+    }
+
+    while(!(x_direction_resolved && y_direction_resolved)) {
+        if(!x_direction_resolved) {
+            if(!limit_x()) {
+                xMotor->move(-1);
+            } else {
+                x_direction_resolved = true;
+
+                if(limit_x_positive()) {
+                    // Inverted
+                    xMotor->set_inverted(true);
+                }
+            }
+        }
+
+        if(!y_direction_resolved) {
+            if(!limit_y()) {
+                yMotor->move(-1);
+            } else {
+                y_direction_resolved = true;
+
+                if(limit_y_positive()) {
+                    // Inverted
+                    yMotor->set_inverted(true);
+                }
+            }
+        }
+    }
+
+
+    LoggerWrapper &info = logger.info() << "Homing: ";
+
+    info << "1";
+
+    int expected_x = 13791;
+    int expected_y = 10764;
+    int tolerance = 50;
+
+    while(!limit_positive() && x_distance < (expected_x + tolerance) && y_distance < (expected_y + tolerance)) {
+        xMotor->move(1);
+        yMotor->move(1);
+
+        x_distance++;
+        y_distance++;
+    }
+
+    info << "2";
+
+    while(!limit_x_positive() && x_distance < (expected_x + tolerance)) {
+        xMotor->move(1);
+
+        x_distance++;
+    }
+
+    info << "3";
+
+    while(!limit_y_positive() && y_distance < (expected_y + tolerance)) {
+        yMotor->move(1);
+
+        y_distance++;
+    }
+
+    info << "4";
+
+    x_distance = 0;
+    y_distance = 0;
+
+    while(!limit_negative() && x_distance < (expected_x + tolerance) && y_distance < (expected_y + tolerance)) {
+        xMotor->move(-1);
+        yMotor->move(-1);
+
+        x_distance++;
+        y_distance++;
+    }
+
+    info << "5";
+
+    while(!limit_x_negative() && x_distance < (expected_x + tolerance)) {
+        xMotor->move(-1);
+        x_distance++;
+    }
+
+    info << "6";
+
+    while(!limit_y_negative() && y_distance < (expected_y + tolerance)) {
+        yMotor->move(-1);
+        y_distance++;
     }
 
     xMotor->reset_position();

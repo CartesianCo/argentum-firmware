@@ -63,8 +63,10 @@ public:
 
     void zero(void);
     void hold(void);
-    
+
     bool moving(void);
+
+    void set_speed(uint32_t mm_per_minute);
 
     static const long steps_per_mm = 80;
 

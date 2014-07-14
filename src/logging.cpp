@@ -17,7 +17,7 @@ const char *Logger::level_prefixes[] = {
 
 Logger::Logger() {
     minimum_log_level = Logger::Info;
-    enabled = true;
+    enabled = false;
 }
 
 Logger::~Logger() {

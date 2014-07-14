@@ -59,4 +59,6 @@ void axis_pos(void);
 
 void stat_command(void);
 
+void size_command(void);
+
 #endif

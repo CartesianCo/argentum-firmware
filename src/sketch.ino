@@ -14,7 +14,8 @@
 #include "logging.h"
 
 #include "rollers.h"
-#include "limit.h"
+
+#include "argentum.h"
 
 #include "AccelStepper.h"
 
@@ -22,17 +23,10 @@
 Motor aMotor(15, 14, 16, 0); // X
 Motor bMotor(18, 17, 19, 0); // Y
 
-ProtoMotor xProto(15, 14, 16);
-ProtoMotor yProto(18, 17, 19);
-
 Motor *xMotor = &aMotor;
 Motor *yMotor = &bMotor;
 
-Rollers rollers;
-
 File myFile;
-
-SerialCommand serial_command;
 
 class Printer {
 public:
@@ -46,18 +40,12 @@ public:
 
 uint8_t current_state = Printer::Idle;
 
-bool dummy_limit(void) {
-    return false;
-}
-
-Axis x_axis(Axis::X, &xProto, &Limit::x_positive, &Limit::x_negative);
-Axis y_axis(Axis::Y, &yProto, &Limit::y_positive, &Limit::y_negative);
-
 void setup() {
     Serial.begin(115200);
     Serial.flush();
 
     logger.minimum_log_level = Logger::Info;
+    logger.enabled = true;
 
     logger.info() << "Information" << Logger::endl;
     logger.warn() << "Warning" << Logger::endl;
@@ -163,6 +151,7 @@ void setup() {
     serial_command.addCommand("xpos", &axis_pos);
     serial_command.addCommand("stat", &stat_command);
 
+    //serial_command.addCommand("size", &size_command);
 
 
     // Common

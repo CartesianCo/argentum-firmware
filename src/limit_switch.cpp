@@ -1,6 +1,6 @@
 #include "limit_switch.h"
 
-uint8_t limit_switches(void) {
+uint8_t __limit_switches(void) {
     uint8_t switches = 0b00000000;
 
     if(x_pos_limit()) {
@@ -49,7 +49,7 @@ void print_switch_status(uint8_t switches) {
 }
 
 void print_switch_status(void) {
-    uint8_t switches = limit_switches();
+    uint8_t switches = __limit_switches();
 
     print_switch_status(switches);
 }

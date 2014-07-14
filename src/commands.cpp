@@ -16,17 +16,13 @@
 
 #include "logging.h"
 
+#include "argentum.h"
+
 extern void readFile(char *filename);
 extern void file_stats(char *filename);
 
-extern SerialCommand serial_command;
-extern Rollers rollers;
-
 extern Motor *xMotor;
 extern Motor *yMotor;
-
-extern Axis x_axis;
-extern Axis y_axis;
 
 void forward(void) {
     xMotor->move(1);
@@ -756,3 +752,27 @@ void axis_pos(void) {
             << "Y: " << y_axis.get_current_position() << " mm"
             << Logger::endl;
 }
+/*
+void size_command(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        logger.error("Missing x size");
+        logger.info() << "Current size: " << x_size << " x " << y_size
+                << Logger::endl;
+        return;
+    }
+
+    x_size = atol(arg);
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        logger.error("Missing y size");
+        return;
+    }
+
+    y_size = atol(arg);
+}*/
