@@ -9,3 +9,6 @@ Axis y_axis(Axis::Y, &yProto, &limit_y_positive, &limit_y_negative);
 SerialCommand serial_command;
 
 Rollers rollers;
+
+long x_size = 0;
+long y_size = 0;

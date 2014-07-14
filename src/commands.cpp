@@ -254,15 +254,12 @@ void move(const char axis, long steps) {
     Motor *motor = motor_from_axis(axis);
 
     if(!motor) {
+        logger.error() << "Cannot obtain motor pointer for " << axis << "axis"
+                << Logger::endl;
         return;
     }
 
-    /*Serial.print("Moving ");
-    Serial.write(axis);
-    Serial.print(" -> ");
-    Serial.print(steps);
-    Serial.println();*/
-    logger.info() << "Moving " << axis << " axis " << steps << "steps" << Logger::endl;
+    //logger.info() << "Moving " << axis << " axis " << steps << "steps" << Logger::endl;
 
     if(steps == 0) {
         //motor->reset_position();
@@ -352,6 +349,10 @@ void resume_command(void) {
 void print_command(void) {
     char *arg;
 
+    static char filename[32] = "output.hex";
+    uint8_t passes = 1;
+
+    // TODO: Should I make a copy of the file name below?
     arg = serial_command.next();
 
     if(!arg) {
@@ -359,9 +360,28 @@ void print_command(void) {
         arg = "output.hex";
     }
 
+    strcpy(filename, arg);
+
+    arg = serial_command.next();
+
+    if(arg) {
+        passes = atoi(arg);
+    }
+
     logger.info() << "Printing '" << arg << "'" << Logger::endl;
 
-    readFile(arg);
+    for(int pass = 0; pass < passes; pass++) {
+        logger.info() << "Pass " << (pass + 1) << " of " << passes << Logger::endl;
+
+        readFile(filename);
+
+        // TODO: Should get these params from the readFile (or print) function
+        // Perhaps passing in some kind of printinfo struct containing print
+        // statistics after it's done.
+        sweep(x_size, y_size);
+    }
+
+    logger.info("Print complete. Enjoy your circuit!");
 }
 
 void stat_command(void) {
@@ -752,7 +772,7 @@ void axis_pos(void) {
             << "Y: " << y_axis.get_current_position() << " mm"
             << Logger::endl;
 }
-/*
+
 void size_command(void) {
     char *arg;
 
@@ -775,4 +795,4 @@ void size_command(void) {
     }
 
     y_size = atol(arg);
-}*/
+}

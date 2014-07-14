@@ -16,4 +16,7 @@ extern Axis y_axis;
 extern SerialCommand serial_command;
 extern Rollers rollers;
 
+extern long x_size;
+extern long y_size;
+
 #endif

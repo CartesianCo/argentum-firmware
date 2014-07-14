@@ -372,6 +372,12 @@ void readFile(char *filename) {
 
     setLEDToColour(COLOUR_PRINTING);
 
+    long max_x = 0;
+    long max_y = 0;
+
+    long cur_x = 0;
+    long cur_y = 0;
+
     // loop through file
     while(myFile.available()) {
         // read in first byte of command
@@ -391,6 +397,47 @@ void readFile(char *filename) {
             }
 
             parse_command(command);
+        } else if(command[0] == 'M') {
+            // read in extra bytes if necessary
+            int i = 1;
+
+            while(myFile.peek() != '\n' && i < 8) {
+                command[i] = myFile.read();
+                i++;
+            }
+            command[i] = 0x00;
+
+            long steps = atol((const char *)&command[4]);
+            char axis = command[2];
+
+            //logger.info() << "Movement command: " << axis << " " << steps << Logger::endl;
+
+            if(axis == 'X') {
+                cur_x += steps;
+
+                if(cur_x > max_x) {
+                    max_x = cur_x;
+                }
+            }
+
+            if(axis == 'Y') {
+                cur_y += abs(steps);
+
+                if(cur_y > max_y) {
+                    max_y = cur_y;
+                }
+
+                logger.info() << "steps: " << steps << " cur_y: " << cur_y
+                        << " max_y: " << max_y << Logger::endl;
+            }
+
+            for(int i = 0; i < 10; i++) {
+                serial_command.add_byte(command[i]);
+
+                if(command[i] == '\n') {
+                    break;
+                }
+            }
         } else {
             serial_command.add_byte(command[0]);
         }
@@ -413,6 +460,12 @@ void readFile(char *filename) {
     }
 
     setLEDToColour(COLOUR_FINISHED);
+
+    logger.info() << "File dimensions: " << max_x << " x " << max_y << " steps"
+            << Logger::endl;
+
+    x_size = max_x;
+    y_size = max_y;
 
     //close file
     myFile.close();
