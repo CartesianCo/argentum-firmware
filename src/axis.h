@@ -43,8 +43,8 @@ public:
 
     // Motor Mapping for POSITIVE steps.
     enum MotorMapping {
-        NonInverted = 0,
-        Inverted = 1
+        CW_Positive = 0,
+        CW_Negative = 1
     };
 
     Axis(const char axis, ProtoMotor *motor, bool (*positive_limit_function)(void), bool (*negative_limit_function)(void));
@@ -60,6 +60,11 @@ public:
 
     double get_current_position(void);
     double get_desired_position(void);
+
+    void zero(void);
+    void hold(void);
+    
+    bool moving(void);
 
     static const long steps_per_mm = 80;
 

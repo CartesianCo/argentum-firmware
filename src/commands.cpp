@@ -16,7 +16,8 @@
 
 #include "logging.h"
 
-extern void readFile(char* filename);
+extern void readFile(char *filename);
+extern void file_stats(char *filename);
 
 extern SerialCommand serial_command;
 extern Rollers rollers;
@@ -143,15 +144,21 @@ void speed_command(void) {
 }
 
 void zero_position_command(void) {
-    Serial.println("Setting new zero position");
+    logger.info("Setting new zero position");
     xMotor->set_position(0L);
     yMotor->set_position(0L);
+
+    x_axis.zero();
+    y_axis.zero();
 }
 
 void goto_zero_command(void) {
-    Serial.println("Returning to 0.000, 0.000");
+    logger.info("Returning to 0.000, 0.000");
     xMotor->go_home();
     yMotor->go_home();
+
+    x_axis.move_absolute(0.00);
+    y_axis.move_absolute(0.00);
 }
 
 void current_position_command(void) {
@@ -160,6 +167,10 @@ void current_position_command(void) {
     Serial.print(", ");
     Serial.print(yMotor->get_position());
     Serial.println(")");
+
+    logger.info() << "X: " << x_axis.get_current_position() << " mm, "
+            << "Y: " << y_axis.get_current_position() << " mm"
+            << Logger::endl;
 }
 
 void home_command(void) {
@@ -352,10 +363,24 @@ void print_command(void) {
         arg = "output.hex";
     }
 
-    Serial.print("Printing ");
-    Serial.println(arg);
+    logger.info() << "Printing '" << arg << "'" << Logger::endl;
 
     readFile(arg);
+}
+
+void stat_command(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(!arg) {
+        logger.info("No filename supplied, using 'output.hex'");
+        arg = "output.hex";
+    }
+
+    logger.info() << "Statting '" << arg << "'" << Logger::endl;
+
+    file_stats(arg);
 }
 
 void print_ram(void) {
@@ -671,7 +696,7 @@ void sweep(long width, long height) {
     move('y', -y_offset);
 }
 
-void proto_move(void) {
+void absolute_move(void) {
     char *arg;
 
     arg = serial_command.next();
@@ -692,8 +717,38 @@ void proto_move(void) {
 
     double y_position = atof(arg);
 
+    if(x_position < 0 || y_position < 0) {
+        logger.error("Absolute positions must be positive.");
+        return;
+    }
+
     x_axis.move_absolute(x_position);
     y_axis.move_absolute(y_position);
+}
+
+void incremental_move(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        logger.error("Missing x position (double)");
+        return;
+    }
+
+    double x_position = atof(arg);
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        logger.error("Missing y position (double)");
+        return;
+    }
+
+    double y_position = atof(arg);
+
+    x_axis.move_incremental(x_position);
+    y_axis.move_incremental(y_position);
 }
 
 void axis_pos(void) {

@@ -33,7 +33,6 @@ ProtoMotor::ProtoMotor(int step_pin, int dir_pin, int enable_pin) {
     this->dir_pin = dir_pin;
     this->enable_pin = enable_pin;
 
-    this->direction = 0;
     this->last_step_time = 0;
 
     /* Speed is the delay between steps necessary to move at the required speed

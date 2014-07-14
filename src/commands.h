@@ -53,7 +53,10 @@ void pwm_command(void);
 void sweep_command(void);
 void sweep(long width, long height);
 
-void proto_move(void);
+void absolute_move(void);
+void incremental_move(void);
 void axis_pos(void);
+
+void stat_command(void);
 
 #endif

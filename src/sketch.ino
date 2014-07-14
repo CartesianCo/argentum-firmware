@@ -63,8 +63,6 @@ void setup() {
     logger.warn() << "Warning" << Logger::endl;
     logger.error() << "Error" << Logger::endl;
 
-    //pinMode(12, OUTPUT);
-
     rollers.disable();
     rollers.enable();
 
@@ -159,8 +157,12 @@ void setup() {
 
     serial_command.addCommand("sweep", &sweep_command);
 
-    serial_command.addCommand("abs", &proto_move);
+    serial_command.addCommand("abs", &absolute_move);
+    serial_command.addCommand("inc", &incremental_move);
+
     serial_command.addCommand("xpos", &axis_pos);
+    serial_command.addCommand("stat", &stat_command);
+
 
 
     // Common
@@ -221,7 +223,7 @@ void loop() {
 
         default:
             current_state = Printer::Idle;
-            break;
+        break;
     }
 }
 
@@ -261,7 +263,78 @@ void parse_command(byte* command) {
     }
 }
 
-void readFile(char* filename) {
+void file_stats(char *filename) {
+    uint8_t command[10];
+
+    myFile = SD.open(filename);
+
+    // Check if file open succeeded, if not output error message
+    if (!myFile) {
+        Serial.print("File could not be opened: ");
+        Serial.println(filename);
+
+        return;
+    }
+
+    Serial.println("Starting");
+
+    long max_x = 0;
+    long max_y = 0;
+
+    long cur_x = 0;
+    long cur_y = 0;
+
+    // loop through file
+    while(myFile.available()) {
+        // read in first byte of command
+        command[0] = myFile.read();
+
+        //Serial.println(command[0]);
+
+        if(command[0] == 'M') {
+            // read in extra bytes if necessary
+            int i = 1;
+
+            while(myFile.peek() != '\n' && i < 8) {
+                command[i] = myFile.read();
+                i++;
+            }
+            command[i] = 0x00;
+
+            long steps = atol((const char *)&command[4]);
+            char axis = command[2];
+
+            //logger.info() << "Movement command: " << axis << " " << steps << Logger::endl;
+
+            if(axis == 'X') {
+                cur_x += steps;
+
+                if(cur_x > max_x) {
+                    max_x = cur_x;
+                }
+            }
+
+            if(axis == 'Y') {
+                cur_y += abs(steps);
+
+                if(cur_y > max_y) {
+                    max_y = cur_y;
+                }
+
+                logger.info() << "steps: " << steps << " cur_y: " << cur_y
+                        << " max_y: " << max_y << Logger::endl;
+            }
+        }
+    }
+
+    logger.info() << "File dimensions: " << max_x << " x " << max_y << " steps"
+            << Logger::endl;
+
+    //close file
+    myFile.close();
+}
+
+void readFile(char *filename) {
     byte command[10];
 
     swap_motors();

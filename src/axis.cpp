@@ -11,11 +11,11 @@ Axis::Axis(const char axis, ProtoMotor *motor, bool (*positive_limit)(void), boo
     current_position = 0;
     desired_position = 0;
 
-    motor_mapping = Axis::NonInverted;
+    motor_mapping = Axis::CW_Positive;
 
     direction = Axis::Positive;
 
-    motor->set_speed(5000);
+    motor->set_speed(1000);
 
     logger.info() << "Axis created for: " << axis << Logger::endl;
 }
@@ -34,8 +34,8 @@ bool Axis::run(void) {
                     << " tried to step in a limited direction, holding."
                     << Logger::endl;
 
-            desired_position = current_position;
-
+            hold();
+            
             return false;
         }
 
@@ -64,7 +64,26 @@ bool Axis::step(void) {
 }
 
 void Axis::set_direction(uint8_t direction) {
+    if(direction == this->direction) {
+        return;
+    }
+
     this->direction = direction;
+    //motor->swap_direction();
+
+    if(direction == Axis::Positive) {
+        if(motor_mapping == Axis::CW_Positive) {
+            motor->set_direction(ProtoMotor::CW);
+        } else {
+            motor->set_direction(ProtoMotor::CCW);
+        }
+    } else if(direction == Axis::Negative) {
+        if(motor_mapping == Axis::CW_Negative) {
+            motor->set_direction(ProtoMotor::CW);
+        } else {
+            motor->set_direction(ProtoMotor::CCW);
+        }
+    }
 
     logger.info() << "Setting direction to " << direction << Logger::endl;
 }
@@ -111,4 +130,17 @@ double Axis::get_current_position(void) {
 
 double Axis::get_desired_position(void) {
     return ((double)desired_position) / steps_per_mm;
+}
+
+void Axis::zero(void) {
+    current_position = 0;
+    desired_position = 0;
+}
+
+void Axis::hold(void) {
+    desired_position = current_position;
+}
+
+bool Axis::moving(void) {
+    return (current_position == desired_position);
 }
