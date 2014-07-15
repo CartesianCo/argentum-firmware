@@ -18,7 +18,7 @@
 
 #include "argentum.h"
 
-extern void readFile(char *filename);
+extern bool readFile(char *filename);
 extern void file_stats(char *filename);
 
 extern Motor *xMotor;
@@ -312,27 +312,11 @@ void power_command(void) {
 }
 
 void lower_command(void) {
-    Serial.println("Lower/Raise");
+    logger.info("Lower/Raise");
 
-    // If it is already raised, lower it
-    /*if (ServoR.read() == 45) {
-        ServoR.write(20); //Raised
-        ServoL.write(45); //Left servo is opposite
+    rollers.deploy();
 
-        Serial.println("Raise");
 
-        return;
-    }
-
-    // If it is lowered, raise it
-    if (ServoR.read() == 20) {
-        ServoR.write(45); //Raised
-        ServoL.write(20); //Left servo is opposite
-
-        Serial.println("Lower");
-
-        return;
-    }*/
 }
 
 void pause_command(void) {
@@ -368,17 +352,33 @@ void print_command(void) {
         passes = atoi(arg);
     }
 
-    logger.info() << "Printing '" << arg << "'" << Logger::endl;
+    logger.info() << "Printing '" << filename << "'" << Logger::endl;
 
     for(int pass = 0; pass < passes; pass++) {
         logger.info() << "Pass " << (pass + 1) << " of " << passes << Logger::endl;
 
-        readFile(filename);
+        bool result = readFile(filename);
 
-        // TODO: Should get these params from the readFile (or print) function
-        // Perhaps passing in some kind of printinfo struct containing print
-        // statistics after it's done.
-        sweep(x_size, y_size);
+        if(0) {
+            long x_delta = 6500 + x_size;
+
+            logger.info() << "x_delta: " << x_delta << Logger::endl;
+            logger.info() << -6500 - x_size << Logger::endl;
+
+            move('X', -6500 - x_size);
+            move('Y', -500);
+
+            // TODO: Should get these params from the readFile (or print) function
+            // Perhaps passing in some kind of printinfo struct containing print
+            // statistics after it's done.
+            sweep(x_size + 2000, y_size + 1000);
+
+            move('X', x_delta);
+            move('Y', 500);
+        } else {
+            logger.info("Something went wrong in readFile, aborting print.");
+            return;
+        }
     }
 
     logger.info("Print complete. Enjoy your circuit!");
@@ -411,19 +411,21 @@ void print_ram(void) {
 }
 
 void ls(void) {
-    File root = SD.open("/");
+    File root = SD.open("/.");
 
     File file = root.openNextFile();
 
     while(file) {
         if(is_printer_file(file)) {
-            Serial.println(file.name());
+            logger.info() << file.name() << Logger::endl;
         }
 
         file.close();
 
         file = root.openNextFile();
     }
+
+    root.close();
 }
 
 bool is_printer_file(File file) {
@@ -674,14 +676,15 @@ void sweep(long width, long height) {
     unsigned int passes =  ceil(height / pass_width);
     unsigned int delta_y = floor(height / passes);
 
-    logger.info() << "Coverage per pass: " << pass_width << Logger::endl;
-    logger.info() << "Total Width: " << width << Logger::endl;
-    logger.info() << "Total Height: " << height << Logger::endl;
-    logger.info() << "Passes: " << passes << " Delta Y: " << delta_y
+    logger.info("Sweeping.");
+    logger.info() << "   Coverage per pass: " << pass_width << Logger::endl;
+    logger.info() << "   Total Width: " << width << Logger::endl;
+    logger.info() << "   Total Height: " << height << Logger::endl;
+    logger.info() << "   Passes: " << passes << ", Delta Y: " << delta_y
             << Logger::endl;
 
     for(int pass = 0; pass < passes; pass++) {
-        logger.info() << "Pass: " << pass + 1 << "\\" << passes << Logger::endl;
+        logger.info() << "   Pass: " << pass + 1 << " of " << passes << Logger::endl;
 
         // 1. Lower rollers
         rollers.deploy();

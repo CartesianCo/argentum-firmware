@@ -221,7 +221,7 @@ void calibrate(CalibrationData *calibration) {
     int expected_y = 10764;
     int tolerance = 50;
 
-    while(!limit_positive() && x_distance < (expected_x + tolerance) && y_distance < (expected_y + tolerance)) {
+    while(!limit_positive()) {
         xMotor->move(1);
         yMotor->move(1);
 
@@ -231,7 +231,7 @@ void calibrate(CalibrationData *calibration) {
 
     info << "2";
 
-    while(!limit_x_positive() && x_distance < (expected_x + tolerance)) {
+    while(!limit_x_positive()) {
         xMotor->move(1);
 
         x_distance++;
@@ -239,7 +239,7 @@ void calibrate(CalibrationData *calibration) {
 
     info << "3";
 
-    while(!limit_y_positive() && y_distance < (expected_y + tolerance)) {
+    while(!limit_y_positive()) {
         yMotor->move(1);
 
         y_distance++;
@@ -250,7 +250,7 @@ void calibrate(CalibrationData *calibration) {
     x_distance = 0;
     y_distance = 0;
 
-    while(!limit_negative() && x_distance < (expected_x + tolerance) && y_distance < (expected_y + tolerance)) {
+    while(!limit_negative()) {
         xMotor->move(-1);
         yMotor->move(-1);
 
@@ -260,14 +260,14 @@ void calibrate(CalibrationData *calibration) {
 
     info << "5";
 
-    while(!limit_x_negative() && x_distance < (expected_x + tolerance)) {
+    while(!limit_x_negative()) {
         xMotor->move(-1);
         x_distance++;
     }
 
     info << "6";
 
-    while(!limit_y_negative() && y_distance < (expected_y + tolerance)) {
+    while(!limit_y_negative()) {
         yMotor->move(-1);
         y_distance++;
     }

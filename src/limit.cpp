@@ -20,6 +20,8 @@ bool LimitSwitch::triggered(void) {
 }
 */
 
+static bool limit_switch_nc = true;
+
 uint8_t limit_switches(void) {
     uint8_t switches = 0b00000000;
 
@@ -43,19 +45,35 @@ uint8_t limit_switches(void) {
 }
 
 bool limit_x_positive(void) {
-    return !(PINE & 0b00001000);
+    if(limit_switch_nc) {
+        return !(PINE & 0b00001000);
+    } else {
+        return (PINE & 0b00001000);
+    }
 }
 
 bool limit_x_negative(void) {
-    return !(PINF & 0b00000001);
+    if(limit_switch_nc) {
+        return !(PINF & 0b00000001);
+    } else {
+        return (PINF & 0b00000001);
+    }
 }
 
 bool limit_y_positive(void) {
-    return !(PINF & 0b00000010);
+    if(limit_switch_nc) {
+        return !(PINF & 0b00000010);
+    } else {
+        return (PINF & 0b00000010);
+    }
 }
 
 bool limit_y_negative(void) {
-    return !(PINH & 0b00001000);
+    if(limit_switch_nc) {
+        return !(PINH & 0b00001000);
+    } else {
+        return (PINH & 0b00001000);
+    }
 }
 
 bool limit_x(void) {

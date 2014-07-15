@@ -91,7 +91,7 @@ void setup() {
 
     // Calibration
     serial_command.addCommand("c", &calibrate_command);
-    serial_command.addCommand("cl", &calibrate_loop_command);
+    //serial_command.addCommand("cl", &calibrate_loop_command);
 
     // Movement
     serial_command.addCommand("m", &move_command);
@@ -107,9 +107,9 @@ void setup() {
     serial_command.addCommand("s", &speed_command);
 
     serial_command.addCommand("+", &motors_on_command);
-    serial_command.addCommand("=", &motors_on_command);
+    //serial_command.addCommand("=", &motors_on_command);
     serial_command.addCommand("-", &motors_off_command);
-    serial_command.addCommand("_", &motors_off_command);
+    //serial_command.addCommand("_", &motors_off_command);
 
     // Roller Servo
     serial_command.addCommand("l", &rollers_command);
@@ -121,27 +121,27 @@ void setup() {
 
     // Settings
     serial_command.addCommand("?", &read_setting_command);
-    serial_command.addCommand("??", &read_saved_setting_command);
-    serial_command.addCommand("!", &write_setting_command);
+    serial_command.addCommand("?eeprom", &read_saved_setting_command);
+    serial_command.addCommand("!write", &write_setting_command);
 
     // Experimentals
-    serial_command.addCommand("@", &acc);
+    //serial_command.addCommand("@", &acc);
     serial_command.addCommand("lim", &limit_switch_command);
     serial_command.addCommand("ram", &print_ram);
 
-    serial_command.addCommand("digital", &digital_command);
-    serial_command.addCommand("analog", &analog_command);
+    //serial_command.addCommand("digital", &digital_command);
+    //serial_command.addCommand("analog", &analog_command);
 
     // SD Card
     serial_command.addCommand("ls", &ls);
     serial_command.addCommand("sd", &init_sd_command);
 
     // Colour
-    serial_command.addCommand("red", &red_command);
+    /*serial_command.addCommand("red", &red_command);
     serial_command.addCommand("green", &green_command);
     serial_command.addCommand("blue", &blue_command);
 
-    serial_command.addCommand("pwm", &pwm_command);
+    serial_command.addCommand("pwm", &pwm_command);*/
 
     serial_command.addCommand("sweep", &sweep_command);
 
@@ -149,9 +149,9 @@ void setup() {
     serial_command.addCommand("inc", &incremental_move);
 
     serial_command.addCommand("xpos", &axis_pos);
-    serial_command.addCommand("stat", &stat_command);
+    //serial_command.addCommand("stat", &stat_command);
 
-    //serial_command.addCommand("size", &size_command);
+    serial_command.addCommand("size", &size_command);
 
 
     // Common
@@ -323,10 +323,16 @@ void file_stats(char *filename) {
     myFile.close();
 }
 
-void readFile(char *filename) {
+bool readFile(char *filename) {
     byte command[10];
 
     swap_motors();
+
+    xMotor->set_position(0L);
+    yMotor->set_position(0L);
+
+    x_axis.zero();
+    y_axis.zero();
 
     // Open File
     myFile = SD.open(filename);
@@ -336,11 +342,12 @@ void readFile(char *filename) {
         Serial.print("File could not be opened: ");
         Serial.println(filename);
 
-        return;
+        return false;
     }
 
-    Serial.println("Starting");
+    //Serial.println("Starting");
     //Serial.println(start);
+    logger.info() << "readFile(" << filename << ")" << Logger::endl;
 
     long start = micros();
     long end = 0L;
@@ -415,6 +422,10 @@ void readFile(char *filename) {
             if(axis == 'X') {
                 cur_x += steps;
 
+                if(steps == 0) {
+                    cur_x = 0;
+                }
+
                 if(cur_x > max_x) {
                     max_x = cur_x;
                 }
@@ -423,12 +434,16 @@ void readFile(char *filename) {
             if(axis == 'Y') {
                 cur_y += abs(steps);
 
+                if(steps == 0) {
+                    cur_y = 0;
+                }
+
                 if(cur_y > max_y) {
                     max_y = cur_y;
                 }
 
-                logger.info() << "steps: " << steps << " cur_y: " << cur_y
-                        << " max_y: " << max_y << Logger::endl;
+                //logger.info() << "steps: " << steps << " cur_y: " << cur_y
+                //        << " max_y: " << max_y << Logger::endl;
             }
 
             for(int i = 0; i < 10; i++) {
@@ -453,7 +468,7 @@ void readFile(char *filename) {
 
                 home_command();
 
-                return;
+                return false;
             }
             serialEvent();
         }
@@ -471,4 +486,6 @@ void readFile(char *filename) {
     myFile.close();
 
     swap_motors();
+
+    return true;
 }

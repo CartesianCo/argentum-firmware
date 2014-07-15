@@ -8,6 +8,8 @@
 
 #include "Motor.h"
 
+#include "logging.h"
+
 Motor::Motor(int step_pin, int dir_pin, int power_pin, int steps_per_rev) {
     this->step_pin = step_pin;
     this->dir_pin = dir_pin;
@@ -135,8 +137,7 @@ void Motor::move(long steps) {
 void Motor::go_home(void) {
     int current_direction = this->direction;
 
-    Serial.print("Motor starting at: ");
-    Serial.println(position);
+    logger.info() << "Motor homing from " << position << Logger::endl;
 
     move(-position);
 
