@@ -11,6 +11,8 @@
 #include "utils.h"
 #include "axis.h"
 
+#include "comms.h"
+
 #include "logging.h"
 
 #include "rollers.h"
@@ -41,15 +43,14 @@ public:
 uint8_t current_state = Printer::Idle;
 
 void setup() {
-    Serial.begin(115200);
-    Serial.flush();
+    comms.initialise();
 
     logger.minimum_log_level = Logger::Info;
     logger.enabled = true;
 
-    logger.info() << "Information" << Logger::endl;
-    logger.warn() << "Warning" << Logger::endl;
-    logger.error() << "Error" << Logger::endl;
+    logger.info() << "Information" << Comms::endl;
+    logger.warn() << "Warning" << Comms::endl;
+    logger.error() << "Error" << Comms::endl;
 
     rollers.disable();
     rollers.enable();
@@ -137,18 +138,18 @@ void setup() {
     serial_command.addCommand("sd", &init_sd_command);
 
     // Colour
-    /*serial_command.addCommand("red", &red_command);
+    serial_command.addCommand("red", &red_command);
     serial_command.addCommand("green", &green_command);
     serial_command.addCommand("blue", &blue_command);
 
-    serial_command.addCommand("pwm", &pwm_command);*/
+    serial_command.addCommand("pwm", &pwm_command);
 
     serial_command.addCommand("sweep", &sweep_command);
 
     serial_command.addCommand("abs", &absolute_move);
     serial_command.addCommand("inc", &incremental_move);
 
-    serial_command.addCommand("xpos", &axis_pos);
+    //serial_command.addCommand("xpos", &axis_pos);
     //serial_command.addCommand("stat", &stat_command);
 
     serial_command.addCommand("size", &size_command);
@@ -293,7 +294,7 @@ void file_stats(char *filename) {
             long steps = atol((const char *)&command[4]);
             char axis = command[2];
 
-            //logger.info() << "Movement command: " << axis << " " << steps << Logger::endl;
+            //logger.info() << "Movement command: " << axis << " " << steps << Comms::endl;
 
             if(axis == 'X') {
                 cur_x += steps;
@@ -311,13 +312,13 @@ void file_stats(char *filename) {
                 }
 
                 logger.info() << "steps: " << steps << " cur_y: " << cur_y
-                        << " max_y: " << max_y << Logger::endl;
+                        << " max_y: " << max_y << Comms::endl;
             }
         }
     }
 
     logger.info() << "File dimensions: " << max_x << " x " << max_y << " steps"
-            << Logger::endl;
+            << Comms::endl;
 
     //close file
     myFile.close();
@@ -347,7 +348,7 @@ bool readFile(char *filename) {
 
     //Serial.println("Starting");
     //Serial.println(start);
-    logger.info() << "readFile(" << filename << ")" << Logger::endl;
+    logger.info() << "readFile(" << filename << ")" << Comms::endl;
 
     long start = micros();
     long end = 0L;
@@ -417,7 +418,7 @@ bool readFile(char *filename) {
             long steps = atol((const char *)&command[4]);
             char axis = command[2];
 
-            //logger.info() << "Movement command: " << axis << " " << steps << Logger::endl;
+            //logger.info() << "Movement command: " << axis << " " << steps << Comms::endl;
 
             if(axis == 'X') {
                 cur_x += steps;
@@ -443,7 +444,7 @@ bool readFile(char *filename) {
                 }
 
                 //logger.info() << "steps: " << steps << " cur_y: " << cur_y
-                //        << " max_y: " << max_y << Logger::endl;
+                //        << " max_y: " << max_y << Comms::endl;
             }
 
             for(int i = 0; i < 10; i++) {
@@ -477,7 +478,7 @@ bool readFile(char *filename) {
     setLEDToColour(COLOUR_FINISHED);
 
     logger.info() << "File dimensions: " << max_x << " x " << max_y << " steps"
-            << Logger::endl;
+            << Comms::endl;
 
     x_size = max_x;
     y_size = max_y;

@@ -137,7 +137,7 @@ void Motor::move(long steps) {
 void Motor::go_home(void) {
     int current_direction = this->direction;
 
-    logger.info() << "Motor homing from " << position << Logger::endl;
+    logger.info() << "Motor homing from " << position << Comms::endl;
 
     move(-position);
 

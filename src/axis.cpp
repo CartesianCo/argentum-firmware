@@ -1,7 +1,10 @@
 #include "axis.h"
 #include "logging.h"
 
-Axis::Axis(const char axis, ProtoMotor *motor, bool (*positive_limit)(void), bool (*negative_limit)(void)) {
+Axis::Axis(const char axis,
+           ProtoMotor *motor,
+           bool (*positive_limit)(void),
+           bool (*negative_limit)(void)) {
     this->axis = axis;
     this->motor = motor;
     this->positive_limit = positive_limit;
@@ -17,7 +20,7 @@ Axis::Axis(const char axis, ProtoMotor *motor, bool (*positive_limit)(void), boo
 
     motor->set_speed(1000);
 
-    logger.info() << "Axis created for: " << axis << Logger::endl;
+    logger.info() << "Axis created for: " << axis << Comms::endl;
 }
 
 Axis::~Axis() {
@@ -27,15 +30,17 @@ bool Axis::run(void) {
     if(current_position == desired_position) {
         return false;
     } else {
-        //logger.info() << current_position << " -> " << desired_position << Logger::endl;
+        //logger.info() << current_position << " -> " << desired_position
+        //        << Logger::endl;
         if(((current_position < desired_position) && positive_limit())
-                || ((current_position > desired_position) && negative_limit())) {
+                || ((current_position > desired_position)
+                    && negative_limit())) {
             logger.warn() << axis
                     << " tried to step in a limited direction, holding."
-                    << Logger::endl;
+                    << Comms::endl;
 
             hold();
-            
+
             return false;
         }
 
@@ -55,7 +60,8 @@ bool Axis::step(void) {
         }
 
         if(current_position == desired_position) {
-            logger.info() << "Axis " << axis << " reached goal position: " << desired_position << Logger::endl;
+            logger.info() << "Axis " << axis << " reached goal position: "
+                    << desired_position << Comms::endl;
         }
         return true;
     }
@@ -85,13 +91,14 @@ void Axis::set_direction(uint8_t direction) {
         }
     }
 
-    logger.info() << "Setting direction to " << direction << Logger::endl;
+    logger.info() << "Setting direction to " << direction << Comms::endl;
 }
 
 void Axis::move_absolute(double position) {
     uint32_t pos = position * steps_per_mm;
 
-    logger.info() << "move_to(" << position << ") -> move_to(" << pos << ")" << Logger::endl;
+    logger.info() << "move_to(" << position << ") -> move_to(" << pos << ")"
+            << Comms::endl;
 
     move_absolute(pos);
 }
@@ -103,9 +110,12 @@ void Axis::move_absolute(uint32_t position) {
 
     // Constrain the possible positions
     desired_position = max(position, 0);
-    desired_position = min(desired_position, 100000); // This could really be ~14000
 
-    logger.info() << "Setting new desired position to " << desired_position << Logger::endl;
+    // This could really be ~14000
+    desired_position = min(desired_position, 20000);
+
+    logger.info() << "Setting new desired position to " << desired_position
+            << Comms::endl;
 
     if(desired_position > current_position) {
         set_direction(Axis::Positive);

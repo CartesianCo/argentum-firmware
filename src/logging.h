@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <Arduino.h>
 
+#include "comms.h"
+
 // Because the definition comes after
 class LoggerWrapper;
 
@@ -15,8 +17,6 @@ public:
         Error = 2
     };
 
-    static const char *endl;
-
     static const char *level_prefixes[];
 
     Logger();
@@ -25,19 +25,19 @@ public:
     LoggerWrapper & info(void);
 
     template<class T> inline LoggerWrapper & info(T arg) {
-        return info() << arg << Logger::endl;
+        return info() << arg << Comms::endl;
     }
 
     LoggerWrapper & warn(void);
 
     template<class T> inline LoggerWrapper & warn(T arg) {
-        return warn() << arg << Logger::endl;
+        return warn() << arg << Comms::endl;
     }
 
     LoggerWrapper & error(void);
 
     template<class T> inline LoggerWrapper & error(T arg) {
-        return error() << arg << Logger::endl;
+        return error() << arg << Comms::endl;
     }
 
     /*
@@ -59,7 +59,7 @@ private:
         Serial.println(entry);*/
 
         if(enabled && level >= minimum_log_level) {
-            Serial.print(entry);
+            comms.send(entry);
         }
     }
 

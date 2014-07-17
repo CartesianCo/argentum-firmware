@@ -12,6 +12,8 @@
 #include <Servo.h>
 #include <SD.h>
 
+#include "comms.h"
+
 #include "Axis.h"
 
 #include "logging.h"
@@ -166,7 +168,7 @@ void current_position_command(void) {
 
     logger.info() << "X: " << x_axis.get_current_position() << " mm, "
             << "Y: " << y_axis.get_current_position() << " mm"
-            << Logger::endl;
+            << Comms::endl;
 }
 
 void home_command(void) {
@@ -255,11 +257,11 @@ void move(const char axis, long steps) {
 
     if(!motor) {
         logger.error() << "Cannot obtain motor pointer for " << axis << "axis"
-                << Logger::endl;
+                << Comms::endl;
         return;
     }
 
-    //logger.info() << "Moving " << axis << " axis " << steps << "steps" << Logger::endl;
+    //logger.info() << "Moving " << axis << " axis " << steps << "steps" << Comms::endl;
 
     if(steps == 0) {
         //motor->reset_position();
@@ -352,18 +354,18 @@ void print_command(void) {
         passes = atoi(arg);
     }
 
-    logger.info() << "Printing '" << filename << "'" << Logger::endl;
+    logger.info() << "Printing '" << filename << "'" << Comms::endl;
 
     for(int pass = 0; pass < passes; pass++) {
-        logger.info() << "Pass " << (pass + 1) << " of " << passes << Logger::endl;
+        logger.info() << "Pass " << (pass + 1) << " of " << passes << Comms::endl;
 
         bool result = readFile(filename);
 
         if(0) {
             long x_delta = 6500 + x_size;
 
-            logger.info() << "x_delta: " << x_delta << Logger::endl;
-            logger.info() << -6500 - x_size << Logger::endl;
+            logger.info() << "x_delta: " << x_delta << Comms::endl;
+            logger.info() << -6500 - x_size << Comms::endl;
 
             move('X', -6500 - x_size);
             move('Y', -500);
@@ -394,7 +396,7 @@ void stat_command(void) {
         arg = "output.hex";
     }
 
-    logger.info() << "Statting '" << arg << "'" << Logger::endl;
+    logger.info() << "Statting '" << arg << "'" << Comms::endl;
 
     file_stats(arg);
 }
@@ -417,7 +419,7 @@ void ls(void) {
 
     while(file) {
         if(is_printer_file(file)) {
-            logger.info() << file.name() << Logger::endl;
+            logger.info() << file.name() << Comms::endl;
         }
 
         file.close();
@@ -439,20 +441,23 @@ bool is_printer_file(File file) {
 }
 
 void help_command(void) {
-    Serial.println("Press p to print output.hex");
-    Serial.println("S to stop, P to pause, R to resume, c to calibrate.");
-    Serial.println("Additional commands: ");
+    comms.println("Press p to print output.hex");
+    comms.println("S to stop, P to pause, R to resume, c to calibrate.");
+    comms.println("Additional commands: ");
     serial_command.installed_commands();
-    Serial.println();
+    comms.println();
 
-    Serial.println("Available Files: ");
+    comms.println("Available Files: ");
     ls();
-    Serial.println();
+    comms.println();
 }
 
 void calibrate_command(void) {
     CalibrationData calibration;
     calibrate(&calibration);
+
+    settings_print_calibration(&calibration);
+    settings_update_calibration(&calibration);
 
     /*log_info("C ");
     settings_print_axis_data_minimal(&calibration.x_axis);
@@ -462,7 +467,7 @@ void calibrate_command(void) {
 
     /*logger.info() << settings_print_axis_data_minimal(&calibration.x_axis)
             << " " << settings_print_axis_data_minimal(&calibration.y_axis)
-            << Logger::endl;*/
+            << Comms::endl;*/
 }
 
 void calibrate_loop_command(void) {
@@ -478,7 +483,7 @@ void calibrate_loop_command(void) {
 
         logger.info() << calibration.x_axis.motor << " "
                 << calibration.x_axis.length << ", " << calibration.x_axis.motor
-                << " " << calibration.x_axis.length << Logger::endl;
+                << " " << calibration.x_axis.length << Comms::endl;
     }
 }
 
@@ -513,7 +518,7 @@ void analog_command(void) {
 
     int value = atoi(arg);
 
-    logger.info() << "Setting " << pin << " to " << value << Logger::endl;
+    logger.info() << "Setting " << pin << " to " << value << Comms::endl;
 
     analogWrite(pin, value);
 }
@@ -539,7 +544,7 @@ void digital_command(void) {
 
     int value = atoi(arg);
 
-    logger.info() << "Setting " << pin << " to " << value << Logger::endl;
+    logger.info() << "Setting " << pin << " to " << value << Comms::endl;
 
     digitalWrite(pin, value);
 }
@@ -677,14 +682,14 @@ void sweep(long width, long height) {
     unsigned int delta_y = floor(height / passes);
 
     logger.info("Sweeping.");
-    logger.info() << "   Coverage per pass: " << pass_width << Logger::endl;
-    logger.info() << "   Total Width: " << width << Logger::endl;
-    logger.info() << "   Total Height: " << height << Logger::endl;
+    logger.info() << "   Coverage per pass: " << pass_width << Comms::endl;
+    logger.info() << "   Total Width: " << width << Comms::endl;
+    logger.info() << "   Total Height: " << height << Comms::endl;
     logger.info() << "   Passes: " << passes << ", Delta Y: " << delta_y
-            << Logger::endl;
+            << Comms::endl;
 
     for(int pass = 0; pass < passes; pass++) {
-        logger.info() << "   Pass: " << pass + 1 << " of " << passes << Logger::endl;
+        logger.info() << "   Pass: " << pass + 1 << " of " << passes << Comms::endl;
 
         // 1. Lower rollers
         rollers.deploy();
@@ -773,7 +778,7 @@ void incremental_move(void) {
 void axis_pos(void) {
     logger.info() << "X: " << x_axis.get_current_position() << " mm, "
             << "Y: " << y_axis.get_current_position() << " mm"
-            << Logger::endl;
+            << Comms::endl;
 }
 
 void size_command(void) {
@@ -784,7 +789,7 @@ void size_command(void) {
     if(arg == NULL) {
         logger.error("Missing x size");
         logger.info() << "Current size: " << x_size << " x " << y_size
-                << Logger::endl;
+                << Comms::endl;
         return;
     }
 

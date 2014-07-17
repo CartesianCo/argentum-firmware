@@ -275,7 +275,7 @@ void calibrate(CalibrationData *calibration) {
     xMotor->reset_position();
     yMotor->reset_position();
 
-    info << Logger::endl;
+    info << Comms::endl;
 
     if(calibration) {
         calibration->x_axis.motor = (xMotor == &aMotor) ? Motor::A : Motor::B;
@@ -416,7 +416,7 @@ void calibrate2(CalibrationData *calibration) {
     xMotor->reset_position();
     yMotor->reset_position();
 
-    info << Logger::endl;
+    info << Comms::endl;
 
     if(calibration) {
         calibration->x_axis.motor = (xMotor == &aMotor) ? Motor::A : Motor::B;

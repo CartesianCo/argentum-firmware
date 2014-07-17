@@ -2,7 +2,7 @@
 #ifndef _SETTINGS_H_
 #define _SETTINGS_H_
 
-#include "Arduino.h"
+#include <Arduino.h>
 
 const uint16_t SETTINGS_ADDRESS = 0;
 

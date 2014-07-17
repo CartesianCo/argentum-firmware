@@ -103,7 +103,7 @@ void ProtoMotor::set_speed(int mm_per_minute) {
 
     step_delay = i;
 
-    logger.info() << "step_delay = " << step_delay << Logger::endl;
+    logger.info() << "step_delay = " << step_delay << Comms::endl;
 }
 
 int ProtoMotor::get_speed() {

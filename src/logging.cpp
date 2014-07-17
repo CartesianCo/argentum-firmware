@@ -7,8 +7,6 @@ LoggerWrapper wrapper_info(&logger, Logger::Info);
 LoggerWrapper wrapper_warn(&logger, Logger::Warn);
 LoggerWrapper wrapper_error(&logger, Logger::Error);
 
-const char *Logger::endl = "\r\n";
-
 const char *Logger::level_prefixes[] = {
     "INFO",
     "WARN",
