@@ -155,16 +155,13 @@ void goto_zero_command(void) {
     xMotor->go_home();
     yMotor->go_home();
 
-    x_axis.move_absolute(0.00);
-    y_axis.move_absolute(0.00);
+    x_axis.move_absolute(0.000);
+    y_axis.move_absolute(0.000);
 }
 
 void current_position_command(void) {
-    Serial.print("Current position (steps): (");
-    Serial.print(xMotor->get_position());
-    Serial.print(", ");
-    Serial.print(yMotor->get_position());
-    Serial.println(")");
+    logger.info() << "Current position (steps): (" << xMotor->get_position()
+            << ", " << yMotor->get_position() << ")" << Comms::endl;
 
     logger.info() << "X: " << x_axis.get_current_position() << " mm, "
             << "Y: " << y_axis.get_current_position() << " mm"
@@ -172,18 +169,8 @@ void current_position_command(void) {
 }
 
 void home_command(void) {
-    while(!neg_limit()) {
-        xMotor->move(-1);
-        yMotor->move(-1);
-    }
-
-    while(!x_neg_limit()) {
-        xMotor->move(-1);
-    }
-
-    while(!y_neg_limit()) {
-        yMotor->move(-1);
-    }
+    x_axis.move_absolute(0.000);
+    y_axis.move_absolute(0.000);
 }
 
 void move_command(void) {

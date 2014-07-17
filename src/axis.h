@@ -56,7 +56,7 @@ public:
     void move_absolute(uint32_t position);
 
     void move_incremental(double increment);
-    void move_incremental(uint32_t increment);
+    void move_incremental(int32_t increment);
 
     double get_current_position(void);
     double get_desired_position(void);
@@ -67,6 +67,7 @@ public:
     bool moving(void);
 
     void set_speed(uint32_t mm_per_minute);
+    void set_motor_mapping(uint8_t motor_mapping);
 
     static const long steps_per_mm = 80;
 

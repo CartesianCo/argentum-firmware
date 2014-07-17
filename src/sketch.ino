@@ -164,6 +164,9 @@ void setup() {
 
     init_sd_command();
 
+    // Initialise Axes
+    x_axis;
+
     //uint8_t *firing_buffer = (uint8_t*)malloc(4096);
     help_command();
 }

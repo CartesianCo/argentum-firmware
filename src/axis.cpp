@@ -60,7 +60,7 @@ bool Axis::step(void) {
         }
 
         if(current_position == desired_position) {
-            logger.info() << "Axis " << axis << " reached goal position: "
+            logger.info() << axis << " axis reached goal position: "
                     << desired_position << Comms::endl;
         }
         return true;
@@ -91,10 +91,15 @@ void Axis::set_direction(uint8_t direction) {
         }
     }
 
-    logger.info() << "Setting direction to " << direction << Comms::endl;
+    logger.info() << axis << " axis setting direction to " << direction << Comms::endl;
 }
 
 void Axis::move_absolute(double position) {
+    if(position < 0) {
+        logger.error() << axis << " absolute movement with negative position ("
+                << position << ")";
+    }
+
     uint32_t pos = position * steps_per_mm;
 
     logger.info() << "move_to(" << position << ") -> move_to(" << pos << ")"
@@ -112,7 +117,7 @@ void Axis::move_absolute(uint32_t position) {
     desired_position = max(position, 0);
 
     // This could really be ~14000
-    desired_position = min(desired_position, 20000);
+    desired_position = min(desired_position, 16000);
 
     logger.info() << "Setting new desired position to " << desired_position
             << Comms::endl;
@@ -125,13 +130,25 @@ void Axis::move_absolute(uint32_t position) {
 }
 
 void Axis::move_incremental(double increment) {
-    uint32_t steps = increment * steps_per_mm;
+    int32_t steps = increment * steps_per_mm;
 
     move_incremental(steps);
 }
 
-void Axis::move_incremental(uint32_t increment) {
-    move_absolute(desired_position + increment);
+void Axis::move_incremental(int32_t increment) {
+    uint32_t new_desired_position = desired_position + increment;
+
+    logger.info() << axis << " axis given increment of (" << increment
+            << ")" << Comms::endl;
+
+    if(((int32_t)desired_position + increment) < 0) {
+        logger.error() << axis << " axis given negative incremental move ("
+                << increment << ")" << Comms::endl;
+
+        new_desired_position = 0;
+    }
+
+    move_absolute(new_desired_position);
 }
 
 double Axis::get_current_position(void) {
@@ -153,4 +170,24 @@ void Axis::hold(void) {
 
 bool Axis::moving(void) {
     return (current_position == desired_position);
+}
+
+void Axis::set_motor_mapping(uint8_t motor_mapping) {
+    this->motor_mapping = motor_mapping;
+
+    // TODO: This is duplicated here and in the direction function. There's a
+    // better way of structuring it.
+    if(direction == Axis::Positive) {
+        if(motor_mapping == Axis::CW_Positive) {
+            motor->set_direction(ProtoMotor::CW);
+        } else {
+            motor->set_direction(ProtoMotor::CCW);
+        }
+    } else if(direction == Axis::Negative) {
+        if(motor_mapping == Axis::CW_Negative) {
+            motor->set_direction(ProtoMotor::CW);
+        } else {
+            motor->set_direction(ProtoMotor::CCW);
+        }
+    }
 }
