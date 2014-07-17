@@ -7,8 +7,8 @@
 #include "rollers.h"
 #include "SerialCommand.h"
 
-extern ProtoMotor xProto;
-extern ProtoMotor yProto;
+extern ProtoMotor a_motor;
+extern ProtoMotor b_motor;
 
 extern Axis x_axis;
 extern Axis y_axis;

@@ -22,11 +22,11 @@
 #include "AccelStepper.h"
 
 // step_pin, dir_pin, power_pin, steps_per_rev
-Motor aMotor(15, 14, 16, 0); // X
-Motor bMotor(18, 17, 19, 0); // Y
+//Motor aMotor(15, 14, 16, 0); // X
+//Motor bMotor(18, 17, 19, 0); // Y
 
-Motor *xMotor = &aMotor;
-Motor *yMotor = &bMotor;
+//Motor *xMotor = &aMotor;
+//Motor *yMotor = &bMotor;
 
 File myFile;
 
@@ -55,8 +55,10 @@ void setup() {
     rollers.disable();
     rollers.enable();
 
-    xMotor->set_speed(1500);
-    yMotor->set_speed(1500);
+    //xMotor->set_speed(1500);
+    //yMotor->set_speed(1500);
+    x_axis.set_speed(1500);
+    y_axis.set_speed(1500);
 
     settings_initialise(false);
 
@@ -154,6 +156,10 @@ void setup() {
 
     serial_command.addCommand("size", &size_command);
 
+    serial_command.addCommand("++", &plus_command);
+    serial_command.addCommand("--", &minus_command);
+    serial_command.addCommand("wait", &wait_command);
+
 
     // Common
     serial_command.addCommand("help", &help_command);
@@ -164,8 +170,7 @@ void setup() {
 
     init_sd_command();
 
-    // Initialise Axes
-    x_axis;
+    // Initialise Axes from EEPROM here
 
     //uint8_t *firing_buffer = (uint8_t*)malloc(4096);
     help_command();
@@ -237,9 +242,13 @@ void serialEvent(void) {
 }
 
 void swap_motors(void) {
-    Motor *temp = xMotor;
+    /*Motor *temp = xMotor;
     xMotor = yMotor;
-    yMotor = temp;
+    yMotor = temp;*/
+    ProtoMotor *temp = x_axis.motor;
+
+    x_axis.motor = y_axis.motor;
+    y_axis.motor = temp;
 }
 
 void parse_command(byte* command) {
@@ -332,8 +341,8 @@ bool readFile(char *filename) {
 
     swap_motors();
 
-    xMotor->set_position(0L);
-    yMotor->set_position(0L);
+    //xMotor->set_position(0L);
+    //yMotor->set_position(0L);
 
     x_axis.zero();
     y_axis.zero();

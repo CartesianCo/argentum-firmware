@@ -58,6 +58,9 @@ public:
     void move_incremental(double increment);
     void move_incremental(int32_t increment);
 
+    void move_to_positive(void);
+    void move_to_negative(void);
+
     double get_current_position(void);
     double get_desired_position(void);
 
@@ -65,18 +68,26 @@ public:
     void hold(void);
 
     bool moving(void);
+    void wait_for_move(void);
 
     void set_speed(uint32_t mm_per_minute);
     void set_motor_mapping(uint8_t motor_mapping);
 
+    //void set_motor(ProtoMotor *motor);
+    //ProtoMotor * get_motor(void);
+
+    ProtoMotor *motor;
+
     static const long steps_per_mm = 80;
+
+    uint32_t current_position;
 
 private:
     bool step(void);
     void set_direction(uint8_t direction);
 
     char axis;
-    ProtoMotor *motor;
+
     bool (*positive_limit)(void);
     bool (*negative_limit)(void);
 
@@ -85,7 +96,7 @@ private:
 
     uint8_t motor_mapping;
 
-    uint32_t current_position;
+
     uint32_t desired_position;
 };
 

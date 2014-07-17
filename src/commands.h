@@ -4,7 +4,8 @@
 #include <Arduino.h>
 #include <SD.h>
 
-#include "Motor.h"
+#include "ProtoMotor.h"
+#include "Axis.h"
 
 void acc(void);
 void read_setting_command(void);
@@ -13,7 +14,10 @@ void write_setting_command(void);
 void speed_command(void);
 void home_command(void);
 void move_command(void);
-Motor * motor_from_axis(unsigned const char axis);
+
+ProtoMotor * motor_from_axis(unsigned const char axis);
+Axis * axis_from_id(uint8_t id);
+
 void move(const char axis, long steps);
 void power_command(void);
 
@@ -60,5 +64,9 @@ void axis_pos(void);
 void stat_command(void);
 
 void size_command(void);
+
+void plus_command(void);
+void minus_command(void);
+void wait_command(void);
 
 #endif

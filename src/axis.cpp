@@ -151,6 +151,22 @@ void Axis::move_incremental(int32_t increment) {
     move_absolute(new_desired_position);
 }
 
+void Axis::move_to_positive(void) {
+    set_direction(Axis::Positive);
+
+    while(!positive_limit()) {
+        while(!motor->step());
+    }
+}
+
+void Axis::move_to_negative(void) {
+    set_direction(Axis::Negative);
+
+    while(!negative_limit()) {
+        while(!motor->step());
+    }
+}
+
 double Axis::get_current_position(void) {
     return ((double)current_position) / steps_per_mm;
 }
@@ -170,6 +186,14 @@ void Axis::hold(void) {
 
 bool Axis::moving(void) {
     return (current_position == desired_position);
+}
+
+void Axis::wait_for_move(void) {
+    while(moving());
+}
+
+void Axis::set_speed(uint32_t mm_per_minute) {
+    motor->set_speed(mm_per_minute);
 }
 
 void Axis::set_motor_mapping(uint8_t motor_mapping) {

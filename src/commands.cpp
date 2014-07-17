@@ -84,14 +84,18 @@ void acc(void) {
 
 void motors_off_command(void) {
     Serial.println("Motors off");
-    xMotor->power(0);
-    yMotor->power(0);
+    //xMotor->power(0);
+    //yMotor->power(0);
+    x_axis.motor->enable(false);
+    y_axis.motor->enable(false);
 }
 
 void motors_on_command(void) {
     Serial.println("Motors on");
-    xMotor->power(1);
-    yMotor->power(1);
+    //xMotor->power(1);
+    //yMotor->power(1);
+    x_axis.motor->enable(true);
+    y_axis.motor->enable(true);
 }
 
 void read_setting_command(void) {
@@ -137,14 +141,14 @@ void speed_command(void) {
         speed = 1;
     }
 
-    Motor *motor = motor_from_axis(axis);
+    ProtoMotor *motor = motor_from_axis(axis);
     motor->set_speed(speed);
 }
 
 void zero_position_command(void) {
     logger.info("Setting new zero position");
-    xMotor->set_position(0L);
-    yMotor->set_position(0L);
+    //xMotor->set_position(0L);
+    //yMotor->set_position(0L);
 
     x_axis.zero();
     y_axis.zero();
@@ -152,16 +156,16 @@ void zero_position_command(void) {
 
 void goto_zero_command(void) {
     logger.info("Returning to 0.000, 0.000");
-    xMotor->go_home();
-    yMotor->go_home();
+    //xMotor->go_home();
+    //yMotor->go_home();
 
     x_axis.move_absolute(0.000);
     y_axis.move_absolute(0.000);
 }
 
 void current_position_command(void) {
-    logger.info() << "Current position (steps): (" << xMotor->get_position()
-            << ", " << yMotor->get_position() << ")" << Comms::endl;
+    //logger.info() << "Current position (steps): (" << xMotor->get_position()
+    //        << ", " << yMotor->get_position() << ")" << Comms::endl;
 
     logger.info() << "X: " << x_axis.get_current_position() << " mm, "
             << "Y: " << y_axis.get_current_position() << " mm"
@@ -197,11 +201,28 @@ void move_command(void) {
     move(axis, steps);
 }
 
-Motor * motor_from_axis(unsigned const char axis) {
+Axis * axis_from_id(uint8_t id) {
+    switch(id) {
+        case Axis::X:
+            return &x_axis;
+            break;
+
+        case Axis::Y:
+            return &y_axis;
+            break;
+
+        default:
+            return NULL;
+    }
+}
+
+ProtoMotor * motor_from_axis(unsigned const char axis) {
     if (toupper(axis) == 'X') {
-        return xMotor;
+        //return xMotor;
+        return x_axis.motor;
     } else if (toupper(axis) == 'Y') {
-        return yMotor;
+        //return yMotor;
+        return y_axis.motor;
     }
 
     return NULL;
@@ -228,22 +249,23 @@ void continuous_move(void) {
 
     char direction = arg[0];
 
-    Motor *motor = motor_from_axis(axis);
+    ProtoMotor *motor = motor_from_axis(axis);
 
     while(!Serial.read() == 'c') {
         if(direction == '+') {
-            motor->move(1);
+            //motor->move_incremental(1);
         } else {
-            motor->move(-1);
+            //motor->move_incremental(-1);
         }
     }
 }
 
-void move(const char axis, long steps) {
-    Motor *motor = motor_from_axis(axis);
+void move(const char axis_id, long steps) {
+    //ProtoMotor *motor = motor_from_axis(axis);
+    Axis *axis = axis_from_id(axis_id);
 
-    if(!motor) {
-        logger.error() << "Cannot obtain motor pointer for " << axis << "axis"
+    if(!axis) {
+        logger.error() << "Cannot obtain pointer for " << axis_id << "axis"
                 << Comms::endl;
         return;
     }
@@ -252,9 +274,9 @@ void move(const char axis, long steps) {
 
     if(steps == 0) {
         //motor->reset_position();
-        motor->go_home();
+        axis->move_absolute(0.000);
     } else {
-        motor->move(steps);
+        axis->move_incremental(steps);
     }
 }
 
@@ -279,21 +301,26 @@ void power_command(void) {
 
     char power = arg[0];
 
-    Motor *motor = NULL;
+    //Motor *motor = NULL;
+    ProtoMotor *motor = NULL;
 
     if(toupper(axis) == 'X') {
-        motor = xMotor;
+        //motor = xMotor;
+        motor = x_axis.motor;
     } else if(toupper(axis) == 'Y') {
-        motor = yMotor;
+        //motor = yMotor;
+        motor = y_axis.motor;
     } else {
         logger.error("No axis");
         return;
     }
 
     if(power == '0') {
-        motor->power(0);
+        //motor->power(0);
+        motor->enable(false);
     } else if (power == '1') {
-        motor->power(1);
+        //motor->power(1);
+        motor->enable(true);
     } else {
         logger.error("Unknown power");
         return;
@@ -790,4 +817,16 @@ void size_command(void) {
     }
 
     y_size = atol(arg);
+}
+
+void plus_command(void) {
+    x_axis.move_to_positive();
+}
+
+void minus_command(void) {
+    x_axis.move_to_negative();
+}
+
+void wait_command(void) {
+    x_axis.wait_for_move();
 }

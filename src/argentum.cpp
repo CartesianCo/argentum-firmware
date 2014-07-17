@@ -1,10 +1,10 @@
 #include "argentum.h"
 
-ProtoMotor xProto(15, 14, 16);
-ProtoMotor yProto(18, 17, 19);
+ProtoMotor a_motor(15, 14, 16); // Should be x axis
+ProtoMotor b_motor(18, 17, 19); // Should be y axis
 
-Axis x_axis(Axis::X, &xProto, &limit_x_positive, &limit_x_negative);
-Axis y_axis(Axis::Y, &yProto, &limit_y_positive, &limit_y_negative);
+Axis x_axis(Axis::X, &a_motor, &limit_x_positive, &limit_x_negative);
+Axis y_axis(Axis::Y, &b_motor, &limit_y_positive, &limit_y_negative);
 
 SerialCommand serial_command;
 
