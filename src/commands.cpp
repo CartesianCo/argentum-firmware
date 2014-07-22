@@ -141,7 +141,7 @@ void speed_command(void) {
         speed = 1;
     }
 
-    ProtoMotor *motor = motor_from_axis(axis);
+    Stepper *motor = motor_from_axis(axis);
     motor->set_speed(speed);
 }
 
@@ -216,7 +216,7 @@ Axis * axis_from_id(uint8_t id) {
     }
 }
 
-ProtoMotor * motor_from_axis(unsigned const char axis) {
+Stepper * motor_from_axis(unsigned const char axis) {
     if (toupper(axis) == 'X') {
         //return xMotor;
         return x_axis.motor;
@@ -249,7 +249,7 @@ void continuous_move(void) {
 
     char direction = arg[0];
 
-    ProtoMotor *motor = motor_from_axis(axis);
+    Stepper *motor = motor_from_axis(axis);
 
     while(!Serial.read() == 'c') {
         if(direction == '+') {
@@ -261,7 +261,7 @@ void continuous_move(void) {
 }
 
 void move(const char axis_id, long steps) {
-    //ProtoMotor *motor = motor_from_axis(axis);
+    //Stepper *motor = motor_from_axis(axis);
     Axis *axis = axis_from_id(axis_id);
 
     if(!axis) {
@@ -302,7 +302,7 @@ void power_command(void) {
     char power = arg[0];
 
     //Motor *motor = NULL;
-    ProtoMotor *motor = NULL;
+    Stepper *motor = NULL;
 
     if(toupper(axis) == 'X') {
         //motor = xMotor;

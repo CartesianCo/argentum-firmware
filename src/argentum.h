@@ -1,14 +1,14 @@
 #ifndef _ARGENTUM_H_
 #define _ARGENTUM_H_
 
-#include "protomotor.h"
+#include "stepper.h"
 #include "axis.h"
 #include "limit.h"
 #include "rollers.h"
 #include "SerialCommand.h"
 
-extern ProtoMotor a_motor;
-extern ProtoMotor b_motor;
+extern Stepper a_motor;
+extern Stepper b_motor;
 
 extern Axis x_axis;
 extern Axis y_axis;

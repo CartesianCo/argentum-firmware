@@ -4,7 +4,7 @@
 
 #include "settings.h"
 #include "axis.h"
-#include "ProtoMotor.h"
+#include "stepper.h"
 
 #include "logging.h"
 
@@ -35,7 +35,7 @@
 
  * @param direction_correct A pointer to a bool...
  */
-bool resolve(ProtoMotor *motor,
+bool resolve(Stepper *motor,
              long steps,
              uint8_t axis_mask,
              bool *axis_correct,
@@ -45,9 +45,9 @@ bool resolve(ProtoMotor *motor,
     uint8_t before = limit_switches();
 
     if(steps < 0) {
-        motor->set_direction(ProtoMotor::CCW);
+        motor->set_direction(Stepper::CCW);
     } else {
-        motor->set_direction(ProtoMotor::CW);
+        motor->set_direction(Stepper::CW);
     }
 
     for(long step = 0; step < steps; step++) {
@@ -125,7 +125,7 @@ bool freedom(bool *x_direction_resolved, bool *y_direction_resolved) {
             } else {
                 logger.info("Found + = -");
 
-                a_motor.set_direction(ProtoMotor::CCW);
+                a_motor.set_direction(Stepper::CCW);
             }
         }
 
@@ -161,7 +161,7 @@ bool freedom(bool *x_direction_resolved, bool *y_direction_resolved) {
                 logger.info("Found + = +");
             } else {
                 logger.info("Found + = -");
-                b_motor.set_direction(ProtoMotor::CCW);
+                b_motor.set_direction(Stepper::CCW);
             }
         }
     } else {
@@ -176,8 +176,8 @@ void calibrate(CalibrationData *calibration) {
 
     //x_axis.set_direction(Axis::Positive);
     //y_axis.set_direction(Axis::Positive);
-    x_axis.motor->set_direction(ProtoMotor::CW);
-    y_axis.motor->set_direction(ProtoMotor::CW);
+    x_axis.motor->set_direction(Stepper::CW);
+    y_axis.motor->set_direction(Stepper::CW);
 
     x_axis.set_speed(250);
     y_axis.set_speed(250);
@@ -208,7 +208,7 @@ void calibrate(CalibrationData *calibration) {
             xMotor = yMotor;
             yMotor = temp;*/
 
-            ProtoMotor *temp = x_axis.motor;
+            Stepper *temp = x_axis.motor;
 
             x_axis.motor = y_axis.motor;
             y_axis.motor = temp;

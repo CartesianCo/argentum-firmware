@@ -1,7 +1,7 @@
 #include "argentum.h"
 
-ProtoMotor a_motor(15, 14, 16); // Should be x axis
-ProtoMotor b_motor(18, 17, 19); // Should be y axis
+Stepper a_motor(15, 14, 16); // Should be x axis
+Stepper b_motor(18, 17, 19); // Should be y axis
 
 Axis x_axis(Axis::X, &a_motor, &limit_x_positive, &limit_x_negative);
 Axis y_axis(Axis::Y, &b_motor, &limit_y_positive, &limit_y_negative);

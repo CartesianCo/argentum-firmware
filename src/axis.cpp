@@ -2,7 +2,7 @@
 #include "logging.h"
 
 Axis::Axis(const char axis,
-           ProtoMotor *motor,
+           Stepper *motor,
            bool (*positive_limit)(void),
            bool (*negative_limit)(void)) {
     this->axis = axis;
@@ -81,15 +81,15 @@ void Axis::set_direction(uint8_t direction) {
 
     if(direction == Axis::Positive) {
         if(motor_mapping == Axis::CW_Positive) {
-            motor->set_direction(ProtoMotor::CW);
+            motor->set_direction(Stepper::CW);
         } else {
-            motor->set_direction(ProtoMotor::CCW);
+            motor->set_direction(Stepper::CCW);
         }
     } else if(direction == Axis::Negative) {
         if(motor_mapping == Axis::CW_Negative) {
-            motor->set_direction(ProtoMotor::CW);
+            motor->set_direction(Stepper::CW);
         } else {
-            motor->set_direction(ProtoMotor::CCW);
+            motor->set_direction(Stepper::CCW);
         }
     }
 
@@ -208,15 +208,15 @@ void Axis::set_motor_mapping(uint8_t motor_mapping) {
     // better way of structuring it.
     if(direction == Axis::Positive) {
         if(motor_mapping == Axis::CW_Positive) {
-            motor->set_direction(ProtoMotor::CW);
+            motor->set_direction(Stepper::CW);
         } else {
-            motor->set_direction(ProtoMotor::CCW);
+            motor->set_direction(Stepper::CCW);
         }
     } else if(direction == Axis::Negative) {
         if(motor_mapping == Axis::CW_Negative) {
-            motor->set_direction(ProtoMotor::CW);
+            motor->set_direction(Stepper::CW);
         } else {
-            motor->set_direction(ProtoMotor::CCW);
+            motor->set_direction(Stepper::CCW);
         }
     }
 }

@@ -27,7 +27,7 @@ SOFTWARE.
 #ifndef _AXIS_H_
 #define _AXIS_H_
 
-#include "ProtoMotor.h"
+#include "stepper.h"
 
 class Axis {
 public:
@@ -37,12 +37,12 @@ public:
     };
 
     // Motor Mapping for POSITIVE steps.
-    enum MotorMapping {
+    enum StepperMapping {
         CW_Positive = 0,
         CW_Negative = 1
     };
 
-    Axis(const char axis, ProtoMotor *motor, bool (*positive_limit_function)(void), bool (*negative_limit_function)(void));
+    Axis(const char axis, Stepper *motor, bool (*positive_limit_function)(void), bool (*negative_limit_function)(void));
     ~Axis();
 
     bool run(void);
@@ -68,10 +68,10 @@ public:
     void set_speed(uint32_t mm_per_minute);
     void set_motor_mapping(uint8_t motor_mapping);
 
-    //void set_motor(ProtoMotor *motor);
-    //ProtoMotor * get_motor(void);
+    //void set_motor(Stepper *motor);
+    //Stepper * get_motor(void);
 
-    ProtoMotor *motor;
+    Stepper *motor;
 
     static const long steps_per_mm = 80;
 
@@ -82,7 +82,7 @@ private:
         Positive = 0,
         Negative = 1
     };
-    
+
     bool step(void);
     void set_direction(uint8_t direction);
 

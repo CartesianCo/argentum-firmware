@@ -244,7 +244,7 @@ void swap_motors(void) {
     /*Motor *temp = xMotor;
     xMotor = yMotor;
     yMotor = temp;*/
-    ProtoMotor *temp = x_axis.motor;
+    Stepper *temp = x_axis.motor;
 
     x_axis.motor = y_axis.motor;
     y_axis.motor = temp;

@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <SD.h>
 
-#include "ProtoMotor.h"
+#include "stepper.h"
 #include "Axis.h"
 
 void acc(void);
@@ -15,7 +15,7 @@ void speed_command(void);
 void home_command(void);
 void move_command(void);
 
-ProtoMotor * motor_from_axis(unsigned const char axis);
+Stepper * motor_from_axis(unsigned const char axis);
 Axis * axis_from_id(uint8_t id);
 
 void move(const char axis, long steps);
