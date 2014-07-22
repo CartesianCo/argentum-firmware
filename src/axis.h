@@ -36,11 +36,6 @@ public:
         Y = 'Y',
     };
 
-    enum StepDirection {
-        Positive = 0,
-        Negative = 1
-    };
-
     // Motor Mapping for POSITIVE steps.
     enum MotorMapping {
         CW_Positive = 0,
@@ -83,6 +78,11 @@ public:
     uint32_t current_position;
 
 private:
+    enum StepDirection {
+        Positive = 0,
+        Negative = 1
+    };
+    
     bool step(void);
     void set_direction(uint8_t direction);
 

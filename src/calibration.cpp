@@ -282,8 +282,8 @@ void calibrate(CalibrationData *calibration) {
     x_distance = 0;
     y_distance = 0;
 
-    x_axis.current_position = 100000;
-    y_axis.current_position = 100000;
+    //x_axis.current_position = 100000;
+    //y_axis.current_position = 100000;
 /*
     while(!(limit_x_negative() && limit_y_negative())) {
         x_axis.move_incremental((int32_t)-1);

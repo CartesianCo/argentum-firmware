@@ -37,6 +37,8 @@ bool Axis::run(void) {
                     && negative_limit())) {
             logger.warn() << axis
                     << " tried to step in a limited direction, holding."
+                    << "current_position: " << current_position
+                    << "desired_position: " << desired_position
                     << Comms::endl;
 
             hold();
@@ -95,10 +97,10 @@ void Axis::set_direction(uint8_t direction) {
 }
 
 void Axis::move_absolute(double position) {
-    if(position < 0) {
+    /*if(position < 0) {
         logger.error() << axis << " absolute movement with negative position ("
                 << position << ")";
-    }
+    }*/
 
     uint32_t pos = position * steps_per_mm;
 
@@ -185,11 +187,13 @@ void Axis::hold(void) {
 }
 
 bool Axis::moving(void) {
-    return (current_position == desired_position);
+    return (current_position != desired_position);
 }
 
 void Axis::wait_for_move(void) {
-    while(moving());
+    while(moving()) {
+        run();
+    }
 }
 
 void Axis::set_speed(uint32_t mm_per_minute) {
