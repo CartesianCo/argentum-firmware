@@ -1,6 +1,7 @@
 #include "utils.h"
 
 #include "settings.h"
+#include "limit.h"
 
 int ram_used(void) {
   extern int __heap_start, *__brkval;
@@ -42,4 +43,36 @@ uint8_t CRC8_add_byte(uint8_t data, uint8_t crc) {
     }
 
     return crc;
+}
+
+void print_switch_status(uint8_t switches) {
+    //Serial.print("Switch binary: ");
+    //Serial.println(switches, BIN);
+    if(switches == 0b00000000) {
+        Serial.print("None triggered.");
+    }
+
+    if(X_POS(switches)) {
+        Serial.print("X+ ");
+    }
+
+    if(X_NEG(switches)) {
+        Serial.print("X- ");
+    }
+
+    if(Y_POS(switches)) {
+        Serial.print("Y+ ");
+    }
+
+    if(Y_NEG(switches)) {
+        Serial.print("Y- ");
+    }
+
+    Serial.print("\r\n");
+}
+
+void print_switch_status(void) {
+    uint8_t switches = limit_switches();
+
+    print_switch_status(switches);
 }

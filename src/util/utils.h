@@ -17,4 +17,7 @@ double ram_utilisation(void);
 uint8_t CRC8(const void *buffer, const uint16_t length);
 uint8_t CRC8_add_byte(uint8_t data, uint8_t seed_crc);
 
+void print_switch_status(void);
+void print_switch_status(uint8_t switches);
+
 #endif

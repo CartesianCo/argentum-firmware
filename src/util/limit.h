@@ -18,6 +18,17 @@
 #define POS_MASK  0b00001010
 #define NEG_MASK  0b00000101
 
+#define X_POS(switches) (switches & X_POS_BIT)
+#define X_NEG(switches) (switches & X_NEG_BIT)
+#define Y_POS(switches) (switches & Y_POS_BIT)
+#define Y_NEG(switches) (switches & Y_NEG_BIT)
+
+#define X_LIMIT(switches) (switches & X_MASK)
+#define Y_LIMIT(switches) (switches & Y_MASK)
+
+#define POS_LIMIT(switches) (switches & POS_MASK)
+#define NEG_LIMIT(switches) (switches & NEG_MASK)
+
 /*
 class LimitSwitch {
 public:

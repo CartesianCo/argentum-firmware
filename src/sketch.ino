@@ -1,24 +1,22 @@
-#include "LEDStrip.h"
+#include "util/LEDStrip.h"
 #include <SD.h>
 #include <Servo.h>
-#include "settings.h"
-#include "SerialCommand.h"
+#include "util/settings.h"
+#include "util/SerialCommand.h"
 //#include "limit_switch.h"
-#include "calibration.h"
-#include "cartridge.h"
-#include "commands.h"
-#include "utils.h"
-#include "axis.h"
+#include "argentum/calibration.h"
+#include "util/cartridge.h"
+#include "argentum/commands.h"
+#include "util/utils.h"
+#include "util/axis.h"
 
-#include "comms.h"
+#include "util/comms.h"
 
-#include "logging.h"
+#include "util/logging.h"
 
-#include "rollers.h"
+#include "util/rollers.h"
 
-#include "argentum.h"
-
-#include "AccelStepper.h"
+#include "argentum/argentum.h"
 
 // step_pin, dir_pin, power_pin, steps_per_rev
 //Motor aMotor(15, 14, 16, 0); // X

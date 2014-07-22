@@ -1,12 +1,12 @@
 #include "calibration.h"
 //#include "limit_switch.h"
-#include "limit.h"
+#include "../util/limit.h"
 
-#include "settings.h"
-#include "axis.h"
-#include "stepper.h"
+#include "../util/settings.h"
+#include "../util/axis.h"
+#include "../util/stepper.h"
 
-#include "logging.h"
+#include "../util/logging.h"
 
 #include "argentum.h"
 

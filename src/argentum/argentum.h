@@ -1,11 +1,11 @@
 #ifndef _ARGENTUM_H_
 #define _ARGENTUM_H_
 
-#include "stepper.h"
-#include "axis.h"
-#include "limit.h"
-#include "rollers.h"
-#include "SerialCommand.h"
+#include "../util/stepper.h"
+#include "../util/axis.h"
+#include "../util/limit.h"
+#include "../util/rollers.h"
+#include "../util/SerialCommand.h"
 
 extern Stepper a_motor;
 extern Stepper b_motor;

@@ -4,8 +4,8 @@
 #include <Arduino.h>
 #include <SD.h>
 
-#include "stepper.h"
-#include "Axis.h"
+#include "../util/stepper.h"
+#include "../util/axis.h"
 
 void acc(void);
 void read_setting_command(void);

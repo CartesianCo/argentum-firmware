@@ -1,21 +1,21 @@
 #include "commands.h"
 
-#include "AccelStepper.h"
-#include "SerialCommand.h"
-#include "settings.h"
-#include "limit_switch.h"
-#include "utils.h"
+//#include "AccelStepper.h"
+#include "../util/SerialCommand.h"
+#include "../util/settings.h"
+#include "../util/limit.h"
+#include "../util/utils.h"
 #include "calibration.h"
-#include "LEDStrip.h"
-#include "rollers.h"
+#include "../util/LEDStrip.h"
+#include "../util/rollers.h"
 #include <Servo.h>
 #include <SD.h>
 
-#include "comms.h"
+#include "../util/comms.h"
 
-#include "Axis.h"
+#include "../util/axis.h"
 
-#include "logging.h"
+#include "../util/logging.h"
 
 #include "argentum.h"
 
