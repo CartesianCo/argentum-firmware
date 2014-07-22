@@ -24,11 +24,11 @@ SOFTWARE.
 
 */
 
-#include "protomotor.h"
+#include "stepper.h"
 
 #include "logging.h"
 
-ProtoMotor::ProtoMotor(int step_pin, int dir_pin, int enable_pin) {
+Stepper::Stepper(int step_pin, int dir_pin, int enable_pin) {
     this->step_pin = step_pin;
     this->dir_pin = dir_pin;
     this->enable_pin = enable_pin;
@@ -48,12 +48,12 @@ ProtoMotor::ProtoMotor(int step_pin, int dir_pin, int enable_pin) {
 
     digitalWrite(step_pin, LOW);
 
-    set_direction(ProtoMotor::CW);
+    set_direction(Stepper::CW);
 
     enable(true);
 }
 
-void ProtoMotor::enable(bool enabled) {
+void Stepper::enable(bool enabled) {
     if (enabled) {
         digitalWrite(enable_pin, LOW);
     } else {
@@ -61,13 +61,13 @@ void ProtoMotor::enable(bool enabled) {
     }
 }
 
-uint8_t ProtoMotor::swap_direction(void) {
+uint8_t Stepper::swap_direction(void) {
     this->set_direction(!this->direction);
 
     return this->direction;
 }
 
-void ProtoMotor::set_direction(uint8_t direction) {
+void Stepper::set_direction(uint8_t direction) {
     this->direction = direction;
 
     if (direction) {
@@ -77,7 +77,7 @@ void ProtoMotor::set_direction(uint8_t direction) {
     }
 }
 
-bool ProtoMotor::step() {
+bool Stepper::step() {
     if((micros() - last_step_time) > step_delay) {
         digitalWrite(step_pin, HIGH);
         digitalWrite(step_pin, LOW);
@@ -90,7 +90,7 @@ bool ProtoMotor::step() {
     return false;
 }
 
-void ProtoMotor::set_speed(int mm_per_minute) {
+void Stepper::set_speed(int mm_per_minute) {
     int rate = mm_per_minute;
 
     if (rate > 5000) {
@@ -106,6 +106,6 @@ void ProtoMotor::set_speed(int mm_per_minute) {
     logger.info() << "step_delay = " << step_delay << Comms::endl;
 }
 
-int ProtoMotor::get_speed() {
+int Stepper::get_speed() {
     return 0; //speed;
 }

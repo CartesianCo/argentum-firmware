@@ -1,4 +1,3 @@
-#include "Motor.h"
 #include "LEDStrip.h"
 #include <SD.h>
 #include <Servo.h>

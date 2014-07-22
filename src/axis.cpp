@@ -93,14 +93,15 @@ void Axis::set_direction(uint8_t direction) {
         }
     }
 
-    logger.info() << axis << " axis setting direction to " << direction << Comms::endl;
+    logger.info() << axis << " axis setting direction to " << direction
+            << Comms::endl;
 }
 
 void Axis::move_absolute(double position) {
-    /*if(position < 0) {
+    if(position < 0) {
         logger.error() << axis << " absolute movement with negative position ("
                 << position << ")";
-    }*/
+    }
 
     uint32_t pos = position * steps_per_mm;
 

@@ -24,19 +24,19 @@ SOFTWARE.
 
 */
 
-#ifndef _PROTO_MOTOR_H_
-#define _PROTO_MOTOR_H_
+#ifndef _STEPPER_H_
+#define _STEPPER_H_
 
 #include "Arduino.h"
 
-class ProtoMotor {
+class Stepper {
 public:
     enum {
         CW = 0,
         CCW = 1
     };
 
-    ProtoMotor(int step_pin, int dir_pin, int enable_pin);
+    Stepper(int step_pin, int dir_pin, int enable_pin);
 
     void enable(bool enabled);
 

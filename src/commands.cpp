@@ -1,7 +1,6 @@
 #include "commands.h"
 
 #include "AccelStepper.h"
-#include "Motor.h"
 #include "SerialCommand.h"
 #include "settings.h"
 #include "limit_switch.h"
@@ -23,6 +22,7 @@
 extern bool readFile(char *filename);
 extern void file_stats(char *filename);
 
+/*
 extern Motor *xMotor;
 extern Motor *yMotor;
 
@@ -81,7 +81,7 @@ void acc(void) {
         }
     }
 }
-
+*/
 void motors_off_command(void) {
     Serial.println("Motors off");
     //xMotor->power(0);
