@@ -146,6 +146,32 @@ void setup() {
     init_sd_command();
 
     // Initialise Axes from EEPROM here
+    if(global_settings.calibration.x_axis.motor == 'A') {
+        x_axis.set_motor(&a_motor);
+    } else {
+        x_axis.set_motor(&b_motor);
+    }
+
+    if(global_settings.calibration.y_axis.motor == 'A') {
+        y_axis.set_motor(&a_motor);
+    } else {
+        y_axis.set_motor(&b_motor);
+    }
+
+    if(global_settings.calibration.x_axis.flipped) {
+        x_axis.set_motor_mapping(Axis::CW_Negative);
+    } else {
+        x_axis.set_motor_mapping(Axis::CW_Positive);
+    }
+
+    if(global_settings.calibration.y_axis.flipped) {
+        y_axis.set_motor_mapping(Axis::CW_Negative);
+    } else {
+        y_axis.set_motor_mapping(Axis::CW_Positive);
+    }
+
+    x_axis.length = global_settings.calibration.x_axis.length;
+    y_axis.length = global_settings.calibration.y_axis.length;
 
     //uint8_t *firing_buffer = (uint8_t*)malloc(4096);
     help_command();

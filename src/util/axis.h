@@ -83,6 +83,8 @@ public:
 
     uint32_t current_position;
 
+    uint32_t length;
+
     void debug_info(void);
 
 private:
@@ -102,7 +104,6 @@ private:
     Stepper *motor;
 
     uint8_t direction;
-    uint32_t length;
 
     uint8_t motor_mapping;
 

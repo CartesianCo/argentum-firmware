@@ -171,6 +171,8 @@ void current_position_command(void) {
             << "Y: " << y_axis.get_current_position() << " mm"
             << Comms::endl;
 
+    logger.info() << x_axis.length << ", " << y_axis.length << Comms::endl;
+
     x_axis.debug_info();
     y_axis.debug_info();
 }
@@ -205,6 +207,8 @@ void move_command(void) {
 }
 
 Axis * axis_from_id(uint8_t id) {
+    id = toupper(id);
+
     switch(id) {
         case Axis::X:
             return &x_axis;
@@ -281,6 +285,8 @@ void move(const char axis_id, long steps) {
     } else {
         axis->move_incremental(steps);
     }
+
+    axis->wait_for_move();
 }
 
 void power_command(void) {

@@ -35,13 +35,13 @@ bool Axis::run(void) {
         //logger.info() << current_position << " -> " << desired_position
         //        << Logger::endl;
 
-        if(desired_position == Axis::PositiveLimit) {
+        /*if(desired_position == Axis::PositiveLimit) {
             if(positive_limit()) {
                 logger.info("reached positive limit");
             } else {
                 return step();
             }
-        }
+        }*/
 
         if(((current_position < desired_position) && positive_limit())
                 || ((current_position > desired_position)
@@ -73,10 +73,10 @@ bool Axis::step(void) {
             current_position--;
         }
 
-        if(current_position == desired_position) {
+        /*if(current_position == desired_position) {
             logger.info() << axis << " axis reached goal position: "
                     << desired_position << Comms::endl;
-        }
+        }*/
     }
 
     return did_step;
@@ -104,8 +104,8 @@ void Axis::set_direction(uint8_t direction) {
         }
     }
 
-    logger.info() << axis << " axis setting direction to " << direction
-            << Comms::endl;
+    //logger.info() << axis << " axis setting direction to " << direction
+    //        << Comms::endl;
 }
 
 void Axis::move_absolute(double position) {
@@ -124,8 +124,8 @@ void Axis::move_absolute(uint32_t position) {
         return;
     }
 
-    logger.info() << axis << " axis absolute movement from " << current_position
-        << " to " << position << "" << Comms::endl;
+    //logger.info() << axis << " axis absolute movement from " << current_position
+    //    << " to " << position << "" << Comms::endl;
 
     // Constrain the possible positions
     desired_position = max(position, 0);
@@ -133,8 +133,8 @@ void Axis::move_absolute(uint32_t position) {
     // This could really be ~14000
     desired_position = min(desired_position, 16000);
 
-    logger.info() << axis << " axis setting new desired position to "
-        << desired_position << Comms::endl;
+    //logger.info() << axis << " axis setting new desired position to "
+    //    << desired_position << Comms::endl;
 
     if(desired_position > current_position) {
         set_direction(Axis::Positive);
@@ -152,8 +152,8 @@ void Axis::move_incremental(double increment) {
 void Axis::move_incremental(int32_t increment) {
     uint32_t new_desired_position = desired_position + increment;
 
-    logger.info() << axis << " axis given increment of (" << increment
-            << ")" << Comms::endl;
+    //logger.info() << axis << " axis given increment of (" << increment
+    //        << ")" << Comms::endl;
 
     if(((int32_t)desired_position + increment) < 0) {
         logger.error() << axis << " axis given negative incremental move ("
