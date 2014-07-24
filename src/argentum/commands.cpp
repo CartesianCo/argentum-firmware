@@ -86,16 +86,16 @@ void motors_off_command(void) {
     Serial.println("Motors off");
     //xMotor->power(0);
     //yMotor->power(0);
-    x_axis.motor->enable(false);
-    y_axis.motor->enable(false);
+    x_axis.get_motor()->enable(false);
+    y_axis.get_motor()->enable(false);
 }
 
 void motors_on_command(void) {
     Serial.println("Motors on");
     //xMotor->power(1);
     //yMotor->power(1);
-    x_axis.motor->enable(true);
-    y_axis.motor->enable(true);
+    x_axis.get_motor()->enable(true);
+    y_axis.get_motor()->enable(true);
 }
 
 void read_setting_command(void) {
@@ -170,6 +170,9 @@ void current_position_command(void) {
     logger.info() << "X: " << x_axis.get_current_position() << " mm, "
             << "Y: " << y_axis.get_current_position() << " mm"
             << Comms::endl;
+
+    x_axis.debug_info();
+    y_axis.debug_info();
 }
 
 void home_command(void) {
@@ -219,10 +222,10 @@ Axis * axis_from_id(uint8_t id) {
 Stepper * motor_from_axis(unsigned const char axis) {
     if (toupper(axis) == 'X') {
         //return xMotor;
-        return x_axis.motor;
+        return x_axis.get_motor();
     } else if (toupper(axis) == 'Y') {
         //return yMotor;
-        return y_axis.motor;
+        return y_axis.get_motor();
     }
 
     return NULL;
@@ -306,10 +309,10 @@ void power_command(void) {
 
     if(toupper(axis) == 'X') {
         //motor = xMotor;
-        motor = x_axis.motor;
+        motor = x_axis.get_motor();
     } else if(toupper(axis) == 'Y') {
         //motor = yMotor;
-        motor = y_axis.motor;
+        motor = y_axis.get_motor();
     } else {
         logger.error("No axis");
         return;

@@ -40,30 +40,17 @@ public:
         return error() << arg << Comms::endl;
     }
 
-    /*
-    template<class T> inline Logger &operator <<(T arg) {
-        Serial.print(arg);
-
-        return *this;
-    }
-    */
-
     uint8_t minimum_log_level;
     bool enabled;
 
 private:
-
     template<class T> void log_for_level(T entry, uint8_t level) {
-        /*Serial.print(level);
-        Serial.print(" for ");
-        Serial.println(entry);*/
-
         if(enabled && level >= minimum_log_level) {
             comms.send(entry);
         }
     }
 
-    void prefix_for_level(uint8_t level);
+    void emit_prefix_for_level(uint8_t level);
 
     friend class LoggerWrapper;
 };
@@ -74,14 +61,14 @@ public:
     ~LoggerWrapper();
 
     template<class T> inline LoggerWrapper &operator <<(T arg) {
-        _logger->log_for_level(arg, _log_level);
+        logger->log_for_level(arg, log_level);
 
         return *this;
     }
 
 private:
-    Logger *_logger;
-    uint8_t _log_level;
+    Logger *logger;
+    uint8_t log_level;
 };
 
 extern Logger logger;

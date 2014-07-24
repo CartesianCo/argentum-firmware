@@ -5,11 +5,6 @@
 
 #define RAM_TOTAL 8192
 
-template<class T> inline Print &operator <<(Print &obj, T arg) {
-    obj.print(arg);
-    return obj;
-}
-
 int ram_free(void);
 int ram_used(void);
 double ram_utilisation(void);

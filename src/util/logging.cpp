@@ -23,24 +23,24 @@ Logger::~Logger() {
 }
 
 LoggerWrapper & Logger::info(void) {
-    prefix_for_level(Logger::Info);
+    emit_prefix_for_level(Logger::Info);
 
     return wrapper_info;
 }
 
 LoggerWrapper & Logger::warn(void) {
-    prefix_for_level(Logger::Warn);
+    emit_prefix_for_level(Logger::Warn);
 
     return wrapper_warn;
 }
 
 LoggerWrapper & Logger::error(void) {
-    prefix_for_level(Logger::Error);
+    emit_prefix_for_level(Logger::Error);
 
     return wrapper_error;
 }
 
-void Logger::prefix_for_level(uint8_t level) {
+void Logger::emit_prefix_for_level(uint8_t level) {
     log_for_level(millis(), level);
     log_for_level(" - [", level);
     log_for_level(level_prefixes[level], level);
@@ -48,8 +48,8 @@ void Logger::prefix_for_level(uint8_t level) {
 }
 
 LoggerWrapper::LoggerWrapper(Logger *logger, uint8_t log_level) {
-    _logger = logger;
-    _log_level = log_level;
+    this->logger = logger;
+    this->log_level = log_level;
 }
 
 LoggerWrapper::~LoggerWrapper() {

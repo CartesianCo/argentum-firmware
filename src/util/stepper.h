@@ -43,6 +43,7 @@ public:
     void enable(bool enabled);
 
     void set_direction(uint8_t direction);
+    uint8_t get_direction(void);
     uint8_t swap_direction(void);
 
     bool step();

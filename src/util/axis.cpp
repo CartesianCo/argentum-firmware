@@ -1,6 +1,8 @@
 #include "axis.h"
 #include "logging.h"
 
+#include "../argentum/argentum.h"
+
 Axis::Axis(const char axis,
            Stepper *motor,
            bool (*positive_limit)(void),
@@ -32,13 +34,22 @@ bool Axis::run(void) {
     } else {
         //logger.info() << current_position << " -> " << desired_position
         //        << Logger::endl;
+
+        if(desired_position == Axis::PositiveLimit) {
+            if(positive_limit()) {
+                logger.info("reached positive limit");
+            } else {
+                return step();
+            }
+        }
+
         if(((current_position < desired_position) && positive_limit())
                 || ((current_position > desired_position)
-                    && negative_limit())) {
+                && negative_limit())) {
             logger.warn() << axis
                     << " tried to step in a limited direction, holding."
-                    << "current_position: " << current_position
-                    << "desired_position: " << desired_position
+                    << " current_position: " << current_position
+                    << " desired_position: " << desired_position
                     << Comms::endl;
 
             hold();
@@ -54,7 +65,8 @@ bool Axis::step(void) {
     bool did_step = motor->step();
 
     if(did_step) {
-        //logger.info() << axis << " step" << Logger::endl;
+        //logger.info() << axis << " step " << current_position << Comms::endl;
+
         if(direction == Axis::Positive) {
             current_position++;
         } else {
@@ -65,10 +77,9 @@ bool Axis::step(void) {
             logger.info() << axis << " axis reached goal position: "
                     << desired_position << Comms::endl;
         }
-        return true;
     }
 
-    return false;
+    return did_step;
 }
 
 void Axis::set_direction(uint8_t direction) {
@@ -105,9 +116,6 @@ void Axis::move_absolute(double position) {
 
     uint32_t pos = position * steps_per_mm;
 
-    logger.info() << "move_to(" << position << ") -> move_to(" << pos << ")"
-            << Comms::endl;
-
     move_absolute(pos);
 }
 
@@ -116,14 +124,17 @@ void Axis::move_absolute(uint32_t position) {
         return;
     }
 
+    logger.info() << axis << " axis absolute movement from " << current_position
+        << " to " << position << "" << Comms::endl;
+
     // Constrain the possible positions
     desired_position = max(position, 0);
 
     // This could really be ~14000
     desired_position = min(desired_position, 16000);
 
-    logger.info() << "Setting new desired position to " << desired_position
-            << Comms::endl;
+    logger.info() << axis << " axis setting new desired position to "
+        << desired_position << Comms::endl;
 
     if(desired_position > current_position) {
         set_direction(Axis::Positive);
@@ -158,7 +169,7 @@ void Axis::move_to_positive(void) {
     set_direction(Axis::Positive);
 
     while(!positive_limit()) {
-        while(!motor->step());
+        while(!step());
     }
 }
 
@@ -166,7 +177,7 @@ void Axis::move_to_negative(void) {
     set_direction(Axis::Negative);
 
     while(!negative_limit()) {
-        while(!motor->step());
+        while(!step());
     }
 }
 
@@ -219,4 +230,50 @@ void Axis::set_motor_mapping(uint8_t motor_mapping) {
             motor->set_direction(Stepper::CCW);
         }
     }
+}
+
+void Axis::set_motor(Stepper *motor) {
+    this->motor = motor;
+
+    this->motor->set_direction(Stepper::CW);
+}
+
+Stepper * Axis::get_motor(void) {
+    return motor;
+}
+
+void Axis::debug_info(void) {
+    LoggerWrapper &info = logger.info() << axis << " axis, ";
+
+    if(motor == &a_motor) {
+        info << "a";
+    } else {
+        info << "b";
+    }
+
+    info << " motor, ";
+
+    if(direction == Axis::Positive) {
+        info << "+";
+    } else {
+        info << "-";
+    }
+
+    info << " direction, ";
+
+    if(motor->get_direction() == Stepper::CW) {
+        info << "CW";
+    } else {
+        info << "CCW";
+    }
+
+    info << " motor";
+
+    if(motor_mapping == CW_Positive) {
+        info << " (+CW STD)";
+    } else {
+        info << " (-CW INV)";
+    }
+
+    info << Comms::endl;
 }

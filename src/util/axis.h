@@ -36,10 +36,16 @@ public:
         Y = 'Y',
     };
 
-    // Motor Mapping for POSITIVE steps.
     enum StepperMapping {
-        CW_Positive = 0,
-        CW_Negative = 1
+        CW_Positive =  0,
+        CW_Negative =  1,
+        CCW_Positive = CW_Negative,
+        CCW_Negative = CW_Positive
+    };
+
+    enum Goals {
+        PositiveLimit =  123456789,
+        NegativeLimit = -123456789
     };
 
     Axis(const char axis, Stepper *motor, bool (*positive_limit_function)(void), bool (*negative_limit_function)(void));
@@ -68,14 +74,14 @@ public:
     void set_speed(uint32_t mm_per_minute);
     void set_motor_mapping(uint8_t motor_mapping);
 
-    //void set_motor(Stepper *motor);
-    //Stepper * get_motor(void);
-
-    Stepper *motor;
+    void set_motor(Stepper *motor);
+    Stepper * get_motor(void);
 
     static const long steps_per_mm = 80;
 
     uint32_t current_position;
+
+    void debug_info(void);
 
 private:
     enum StepDirection {
@@ -91,11 +97,12 @@ private:
     bool (*positive_limit)(void);
     bool (*negative_limit)(void);
 
+    Stepper *motor;
+
     uint8_t direction;
     uint32_t length;
 
     uint8_t motor_mapping;
-
 
     uint32_t desired_position;
 };

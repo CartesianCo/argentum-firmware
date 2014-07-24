@@ -79,6 +79,10 @@ void Stepper::set_direction(uint8_t direction) {
     }
 }
 
+uint8_t Stepper::get_direction(void) {
+    return direction;
+}
+
 bool Stepper::step() {
     if((micros() - last_step_time) > step_delay) {
         digitalWrite(step_pin, HIGH);

@@ -1,11 +1,9 @@
 #include "calibration.h"
-//#include "limit_switch.h"
-#include "../util/limit.h"
 
+#include "../util/limit.h"
 #include "../util/settings.h"
 #include "../util/axis.h"
 #include "../util/stepper.h"
-
 #include "../util/logging.h"
 
 #include "argentum.h"
@@ -41,11 +39,15 @@ bool resolve(Stepper *motor,
              bool *axis_correct,
              uint8_t direction_mask,
              bool *direction_correct) {
+    if(!motor) {
+        return false;
+    }
 
     uint8_t before = limit_switches();
 
     if(steps < 0) {
         motor->set_direction(Stepper::CCW);
+        steps = abs(steps); // Don't like this particularly
     } else {
         motor->set_direction(Stepper::CW);
     }
@@ -59,7 +61,7 @@ bool resolve(Stepper *motor,
     uint8_t released = (before & ~after);
     uint8_t triggered = (after & ~before);
 
-    // If we activated a switch, release it. Should this happen?
+    // If we activated a switch, release it. Should we do this?
     /*if(triggered) {
         motor->move(-steps);
     }*/
@@ -98,34 +100,37 @@ bool freedom(bool *x_direction_resolved, bool *y_direction_resolved) {
         }
 
         if(a_resolved) {
+            Axis *axis;
+
             if(axis_correct) {
                 logger.info("Found A = X");
 
-                /*xMotor = &aMotor;
-                yMotor = &bMotor;*/
+                axis = &x_axis;
 
-                x_axis.motor = &a_motor;
-                y_axis.motor = &b_motor;
+                x_axis.set_motor(&a_motor);
+                y_axis.set_motor(&b_motor);
 
                 *x_direction_resolved = true;
             } else {
                 logger.info("Found A = Y");
 
-                /*xMotor = &bMotor;
-                yMotor = &aMotor;*/
+                axis = &y_axis;
 
-                x_axis.motor = &b_motor;
-                y_axis.motor = &a_motor;
+                x_axis.set_motor(&b_motor);
+                y_axis.set_motor(&a_motor);
 
                 *y_direction_resolved = true;
             }
 
             if(direction_correct) {
                 logger.info("Found + = +");
+
+                axis->set_motor_mapping(Axis::CW_Positive);
             } else {
                 logger.info("Found + = -");
 
-                a_motor.set_direction(Stepper::CCW);
+                //a_motor.set_direction(Stepper::CCW);
+                axis->set_motor_mapping(Axis::CW_Negative);
             }
         }
 
@@ -137,31 +142,37 @@ bool freedom(bool *x_direction_resolved, bool *y_direction_resolved) {
         }
 
         if(b_resolved) {
+            Axis *axis;
+
             if(axis_correct) {
                 logger.info("Found B = Y");
-                /*xMotor = &aMotor;
-                yMotor = &bMotor;*/
 
-                x_axis.motor = &a_motor;
-                y_axis.motor = &b_motor;
+                axis = &y_axis;
+
+                x_axis.set_motor(&a_motor);
+                y_axis.set_motor(&b_motor);
 
                 *y_direction_resolved = true;
             } else {
                 logger.info("Found B = X");
-                /*xMotor = &bMotor;
-                yMotor = &aMotor;*/
 
-                x_axis.motor = &b_motor;
-                y_axis.motor = &a_motor;
+                axis = &x_axis;
+
+                x_axis.set_motor(&b_motor);
+                y_axis.set_motor(&a_motor);
 
                 *x_direction_resolved = true;
             }
 
             if(direction_correct) {
                 logger.info("Found + = +");
+
+                axis->set_motor_mapping(Axis::CW_Positive);
             } else {
                 logger.info("Found + = -");
-                b_motor.set_direction(Stepper::CCW);
+
+                //b_motor.set_direction(Stepper::CCW);
+                axis->set_motor_mapping(Axis::CW_Negative);
             }
         }
     } else {
@@ -174,13 +185,17 @@ bool freedom(bool *x_direction_resolved, bool *y_direction_resolved) {
 void calibrate(CalibrationData *calibration) {
     logger.info("Calibration beginning.");
 
-    //x_axis.set_direction(Axis::Positive);
-    //y_axis.set_direction(Axis::Positive);
-    x_axis.motor->set_direction(Stepper::CW);
-    y_axis.motor->set_direction(Stepper::CW);
+    x_axis.debug_info();
+    y_axis.debug_info();
 
     x_axis.set_speed(250);
     y_axis.set_speed(250);
+
+    x_axis.set_motor_mapping(Axis::CW_Positive);
+    y_axis.set_motor_mapping(Axis::CW_Positive);
+
+    x_axis.get_motor()->set_direction(Stepper::CW);
+    y_axis.get_motor()->set_direction(Stepper::CW);
 
     long x_distance = 0L;
     long y_distance = 0L;
@@ -198,70 +213,106 @@ void calibrate(CalibrationData *calibration) {
         logger.info("Resolved nothing, finding X");
 
         while(!limit_any()) {
-            while(!x_axis.motor->step());
+            while(!x_axis.get_motor()->step());
         }
 
         if(limit_y()) {
-            // Incorrect
-            /*Motor *temp = xMotor;
+            logger.info("Found axes swapped.");
+            // Incorrect mapping
+            Stepper *temp = x_axis.get_motor();
 
-            xMotor = yMotor;
-            yMotor = temp;*/
-
-            Stepper *temp = x_axis.motor;
-
-            x_axis.motor = y_axis.motor;
-            y_axis.motor = temp;
+            x_axis.set_motor(y_axis.get_motor());
+            y_axis.set_motor(temp);
         }
     }
 
     while(!(x_direction_resolved && y_direction_resolved)) {
         if(!x_direction_resolved) {
+            //logger.info("Stepping X");
+
             if(!limit_x()) {
-                while(!x_axis.motor->step());
+                x_axis.get_motor()->step();
             } else {
                 x_direction_resolved = true;
 
-                if(limit_x_positive()) {
+                if(limit_x_negative()) {
                     // Inverted
-                    //xMotor->set_inverted(true);
+                    logger.info("Found X to be inverted.");
                     x_axis.set_motor_mapping(Axis::CW_Negative);
                 }
             }
         }
 
         if(!y_direction_resolved) {
+            //logger.info("Stepping Y");
+
             if(!limit_y()) {
-                while(!y_axis.motor->step());
+                y_axis.get_motor()->step();
             } else {
                 y_direction_resolved = true;
 
-                if(limit_y_positive()) {
+                if(limit_y_negative()) {
                     // Inverted
-                    //yMotor->set_inverted(true);
+                    logger.info("Found Y to be inverted.");
                     y_axis.set_motor_mapping(Axis::CW_Negative);
                 }
             }
         }
     }
 
+    // At this point we know both axes, and have resolved their directions.
+    x_axis.debug_info();
+    y_axis.debug_info();
+
     LoggerWrapper &info = logger.info() << "Homing: ";
 
     info << "1";
 
+    x_axis.move_to_negative();
+    y_axis.move_to_negative();
+
+    info << "neg, zeroing";
+    delay(1000);
+
+    x_axis.zero();
+    y_axis.zero();
+
+    x_axis.move_to_positive();
+
+    info << "x pos";
+    delay(1000);
+
+    y_axis.move_to_positive();
+
+    info << "y pos";
+    delay(1000);
+
+    info << " x :" << x_axis.current_position;
+    info << " y :" << y_axis.current_position;
+
+    x_axis.zero();
+    y_axis.zero();
+
+    // Why doesn't this work?
+    //x_axis.current_position = 100000;
+    //x_axis.move_absolute(0.000);
+
     //while(!limit_positive()) {
-    while(!(limit_x_positive() && limit_y_positive())) {
+    //while(!(limit_x_positive() && limit_y_positive())) {
         //x_axis.motor->step();
         //y_axis.motor->step();
 
-        x_axis.move_incremental((int32_t)1);
-        y_axis.move_incremental((int32_t)1);
+        //delay(100);
+
+        //x_axis.move_incremental((int32_t)1);
+        //y_axis.move_incremental((int32_t)1);
 
         //x_distance++;
         //y_distance++;
-    }
+    //}
 
     info << "2";
+    delay(1000);
 
     /*while(!limit_x_positive()) {
         x_axis.motor->step();
@@ -301,6 +352,7 @@ void calibrate(CalibrationData *calibration) {
     }*/
 
     info << "6";
+    delay(1000);
 
     /*while(!limit_y_negative()) {
         yMotor->move(-1);
@@ -316,12 +368,12 @@ void calibrate(CalibrationData *calibration) {
     info << Comms::endl;
 
     if(calibration) {
-        calibration->x_axis.motor = 0; //(xMotor == &aMotor) ? Motor::A : Motor::B;
-        calibration->x_axis.flipped = false;//xMotor->is_inverted();
+        calibration->x_axis.motor = (x_axis.get_motor() == &a_motor) ? 'A' : 'B';
+        calibration->x_axis.flipped = false;
         calibration->x_axis.length = x_distance;
 
-        calibration->y_axis.motor = 1; //(yMotor == &aMotor) ? Motor::A : Motor::B;
-        calibration->y_axis.flipped = false;//yMotor->is_inverted();
+        calibration->y_axis.motor = (y_axis.get_motor() == &a_motor) ? 'A' : 'B';
+        calibration->y_axis.flipped = false;
         calibration->y_axis.length = y_distance;
     }
 }

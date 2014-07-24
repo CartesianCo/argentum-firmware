@@ -1,6 +1,7 @@
 #include "utils.h"
 
 #include "settings.h"
+#include "logging.h"
 #include "limit.h"
 
 int ram_used(void) {
@@ -48,27 +49,37 @@ uint8_t CRC8_add_byte(uint8_t data, uint8_t crc) {
 void print_switch_status(uint8_t switches) {
     //Serial.print("Switch binary: ");
     //Serial.println(switches, BIN);
+
+    LoggerWrapper &info = logger.info() << "Limits: ";
+
     if(switches == 0b00000000) {
-        Serial.print("None triggered.");
+        info << "None triggered.";
     }
 
     if(X_POS(switches)) {
-        Serial.print("X+ ");
+        info << "X+ ";
     }
 
     if(X_NEG(switches)) {
-        Serial.print("X- ");
+        info << "X- ";
     }
 
     if(Y_POS(switches)) {
-        Serial.print("Y+ ");
+        info << "Y+ ";
     }
 
     if(Y_NEG(switches)) {
-        Serial.print("Y- ");
+        info << "Y- ";
     }
 
-    Serial.print("\r\n");
+    info << Comms::endl;
+
+    if((X_POS(switches) && X_NEG(switches))
+        || (Y_POS(switches) && Y_NEG(switches))) {
+            logger.info("Impossible configuration on limit switches, inverting.");
+
+            limit_switch_nc = !limit_switch_nc;
+    }
 }
 
 void print_switch_status(void) {

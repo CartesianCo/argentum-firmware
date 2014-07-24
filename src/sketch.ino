@@ -1,29 +1,14 @@
 #include "util/LEDStrip.h"
 #include <SD.h>
-#include <Servo.h>
 #include "util/settings.h"
 #include "util/SerialCommand.h"
-//#include "limit_switch.h"
 #include "argentum/calibration.h"
 #include "util/cartridge.h"
 #include "argentum/commands.h"
 #include "util/utils.h"
 #include "util/axis.h"
-
-#include "util/comms.h"
-
 #include "util/logging.h"
-
-#include "util/rollers.h"
-
 #include "argentum/argentum.h"
-
-// step_pin, dir_pin, power_pin, steps_per_rev
-//Motor aMotor(15, 14, 16, 0); // X
-//Motor bMotor(18, 17, 19, 0); // Y
-
-//Motor *xMotor = &aMotor;
-//Motor *yMotor = &bMotor;
 
 File myFile;
 
@@ -45,24 +30,17 @@ void setup() {
     logger.minimum_log_level = Logger::Info;
     logger.enabled = true;
 
-    logger.info() << "Information" << Comms::endl;
-    logger.warn() << "Warning" << Comms::endl;
-    logger.error() << "Error" << Comms::endl;
-
     rollers.disable();
     rollers.enable();
 
-    //xMotor->set_speed(1500);
-    //yMotor->set_speed(1500);
+    print_switch_status();
+
     x_axis.set_speed(1500);
     y_axis.set_speed(1500);
 
     settings_initialise(false);
 
-    // Configure Cartridge Ports
-    DDRC = 0xFF;
-    DDRL = 0xFF;
-    DDRA = 0xFF;
+    cartridge_initialise();
 
     // Configure Input Pins
     pinMode(A12, INPUT); // General Analog Inputs
@@ -242,10 +220,10 @@ void swap_motors(void) {
     /*Motor *temp = xMotor;
     xMotor = yMotor;
     yMotor = temp;*/
-    Stepper *temp = x_axis.motor;
+    Stepper *temp = x_axis.get_motor();
 
-    x_axis.motor = y_axis.motor;
-    y_axis.motor = temp;
+    x_axis.set_motor(y_axis.get_motor());
+    y_axis.set_motor(temp);
 }
 
 void parse_command(byte* command) {

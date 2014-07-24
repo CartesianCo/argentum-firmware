@@ -1,6 +1,13 @@
 
 #include "cartridge.h"
 
+void cartridge_initialise(void) {
+    // Configure Cartridge Ports
+    DDRC = 0xFF;
+    DDRL = 0xFF;
+    DDRA = 0xFF;
+}
+
 // PORT C is [R1, R2, R3, R4, L1, L2, L3, L4] (Multiplexer)
 // PORT L is Left (MOSFET Drivers)
 // PORT A is Right (MOSFET Drivers)
