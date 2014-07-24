@@ -5,6 +5,7 @@
 #include "../util/axis.h"
 #include "../util/stepper.h"
 #include "../util/logging.h"
+#include "../util/utils.h"
 
 #include "argentum.h"
 
@@ -264,31 +265,24 @@ void calibrate(CalibrationData *calibration) {
     x_axis.debug_info();
     y_axis.debug_info();
 
-    LoggerWrapper &info = logger.info() << "Homing: ";
-
-    info << "1";
+    logger.info("Homing");
 
     x_axis.move_to_negative();
     y_axis.move_to_negative();
 
-    info << "neg, zeroing";
-    delay(1000);
-
     x_axis.zero();
     y_axis.zero();
 
+    // Go to maximum extents
     x_axis.move_to_positive();
-
-    info << "x pos";
-    delay(1000);
-
     y_axis.move_to_positive();
 
-    info << "y pos";
-    delay(1000);
+    x_distance = x_axis.current_position;
+    y_distance = y_axis.current_position;
 
-    info << " x :" << x_axis.current_position;
-    info << " y :" << y_axis.current_position;
+    // Return to home
+    x_axis.move_to_negative();
+    y_axis.move_to_negative();
 
     x_axis.zero();
     y_axis.zero();
@@ -297,83 +291,13 @@ void calibrate(CalibrationData *calibration) {
     //x_axis.current_position = 100000;
     //x_axis.move_absolute(0.000);
 
-    //while(!limit_positive()) {
-    //while(!(limit_x_positive() && limit_y_positive())) {
-        //x_axis.motor->step();
-        //y_axis.motor->step();
-
-        //delay(100);
-
-        //x_axis.move_incremental((int32_t)1);
-        //y_axis.move_incremental((int32_t)1);
-
-        //x_distance++;
-        //y_distance++;
-    //}
-
-    info << "2";
-    delay(1000);
-
-    /*while(!limit_x_positive()) {
-        x_axis.motor->step();
-
-        x_distance++;
-    }*/
-
-    info << "3";
-
-    /*while(!limit_y_positive()) {
-        y_axis.motor->step();
-
-        y_distance++;
-    }*/
-
-    info << "4";
-
-    x_distance = 0;
-    y_distance = 0;
-
-    //x_axis.current_position = 100000;
-    //y_axis.current_position = 100000;
-/*
-    while(!(limit_x_negative() && limit_y_negative())) {
-        x_axis.move_incremental((int32_t)-1);
-        y_axis.move_incremental((int32_t)-1);
-
-        x_distance++;
-        y_distance++;
-    }
-*/
-    info << "5";
-
-    /*while(!limit_x_negative()) {
-        xMotor->move(-1);
-        x_distance++;
-    }*/
-
-    info << "6";
-    delay(1000);
-
-    /*while(!limit_y_negative()) {
-        yMotor->move(-1);
-        y_distance++;
-    }*/
-
-    //xMotor->reset_position();
-    //yMotor->reset_position();
-
-    x_axis.move_absolute(0.000);
-    y_axis.move_absolute(0.000);
-
-    info << Comms::endl;
-
     if(calibration) {
         calibration->x_axis.motor = (x_axis.get_motor() == &a_motor) ? 'A' : 'B';
-        calibration->x_axis.flipped = false;
+        calibration->x_axis.flipped = (x_axis.get_motor_mapping() != Axis::CW_Positive);
         calibration->x_axis.length = x_distance;
 
         calibration->y_axis.motor = (y_axis.get_motor() == &a_motor) ? 'A' : 'B';
-        calibration->y_axis.flipped = false;
+        calibration->y_axis.flipped = (y_axis.get_motor_mapping() != Axis::CW_Positive);
         calibration->y_axis.length = y_distance;
     }
 }

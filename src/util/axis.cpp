@@ -212,6 +212,10 @@ void Axis::set_speed(uint32_t mm_per_minute) {
     motor->set_speed(mm_per_minute);
 }
 
+uint8_t Axis::get_motor_mapping(void) {
+    return motor_mapping;
+}
+
 void Axis::set_motor_mapping(uint8_t motor_mapping) {
     this->motor_mapping = motor_mapping;
 
