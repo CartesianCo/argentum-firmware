@@ -27,8 +27,8 @@ private:
     Servo roller_servo;
     static const int roller_servo_pin = 12;
 
-    static const int retracted_position = 90;
-    static const int deployed_position = 110;
+    static const int retracted_position = 55;
+    static const int deployed_position = 80;
 
 };
 

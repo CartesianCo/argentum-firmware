@@ -268,21 +268,27 @@ void calibrate(CalibrationData *calibration) {
     logger.info("Homing");
 
     x_axis.move_to_negative();
+    logger.info("x-");
     y_axis.move_to_negative();
+    logger.info("y-");
 
     x_axis.zero();
     y_axis.zero();
 
     // Go to maximum extents
     x_axis.move_to_positive();
+    logger.info("x+");
     y_axis.move_to_positive();
+    logger.info("y+");
 
     x_distance = x_axis.current_position;
     y_distance = y_axis.current_position;
 
     // Return to home
     x_axis.move_to_negative();
+    logger.info("x-");
     y_axis.move_to_negative();
+    logger.info("y-");
 
     x_axis.zero();
     y_axis.zero();

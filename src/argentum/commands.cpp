@@ -8,7 +8,6 @@
 #include "calibration.h"
 #include "../util/LEDStrip.h"
 #include "../util/rollers.h"
-#include <Servo.h>
 #include <SD.h>
 
 #include "../util/comms.h"
@@ -21,6 +20,9 @@
 
 extern bool readFile(char *filename);
 extern void file_stats(char *filename);
+
+long xpos = 0;
+long ypos = 0;
 
 /*
 extern Motor *xMotor;
@@ -211,11 +213,11 @@ Axis * axis_from_id(uint8_t id) {
 
     switch(id) {
         case Axis::X:
-            return &x_axis;
+            return &y_axis;
             break;
 
         case Axis::Y:
-            return &y_axis;
+            return &x_axis;
             break;
 
         default:
@@ -281,9 +283,23 @@ void move(const char axis_id, long steps) {
 
     if(steps == 0) {
         //motor->reset_position();
-        axis->move_absolute(0.000);
+        //axis->move_absolute(0.000);
+
+        if(axis_id == 'X') {
+            axis->move_incremental(-xpos);
+            xpos = 0;
+        } else {
+            axis->move_incremental(-ypos);
+            ypos = 0;
+        }
     } else {
         axis->move_incremental(steps);
+
+        if(axis_id == 'X') {
+            xpos += steps;
+        } else {
+            ypos += steps;
+        }
     }
 
     axis->wait_for_move();
@@ -441,7 +457,7 @@ void ls(void) {
     File file = root.openNextFile();
 
     while(file) {
-        if(is_printer_file(file)) {
+        if(true || is_printer_file(file)) {
             logger.info() << file.name() << Comms::endl;
         }
 
@@ -629,6 +645,10 @@ void rollers_command(void) {
 
     int value = atoi(arg);
 
+    //rollers.angle(value);
+
+    //return;
+
     if(value == 0) {
         logger.info("Retracting");
         rollers.retract();
@@ -719,23 +739,23 @@ void sweep(long width, long height) {
         delay(100);
 
         // 2. Make first x pass
-        move('x', width);
+        move('y', width);
         rollers.retract();
 
-        move('x', -width);
+        move('y', -width);
         rollers.deploy();
 
-        move('x', width);
+        move('y', width);
         rollers.retract();
 
-        move('x', -width);
+        move('y', -width);
 
         // 3. Raise rollers
         rollers.retract();
         delay(100);
 
         // 4. Advance Y position
-        move('y', delta_y);
+        move('x', delta_y);
     }
 
     int y_offset = delta_y * passes;

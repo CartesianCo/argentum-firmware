@@ -20,7 +20,7 @@ bool LimitSwitch::triggered(void) {
 }
 */
 
-bool limit_switch_nc = false;
+bool limit_switch_nc = true;
 
 uint8_t limit_switches(void) {
     uint8_t switches = 0b00000000;

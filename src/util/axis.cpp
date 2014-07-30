@@ -22,7 +22,7 @@ Axis::Axis(const char axis,
 
     motor->set_speed(1000);
 
-    logger.info() << "Axis created for: " << axis << Comms::endl;
+    //logger.info() << "Axis created for: " << axis << Comms::endl;
 }
 
 Axis::~Axis() {
@@ -156,7 +156,7 @@ void Axis::move_incremental(int32_t increment) {
     //        << ")" << Comms::endl;
 
     if(((int32_t)desired_position + increment) < 0) {
-        logger.error() << axis << " axis given negative incremental move ("
+        logger.error() << axis << " axis given incremental move below 0.000 ("
                 << increment << ")" << Comms::endl;
 
         new_desired_position = 0;

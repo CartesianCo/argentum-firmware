@@ -242,16 +242,6 @@ void serialEvent(void) {
     serial_command.add_byte(input);
 }
 
-void swap_motors(void) {
-    /*Motor *temp = xMotor;
-    xMotor = yMotor;
-    yMotor = temp;*/
-    Stepper *temp = x_axis.get_motor();
-
-    x_axis.set_motor(y_axis.get_motor());
-    y_axis.set_motor(temp);
-}
-
 void parse_command(byte* command) {
     int dist = 0;
 
@@ -340,13 +330,13 @@ void file_stats(char *filename) {
 bool readFile(char *filename) {
     byte command[10];
 
-    swap_motors();
+    //swap_motors();
 
     //xMotor->set_position(0L);
     //yMotor->set_position(0L);
 
-    x_axis.zero();
-    y_axis.zero();
+    //x_axis.zero();
+    //y_axis.zero();
 
     // Open File
     myFile = SD.open(filename);
@@ -476,7 +466,7 @@ bool readFile(char *filename) {
             if(Serial.peek() == 'S') {
                 myFile.close();
 
-                swap_motors();
+                //swap_motors();
 
                 Serial.println("Stopping.");
 
@@ -499,7 +489,7 @@ bool readFile(char *filename) {
     //close file
     myFile.close();
 
-    swap_motors();
+    //swap_motors();
 
     return true;
 }
