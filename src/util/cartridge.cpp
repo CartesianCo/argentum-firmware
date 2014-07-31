@@ -1,6 +1,13 @@
 
 #include "cartridge.h"
 
+void cartridge_initialise(void) {
+    // Configure Cartridge Ports
+    DDRC = 0xFF;
+    DDRL = 0xFF;
+    DDRA = 0xFF;
+}
+
 // PORT C is [R1, R2, R3, R4, L1, L2, L3, L4] (Multiplexer)
 // PORT L is Left (MOSFET Drivers)
 // PORT A is Right (MOSFET Drivers)
@@ -81,7 +88,6 @@ void fire_head(uint8_t rPrim, uint8_t rAddr, uint8_t lPrim, uint8_t lAddr) {
             st X,r24
 
         */
-        PORTC = (PORTC | int(lAddr)); //Assign this to port C to load it into the cannon.
 
         //x1 = int(rAddr) << 4 | int(rAddr) >4; //Reverse
         //x2 = (x1 & 0x33) << 2 | (x1 & 0xcc) >2;
@@ -90,6 +96,8 @@ void fire_head(uint8_t rPrim, uint8_t rAddr, uint8_t lPrim, uint8_t lAddr) {
         // 2.6µS outer (t_h)
         // 2.5µS inner (t_pw)
 
+        // Address
+        PORTC = (PORTC | int(lAddr));
         PORTC = (PORTC | (int(rAddr) << 4));
 
         asm volatile("nop\n\t"
@@ -119,6 +127,7 @@ void fire_head(uint8_t rPrim, uint8_t rAddr, uint8_t lPrim, uint8_t lAddr) {
 
         */
 
+        // Primitives
         PORTL = int(lPrim);
         PORTA = int(rPrim);
 

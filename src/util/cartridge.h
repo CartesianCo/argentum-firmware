@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 
+void cartridge_initialise(void);
 void fire_head(uint8_t rPrim, uint8_t rAddr, uint8_t lPrim, uint8_t lAddr);
 
 #endif

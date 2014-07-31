@@ -1,37 +1,46 @@
-#include "Motor.h"
-#include "LEDStrip.h"
+#include "util/LEDStrip.h"
 #include <SD.h>
-#include <Servo.h>
-#include "settings.h"
-#include "SerialCommand.h"
-#include "limit_switch.h"
-#include "calibration.h"
-#include "cartridge.h"
-#include "commands.h"
-#include "utils.h"
-
-#include "AccelStepper.h"
-
-Motor aMotor(15, 14, 16, 0); // X
-Motor bMotor(18, 17, 19, 0); // Y
-
-Motor *xMotor = &bMotor;
-Motor *yMotor = &aMotor;
+#include "util/settings.h"
+#include "util/SerialCommand.h"
+#include "argentum/calibration.h"
+#include "util/cartridge.h"
+#include "argentum/commands.h"
+#include "util/utils.h"
+#include "util/axis.h"
+#include "util/logging.h"
+#include "argentum/argentum.h"
 
 File myFile;
 
-SerialCommand serial_command;
+class Printer {
+public:
+    enum States {
+        Idle,
+        Calibrating,
+        Moving,
+        Printing,
+    };
+};
 
-Settings settings;
+uint8_t current_state = Printer::Idle;
 
 void setup() {
-    Serial.begin(9600);
-    Serial.flush();
+    comms.initialise();
 
-    // Configure Cartridge Ports
-    DDRC = 0xFF;
-    DDRL = 0xFF;
-    DDRA = 0xFF;
+    logger.minimum_log_level = Logger::Info;
+    logger.enabled = true;
+
+    rollers.disable();
+    rollers.enable();
+
+    print_switch_status();
+
+    x_axis.set_speed(1500);
+    y_axis.set_speed(1500);
+
+    settings_initialise(false);
+
+    cartridge_initialise();
 
     // Configure Input Pins
     pinMode(A12, INPUT); // General Analog Inputs
@@ -45,20 +54,32 @@ void setup() {
     pinMode(A1, INPUT); // YMAX
     pinMode(6, INPUT); // YMIN
 
+    fet_initialise();
+
     // Calibration
-    serial_command.addCommand("c", &calibration);
+    serial_command.addCommand("c", &calibrate_command);
+    //serial_command.addCommand("cl", &calibrate_loop_command);
 
     // Movement
     serial_command.addCommand("m", &move_command);
     serial_command.addCommand("M", &move_command);
     serial_command.addCommand("h", &home_command);
 
+    serial_command.addCommand("0", &goto_zero_command);
+    serial_command.addCommand(")", &zero_position_command);
+    serial_command.addCommand("pos", &current_position_command);
+
     // Motor
     serial_command.addCommand("x", &power_command);
     serial_command.addCommand("s", &speed_command);
 
+    serial_command.addCommand("+", &motors_on_command);
+    //serial_command.addCommand("=", &motors_on_command);
+    serial_command.addCommand("-", &motors_off_command);
+    //serial_command.addCommand("_", &motors_off_command);
+
     // Roller Servo
-    serial_command.addCommand("l", &lower_command);
+    serial_command.addCommand("l", &rollers_command);
 
     // Print
     serial_command.addCommand("p", &print_command);
@@ -67,34 +88,132 @@ void setup() {
 
     // Settings
     serial_command.addCommand("?", &read_setting_command);
-    serial_command.addCommand("!", &write_setting_command);
+    serial_command.addCommand("?eeprom", &read_saved_setting_command);
+    serial_command.addCommand("!write", &write_setting_command);
 
-    serial_command.addCommand("?L", &read_long_command);
-    serial_command.addCommand("!L", &write_long_command);
-
-    serial_command.addCommand("@", &acc);
-
+    // Experimentals
+    //serial_command.addCommand("@", &acc);
+    serial_command.addCommand("lim", &limit_switch_command);
     serial_command.addCommand("ram", &print_ram);
 
+    //serial_command.addCommand("digital", &digital_command);
+    //serial_command.addCommand("analog", &analog_command);
+
+    // SD Card
     serial_command.addCommand("ls", &ls);
+    serial_command.addCommand("sd", &init_sd_command);
+
+    // Colour
+    serial_command.addCommand("red", &red_command);
+    serial_command.addCommand("green", &green_command);
+    serial_command.addCommand("blue", &blue_command);
+
+    serial_command.addCommand("pwm", &pwm_command);
+
+    serial_command.addCommand("sweep", &sweep_command);
+
+    serial_command.addCommand("abs", &absolute_move);
+    serial_command.addCommand("inc", &incremental_move);
+
+    //serial_command.addCommand("xpos", &axis_pos);
+    //serial_command.addCommand("stat", &stat_command);
+
+    serial_command.addCommand("size", &size_command);
+
+    serial_command.addCommand("++", &plus_command);
+    serial_command.addCommand("--", &minus_command);
+    serial_command.addCommand("wait", &wait_command);
+
+    serial_command.addCommand("volt", &primitive_voltage_command);
+
+    // Common
+    serial_command.addCommand("help", &help_command);
 
     initLED();
 
     setLEDToColour(COLOUR_HOME);
 
-    if(!SD.begin(53)) {
-        Serial.println("SD card could not be accessed..");
+    init_sd_command();
+
+    // Initialise Axes from EEPROM here
+    if(global_settings.calibration.x_axis.motor == 'A') {
+        x_axis.set_motor(&a_motor);
+    } else {
+        x_axis.set_motor(&b_motor);
     }
 
-    //uint8_t *firing_buffer = (uint8_t*)malloc(4096);
+    if(global_settings.calibration.y_axis.motor == 'A') {
+        y_axis.set_motor(&a_motor);
+    } else {
+        y_axis.set_motor(&b_motor);
+    }
 
-    Serial.println("Press p to print output.hex");
-    Serial.println("S to stop, P to pause, R to resume, c to calibrate.");
-    Serial.println("Additional commands: ");
-    serial_command.installed_commands();
+    if(global_settings.calibration.x_axis.flipped) {
+        x_axis.set_motor_mapping(Axis::CW_Negative);
+    } else {
+        x_axis.set_motor_mapping(Axis::CW_Positive);
+    }
+
+    if(global_settings.calibration.y_axis.flipped) {
+        y_axis.set_motor_mapping(Axis::CW_Negative);
+    } else {
+        y_axis.set_motor_mapping(Axis::CW_Positive);
+    }
+
+    x_axis.length = global_settings.calibration.x_axis.length;
+    y_axis.length = global_settings.calibration.y_axis.length;
+
+    //uint8_t *firing_buffer = (uint8_t*)malloc(4096);
+    help_command();
 }
 
+static int white = 0;
+static long old_time = 0;
+static bool dir = false;
+
+
+// Note: This loop _should_ execute three times faster than the motors can step
+// at 5000 speed. Measured.
 void loop() {
+    x_axis.run();
+    y_axis.run();
+
+    /*if(millis() - old_time > 10) {
+        if(!dir) {
+            white++;
+        } else {
+            white--;
+        }
+
+        if(white >= 255) {
+            dir = true;
+        }
+
+        if(white <= 0) {
+            dir = false;
+        }
+
+        old_time = millis();
+        analogWrite(8, white);
+    }*/
+
+    switch(current_state) {
+        case Printer::Idle:
+        break;
+
+        case Printer::Calibrating:
+        break;
+
+        case Printer::Moving:
+        break;
+
+        case Printer::Printing:
+        break;
+
+        default:
+            current_state = Printer::Idle;
+        break;
+    }
 }
 
 void serialEvent(void) {
@@ -113,7 +232,6 @@ void serialEvent(void) {
     serial_command.add_byte(input);
 }
 
-
 void parse_command(byte* command) {
     int dist = 0;
 
@@ -128,10 +246,9 @@ void parse_command(byte* command) {
     }
 }
 
-void readFile(char* filename) {
-    byte command[10];
+void file_stats(char *filename) {
+    uint8_t command[10];
 
-    // Open File
     myFile = SD.open(filename);
 
     // Check if file open succeeded, if not output error message
@@ -143,7 +260,88 @@ void readFile(char* filename) {
     }
 
     Serial.println("Starting");
+
+    long max_x = 0;
+    long max_y = 0;
+
+    long cur_x = 0;
+    long cur_y = 0;
+
+    // loop through file
+    while(myFile.available()) {
+        // read in first byte of command
+        command[0] = myFile.read();
+
+        //Serial.println(command[0]);
+
+        if(command[0] == 'M') {
+            // read in extra bytes if necessary
+            int i = 1;
+
+            while(myFile.peek() != '\n' && i < 8) {
+                command[i] = myFile.read();
+                i++;
+            }
+            command[i] = 0x00;
+
+            long steps = atol((const char *)&command[4]);
+            char axis = command[2];
+
+            //logger.info() << "Movement command: " << axis << " " << steps << Comms::endl;
+
+            if(axis == 'X') {
+                cur_x += steps;
+
+                if(cur_x > max_x) {
+                    max_x = cur_x;
+                }
+            }
+
+            if(axis == 'Y') {
+                cur_y += abs(steps);
+
+                if(cur_y > max_y) {
+                    max_y = cur_y;
+                }
+
+                logger.info() << "steps: " << steps << " cur_y: " << cur_y
+                        << " max_y: " << max_y << Comms::endl;
+            }
+        }
+    }
+
+    logger.info() << "File dimensions: " << max_x << " x " << max_y << " steps"
+            << Comms::endl;
+
+    //close file
+    myFile.close();
+}
+
+bool readFile(char *filename) {
+    byte command[10];
+
+    //swap_motors();
+
+    //xMotor->set_position(0L);
+    //yMotor->set_position(0L);
+
+    //x_axis.zero();
+    //y_axis.zero();
+
+    // Open File
+    myFile = SD.open(filename);
+
+    // Check if file open succeeded, if not output error message
+    if (!myFile) {
+        Serial.print("File could not be opened: ");
+        Serial.println(filename);
+
+        return false;
+    }
+
+    //Serial.println("Starting");
     //Serial.println(start);
+    logger.info() << "readFile(" << filename << ")" << Comms::endl;
 
     long start = micros();
     long end = 0L;
@@ -175,6 +373,12 @@ void readFile(char* filename) {
 
     setLEDToColour(COLOUR_PRINTING);
 
+    long max_x = 0;
+    long max_y = 0;
+
+    long cur_x = 0;
+    long cur_y = 0;
+
     // loop through file
     while(myFile.available()) {
         // read in first byte of command
@@ -194,6 +398,55 @@ void readFile(char* filename) {
             }
 
             parse_command(command);
+        } else if(command[0] == 'M') {
+            // read in extra bytes if necessary
+            int i = 1;
+
+            while(myFile.peek() != '\n' && i < 8) {
+                command[i] = myFile.read();
+                i++;
+            }
+            command[i] = 0x00;
+
+            long steps = atol((const char *)&command[4]);
+            char axis = command[2];
+
+            //logger.info() << "Movement command: " << axis << " " << steps << Comms::endl;
+
+            if(axis == 'X') {
+                cur_x += steps;
+
+                if(steps == 0) {
+                    cur_x = 0;
+                }
+
+                if(cur_x > max_x) {
+                    max_x = cur_x;
+                }
+            }
+
+            if(axis == 'Y') {
+                cur_y += abs(steps);
+
+                if(steps == 0) {
+                    cur_y = 0;
+                }
+
+                if(cur_y > max_y) {
+                    max_y = cur_y;
+                }
+
+                //logger.info() << "steps: " << steps << " cur_y: " << cur_y
+                //        << " max_y: " << max_y << Comms::endl;
+            }
+
+            for(int i = 0; i < 10; i++) {
+                serial_command.add_byte(command[i]);
+
+                if(command[i] == '\n') {
+                    break;
+                }
+            }
         } else {
             serial_command.add_byte(command[0]);
         }
@@ -203,11 +456,13 @@ void readFile(char* filename) {
             if(Serial.peek() == 'S') {
                 myFile.close();
 
+                //swap_motors();
+
                 Serial.println("Stopping.");
 
                 home_command();
 
-                return;
+                return false;
             }
             serialEvent();
         }
@@ -215,6 +470,16 @@ void readFile(char* filename) {
 
     setLEDToColour(COLOUR_FINISHED);
 
+    logger.info() << "File dimensions: " << max_x << " x " << max_y << " steps"
+            << Comms::endl;
+
+    x_size = max_x;
+    y_size = max_y;
+
     //close file
     myFile.close();
+
+    //swap_motors();
+
+    return true;
 }

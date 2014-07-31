@@ -9,7 +9,7 @@ Created by Michael Shiel, 140617
 #ifndef _LEDSTRIP_H_
 #define _LEDSTRIP_H_
 
-#include "Arduino.h"
+#include <Arduino.h>
 
 #define RED_CHANNEL_PIN   3
 #define GREEN_CHANNEL_PIN 2

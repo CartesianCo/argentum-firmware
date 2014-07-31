@@ -22,47 +22,45 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
+Author: Michael Shiel
+
 */
 
-#ifndef _AXIS_H_
-#define _AXIS_H_
+#ifndef _STEPPER_H_
+#define _STEPPER_H_
 
-#include "Motor.h"
+#include "Arduino.h"
 
-class Axis {
+class Stepper {
 public:
     enum {
-        Positive = 0,
-        Negative = 1
+        CW = 0,
+        CCW = 1
     };
 
-    // Enumeration for the mapping of this axis' direction to the underlying
-    // motor direction.
-    enum MotorMapping {
-        NonInverted = 0,
-        Inverted = 1
-    };
+    Stepper(int step_pin, int dir_pin, int enable_pin);
 
-    Axis();
-    ~Axis();
+    void enable(bool enabled);
 
-    bool run(void);
-
-    void move_to(uint32_t position);
     void set_direction(uint8_t direction);
+    uint8_t get_direction(void);
+    uint8_t swap_direction(void);
+
+    bool step();
+
+    void set_speed(int mm_per_minute); //set to 0 for instantaneous movement
+    int  get_speed();
+
+    static const long steps_per_mm = 80;
 
 private:
+    int step_pin;
+    int dir_pin;
+    int enable_pin;
 
-    void step(void);
-
-    Motor *motor;
-    uint8_t direction;
-    uint32_t length;
-
-    uint8_t motor_mapping;
-
-    uint32_t current_position;
-    uint32_t desired_position;
+    long last_step_time;
+    int direction;
+    int step_delay;
 };
 
 #endif
