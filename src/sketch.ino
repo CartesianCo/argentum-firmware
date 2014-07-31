@@ -135,6 +135,7 @@ void setup() {
     serial_command.addCommand("--", &minus_command);
     serial_command.addCommand("wait", &wait_command);
 
+    serial_command.addCommand("volt", &primitive_voltage_command);
 
     // Common
     serial_command.addCommand("help", &help_command);

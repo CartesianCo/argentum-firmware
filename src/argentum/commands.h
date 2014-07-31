@@ -69,4 +69,6 @@ void plus_command(void);
 void minus_command(void);
 void wait_command(void);
 
+void primitive_voltage_command(void);
+
 #endif
