@@ -54,18 +54,7 @@ void setup() {
     pinMode(A1, INPUT); // YMAX
     pinMode(6, INPUT); // YMIN
 
-    // Disable FETs by default
-    pinMode(7, OUTPUT);
-    digitalWrite(7, LOW);
-    //analogWrite(7, 128);
-
-    pinMode(8, OUTPUT);
-    digitalWrite(8, LOW);
-    //analogWrite(8, 128);
-
-    pinMode(9, OUTPUT);
-    digitalWrite(9, LOW);
-    //analogWrite(9, 128);
+    fet_initialise();
 
     // Calibration
     serial_command.addCommand("c", &calibrate_command);

@@ -87,3 +87,18 @@ void print_switch_status(void) {
 
     print_switch_status(switches);
 }
+
+void fet_initialise(void) {
+    // Disable FETs by default
+    pinMode(FET_1_PIN, OUTPUT);
+    pinMode(FET_2_PIN, OUTPUT);
+    pinMode(FET_3_PIN, OUTPUT);
+
+    fet_set_value(FET_1_PIN, 0);
+    fet_set_value(FET_2_PIN, 0);
+    fet_set_value(FET_3_PIN, 0);
+}
+
+void fet_set_value(uint8_t fet, uint8_t value) {
+    analogWrite(fet, value);
+}

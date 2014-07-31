@@ -2,6 +2,7 @@
 #define _UTILS_H_
 
 #include "settings.h"
+#include "argentum.h"
 
 #define RAM_TOTAL 8192
 
@@ -14,5 +15,8 @@ uint8_t CRC8_add_byte(uint8_t data, uint8_t seed_crc);
 
 void print_switch_status(void);
 void print_switch_status(uint8_t switches);
+
+void fet_initialise(void);
+void fet_set_value(uint8_t fet, uint8_t value);
 
 #endif
