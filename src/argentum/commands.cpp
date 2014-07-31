@@ -860,14 +860,12 @@ void wait_command(void) {
     x_axis.wait_for_move();
 }
 
-const uint8_t PRIMITIVE_VOLTAGE_PIN = A15;
-
 void primitive_voltage_command(void) {
-    uint16_t adc_reading = analogRead(PRIMITIVE_VOLTAGE_PIN);
+    uint16_t adc_reading = analog_read(PIN_PRIMITIVE_VOLTAGE);
 
     // Hardware voltage divider of 1/3
     double voltage = (adc_reading / 1024.0) * 5.0 * 3.0;
 
-    logger.info() << "Primitive Voltage :" << voltage << " volts."
+    logger.info() << "Primitive Voltage: " << voltage << " volts."
         << Comms::endl;
 }

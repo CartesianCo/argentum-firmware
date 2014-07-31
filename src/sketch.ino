@@ -12,23 +12,16 @@
 
 File myFile;
 
-class Printer {
-public:
-    enum States {
-        Idle,
-        Calibrating,
-        Moving,
-        Printing,
-    };
-};
-
-uint8_t current_state = Printer::Idle;
-
 void setup() {
     comms.initialise();
 
     logger.minimum_log_level = Logger::Info;
     logger.enabled = true;
+
+    initLED();
+    setLEDToColour(COLOUR_HOME);
+
+    init_sd_command();
 
     rollers.disable();
     rollers.enable();
@@ -41,19 +34,8 @@ void setup() {
     settings_initialise(false);
 
     cartridge_initialise();
-
-    // Configure Input Pins
-    pinMode(A12, INPUT); // General Analog Inputs
-    pinMode(A13, INPUT);
-    pinMode(A14, INPUT);
-    pinMode(A15, INPUT); // Voltage Feedback (9V Sense)
-
-    pinMode(5, INPUT); // XMAX
-    pinMode(A0, INPUT); // XMIN
-
-    pinMode(A1, INPUT); // YMAX
-    pinMode(6, INPUT); // YMIN
-
+    analog_initialise();
+    limit_initialise();
     fet_initialise();
 
     // Calibration
@@ -129,12 +111,6 @@ void setup() {
     // Common
     serial_command.addCommand("help", &help_command);
 
-    initLED();
-
-    setLEDToColour(COLOUR_HOME);
-
-    init_sd_command();
-
     // Initialise Axes from EEPROM here
     if(global_settings.calibration.x_axis.motor == 'A') {
         x_axis.set_motor(&a_motor);
@@ -196,24 +172,6 @@ void loop() {
         old_time = millis();
         analogWrite(8, white);
     }*/
-
-    switch(current_state) {
-        case Printer::Idle:
-        break;
-
-        case Printer::Calibrating:
-        break;
-
-        case Printer::Moving:
-        break;
-
-        case Printer::Printing:
-        break;
-
-        default:
-            current_state = Printer::Idle;
-        break;
-    }
 }
 
 void serialEvent(void) {
