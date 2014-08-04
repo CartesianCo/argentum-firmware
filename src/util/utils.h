@@ -21,4 +21,6 @@ void fet_set_value(uint8_t fet, uint8_t value);
 void analog_initialise(void);
 uint16_t analog_read(uint8_t analog);
 
+double primitive_voltage(void);
+
 #endif

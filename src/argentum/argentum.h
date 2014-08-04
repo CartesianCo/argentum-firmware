@@ -9,9 +9,17 @@
 #include "../util/SdFat/SdFat.h"
 
 // All pin mappings should go here
-#define FET_1_PIN 7
-#define FET_2_PIN 8
-#define FET_3_PIN 9
+#define FET_1_PIN             7
+#define FET_2_PIN             8
+#define FET_3_PIN             9
+
+#define PIN_FET_1             7
+#define PIN_FET_2             8
+#define PIN_FET_3             9
+
+#define PIN_FET_RED           3
+#define PIN_FET_GREEN         4
+#define PIN_FET_BLUE          2
 
 #define STEPPER_A_STEP_PIN    15
 #define STEPPER_A_DIR_PIN     14

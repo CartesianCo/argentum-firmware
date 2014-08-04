@@ -1,4 +1,4 @@
-#include "util/LEDStrip.h"
+#include "util/colour.h"
 //#include <SD.h>
 #include "util/settings.h"
 #include "util/SerialCommand.h"
@@ -10,22 +10,11 @@
 #include "util/logging.h"
 #include "argentum/argentum.h"
 
+#include "argentum/boardtests.h"
+
 #include "util/SdFat/SdFat.h"
 
 SdFile myFile;
-
-enum TestStages {
-    STAGE_0 = 0,
-    STAGE_1,
-    STAGE_2,
-    STAGE_3,
-    STAGE_4,
-    STAGE_5,
-    STAGE_6,
-    STAGE_7
-};
-
-uint8_t current_stage = STAGE_0;
 
 void setup() {
     comms.initialise();
@@ -33,8 +22,8 @@ void setup() {
     logger.minimum_log_level = Logger::Info;
     logger.enabled = true;
 
-    initLED();
-    setLEDToColour(COLOUR_HOME);
+    colour_init();
+    colour(COLOUR_HOME);
 
     init_sd_command();
 
@@ -126,6 +115,8 @@ void setup() {
     // Common
     serial_command.addCommand("help", &help_command);
 
+    serial_command.addCommand("stage", &stage_command);
+
     // Initialise Axes from EEPROM here
     if(global_settings.calibration.x_axis.motor == 'A') {
         x_axis.set_motor(&a_motor);
@@ -162,12 +153,13 @@ static int white = 0;
 static long old_time = 0;
 static bool dir = false;
 
-
 // Note: This loop _should_ execute three times faster than the motors can step
 // at 5000 speed. Measured.
 void loop() {
     x_axis.run();
     y_axis.run();
+
+    //run_tests();
 
     /*if(millis() - old_time > 10) {
         if(!dir) {
@@ -344,7 +336,7 @@ bool readFile(char *filename) {
 
     // if file.available() fails then do something?
 
-    setLEDToColour(COLOUR_PRINTING);
+    colour(COLOUR_PRINTING);
 
     long max_x = 0;
     long max_y = 0;
@@ -441,7 +433,7 @@ bool readFile(char *filename) {
         }
     }
 
-    setLEDToColour(COLOUR_FINISHED);
+    colour(COLOUR_FINISHED);
 
     logger.info() << "File dimensions: " << max_x << " x " << max_y << " steps"
             << Comms::endl;

@@ -71,4 +71,6 @@ void wait_command(void);
 
 void primitive_voltage_command(void);
 
+void stage_command(void);
+
 #endif

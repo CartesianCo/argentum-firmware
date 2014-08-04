@@ -6,7 +6,7 @@
 #include "../util/limit.h"
 #include "../util/utils.h"
 #include "calibration.h"
-#include "../util/LEDStrip.h"
+#include "../util/colour.h"
 #include "../util/rollers.h"
 //#include <SD.h>
 
@@ -15,6 +15,8 @@
 #include "../util/axis.h"
 
 #include "../util/logging.h"
+
+#include "boardtests.h"
 
 #include "argentum.h"
 
@@ -598,7 +600,7 @@ void red_command(void) {
 
     int value = atoi(arg);
 
-    setRed(value);
+    colour_red(value);
 }
 
 void green_command(void) {
@@ -613,7 +615,7 @@ void green_command(void) {
 
     int value = atoi(arg);
 
-    setGreen(value);
+    colour_green(value);
 }
 
 void blue_command(void) {
@@ -628,7 +630,7 @@ void blue_command(void) {
 
     int value = atoi(arg);
 
-    setBlue(value);
+    colour_blue(value);
 }
 
 void rollers_command(void) {
@@ -859,11 +861,30 @@ void wait_command(void) {
 }
 
 void primitive_voltage_command(void) {
-    uint16_t adc_reading = analog_read(PIN_PRIMITIVE_VOLTAGE);
-
-    // Hardware voltage divider of 1/3
-    double voltage = (adc_reading / 1024.0) * 5.0 * 3.0;
+    double voltage = primitive_voltage();
 
     logger.info() << "Primitive Voltage: " << voltage << " volts."
         << Comms::endl;
+}
+
+void stage_command(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        logger.error("Missing stage");
+        return;
+    }
+
+    uint8_t stage = atoi(arg);
+
+    if(stage >= STAGE_0 && stage <= STAGE_7) {
+
+        logger.info() << "Changing to stage " << stage << Comms::endl;
+
+        current_stage = stage;
+    } else {
+        logger.error("Stage out of range.");
+    }
 }
