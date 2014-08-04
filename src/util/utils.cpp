@@ -118,3 +118,12 @@ void analog_initialise(void) {
 uint16_t analog_read(uint8_t analog) {
     return analogRead(analog);
 }
+
+double primitive_voltage(void) {
+    uint16_t adc_reading = analog_read(PIN_PRIMITIVE_VOLTAGE);
+
+    // Hardware voltage divider of 1/3
+    double voltage = (adc_reading / 1024.0) * 5.0 * 3.0;
+
+    return voltage;
+}

@@ -12,8 +12,8 @@ Created by Michael Shiel, 140617
 #include <Arduino.h>
 
 #define RED_CHANNEL_PIN   3
-#define GREEN_CHANNEL_PIN 2
-#define BLUE_CHANNEL_PIN  4
+#define GREEN_CHANNEL_PIN 4
+#define BLUE_CHANNEL_PIN  2
 
 #define COLOUR_NONE     0x00000000
 #define COLOUR_HOME 	0x000000FF

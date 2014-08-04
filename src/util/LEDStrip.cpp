@@ -5,6 +5,8 @@ void initLED(void) {
     pinMode(RED_CHANNEL_PIN, OUTPUT);
     pinMode(GREEN_CHANNEL_PIN, OUTPUT);
     pinMode(BLUE_CHANNEL_PIN, OUTPUT);
+
+    setLED(0, 0, 0);
 }
 
 void setLEDToColour(uint32_t colour) {

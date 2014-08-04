@@ -10,22 +10,11 @@
 #include "util/logging.h"
 #include "argentum/argentum.h"
 
+#include "argentum/boardtests.h"
+
 #include "util/SdFat/SdFat.h"
 
 SdFile myFile;
-
-enum TestStages {
-    STAGE_0 = 0,
-    STAGE_1,
-    STAGE_2,
-    STAGE_3,
-    STAGE_4,
-    STAGE_5,
-    STAGE_6,
-    STAGE_7
-};
-
-uint8_t current_stage = STAGE_0;
 
 void setup() {
     comms.initialise();
@@ -34,7 +23,7 @@ void setup() {
     logger.enabled = true;
 
     initLED();
-    setLEDToColour(COLOUR_HOME);
+    //setLEDToColour(COLOUR_HOME);
 
     init_sd_command();
 
@@ -126,6 +115,8 @@ void setup() {
     // Common
     serial_command.addCommand("help", &help_command);
 
+    serial_command.addCommand("stage", &stage_command);
+
     // Initialise Axes from EEPROM here
     if(global_settings.calibration.x_axis.motor == 'A') {
         x_axis.set_motor(&a_motor);
@@ -168,6 +159,8 @@ static bool dir = false;
 void loop() {
     x_axis.run();
     y_axis.run();
+
+    //run_tests();
 
     /*if(millis() - old_time > 10) {
         if(!dir) {

@@ -16,6 +16,8 @@
 
 #include "../util/logging.h"
 
+#include "boardtests.h"
+
 #include "argentum.h"
 
 extern bool readFile(char *filename);
@@ -859,11 +861,30 @@ void wait_command(void) {
 }
 
 void primitive_voltage_command(void) {
-    uint16_t adc_reading = analog_read(PIN_PRIMITIVE_VOLTAGE);
-
-    // Hardware voltage divider of 1/3
-    double voltage = (adc_reading / 1024.0) * 5.0 * 3.0;
+    double voltage = primitive_voltage();
 
     logger.info() << "Primitive Voltage: " << voltage << " volts."
         << Comms::endl;
+}
+
+void stage_command(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        logger.error("Missing stage");
+        return;
+    }
+
+    uint8_t stage = atoi(arg);
+
+    if(stage >= STAGE_0 && stage <= STAGE_7) {
+
+        logger.info() << "Changing to stage " << stage << Comms::endl;
+
+        current_stage = stage;
+    } else {
+        logger.error("Stage out of range.");
+    }
 }
