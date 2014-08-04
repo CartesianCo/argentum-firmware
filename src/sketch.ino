@@ -14,6 +14,19 @@
 
 SdFile myFile;
 
+enum TestStages {
+    STAGE_0 = 0,
+    STAGE_1,
+    STAGE_2,
+    STAGE_3,
+    STAGE_4,
+    STAGE_5,
+    STAGE_6,
+    STAGE_7
+};
+
+uint8_t current_stage = STAGE_0;
+
 void setup() {
     comms.initialise();
 
