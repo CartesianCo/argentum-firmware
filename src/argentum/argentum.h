@@ -6,6 +6,7 @@
 #include "../util/limit.h"
 #include "../util/rollers.h"
 #include "../util/SerialCommand.h"
+#include "../util/SdFat/SdFat.h"
 
 // All pin mappings should go here
 #define FET_1_PIN 7
@@ -20,6 +21,16 @@
 #define STEPPER_B_DIR_PIN     17
 #define STEPPER_B_ENABLE_PIN  19
 
+#define PIN_LIMIT_X_POSITIVE  5
+#define PIN_LIMIT_X_NEGATIVE  A0
+#define PIN_LIMIT_Y_POSITIVE  A1
+#define PIN_LIMIT_Y_NEGATIVE  6
+
+#define PIN_ANALOG_1          A12
+#define PIN_ANALOG_2          A13
+#define PIN_ANALOG_3          A14
+#define PIN_PRIMITIVE_VOLTAGE A15
+
 extern Stepper a_motor;
 extern Stepper b_motor;
 
@@ -31,5 +42,7 @@ extern Rollers rollers;
 
 extern long x_size;
 extern long y_size;
+
+extern SdFat sd;
 
 #endif

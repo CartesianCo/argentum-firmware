@@ -45,6 +45,8 @@ private:
 
 extern bool limit_switch_nc;
 
+void limit_initialise(void);
+
 uint8_t limit_switches(void);
 
 bool limit_x_positive(void);

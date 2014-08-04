@@ -8,7 +8,7 @@
 #include "calibration.h"
 #include "../util/LEDStrip.h"
 #include "../util/rollers.h"
-#include <SD.h>
+//#include <SD.h>
 
 #include "../util/comms.h"
 
@@ -382,10 +382,9 @@ void print_command(void) {
 
     if(!arg) {
         logger.info("No filename supplied, using 'output.hex'");
-        arg = "output.hex";
+    } else {
+        strcpy(filename, arg);
     }
-
-    strcpy(filename, arg);
 
     arg = serial_command.next();
 
@@ -428,16 +427,26 @@ void print_command(void) {
 void stat_command(void) {
     char *arg;
 
+    uint8_t v = digitalRead(50);
+    logger.info(v);
+
+    v = digitalRead(51);
+    logger.info(v);
+
+    v = digitalRead(52);
+    logger.info(v);
+
+    v = digitalRead(53);
+    logger.info(v);
+
     arg = serial_command.next();
 
     if(!arg) {
         logger.info("No filename supplied, using 'output.hex'");
-        arg = "output.hex";
+    //    file_stats("output.hex");
+    } else {
+    //    file_stats(arg);
     }
-
-    logger.info() << "Statting '" << arg << "'" << Comms::endl;
-
-    file_stats(arg);
 }
 
 void print_ram(void) {
@@ -452,31 +461,20 @@ void print_ram(void) {
 }
 
 void ls(void) {
-    File root = SD.open("/.");
+    SdFile file;
+    char name[13];
 
-    File file = root.openNextFile();
+    sd.vwd()->rewind();
 
-    while(file) {
-        if(true || is_printer_file(file)) {
-            logger.info() << file.name() << Comms::endl;
+    while (file.openNext(sd.vwd(), O_READ)) {
+        file.getFilename(name);
+
+        if(strstr(name, ".HEX")) {
+            logger.info(name);
         }
 
         file.close();
-
-        file = root.openNextFile();
     }
-
-    root.close();
-}
-
-bool is_printer_file(File file) {
-    char *file_name = file.name();
-
-    if(strstr(file_name, ".HEX")) {
-        return true;
-    }
-
-    return false;
 }
 
 void help_command(void) {
@@ -527,7 +525,7 @@ void calibrate_loop_command(void) {
 }
 
 void init_sd_command(void) {
-    if(!SD.begin(53)) {
+    if(!sd.begin(53, SPI_HALF_SPEED)) {
         logger.warn("Failed to initialise SD card.");
     }
 }
@@ -860,14 +858,12 @@ void wait_command(void) {
     x_axis.wait_for_move();
 }
 
-const uint8_t PRIMITIVE_VOLTAGE_PIN = A15;
-
 void primitive_voltage_command(void) {
-    uint16_t adc_reading = analogRead(PRIMITIVE_VOLTAGE_PIN);
+    uint16_t adc_reading = analog_read(PIN_PRIMITIVE_VOLTAGE);
 
     // Hardware voltage divider of 1/3
     double voltage = (adc_reading / 1024.0) * 5.0 * 3.0;
 
-    logger.info() << "Primitive Voltage :" << voltage << " volts."
+    logger.info() << "Primitive Voltage: " << voltage << " volts."
         << Comms::endl;
 }

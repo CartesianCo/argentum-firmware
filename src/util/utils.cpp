@@ -4,6 +4,8 @@
 #include "logging.h"
 #include "limit.h"
 
+#include "../argentum/argentum.h"
+
 int ram_used(void) {
   extern int __heap_start, *__brkval;
   int v;
@@ -101,4 +103,18 @@ void fet_initialise(void) {
 
 void fet_set_value(uint8_t fet, uint8_t value) {
     analogWrite(fet, value);
+}
+
+void analog_initialise(void) {
+    // General Analog Inputs
+    pinMode(PIN_ANALOG_1, INPUT);
+    pinMode(PIN_ANALOG_2, INPUT);
+    pinMode(PIN_ANALOG_3, INPUT);
+
+    // Voltage Feedback (9V Sense)
+    pinMode(PIN_PRIMITIVE_VOLTAGE, INPUT);
+}
+
+uint16_t analog_read(uint8_t analog) {
+    return analogRead(analog);
 }

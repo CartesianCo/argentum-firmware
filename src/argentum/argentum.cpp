@@ -13,5 +13,7 @@ SerialCommand serial_command;
 
 Rollers rollers;
 
+SdFat sd;
+
 long x_size = 0;
 long y_size = 0;

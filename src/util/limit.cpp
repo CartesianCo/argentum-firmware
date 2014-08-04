@@ -1,6 +1,8 @@
 #include "limit.h"
 #include <Arduino.h>
 
+#include "../argentum/argentum.h"
+
 /*
 LimitSwitch x_positive(&PINE, X_POS_HARDWARE_BIT);
 LimitSwitch x_negative(&PINF, X_NEG_HARDWARE_BIT);
@@ -19,6 +21,14 @@ bool LimitSwitch::triggered(void) {
     return *port & bit;
 }
 */
+
+void limit_initialise(void) {
+    pinMode(PIN_LIMIT_X_POSITIVE, INPUT);
+    pinMode(PIN_LIMIT_X_NEGATIVE, INPUT);
+
+    pinMode(PIN_LIMIT_Y_POSITIVE, INPUT);
+    pinMode(PIN_LIMIT_Y_NEGATIVE, INPUT);
+}
 
 bool limit_switch_nc = true;
 
