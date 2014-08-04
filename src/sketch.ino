@@ -1,4 +1,4 @@
-#include "util/LEDStrip.h"
+#include "util/colour.h"
 //#include <SD.h>
 #include "util/settings.h"
 #include "util/SerialCommand.h"
@@ -22,8 +22,8 @@ void setup() {
     logger.minimum_log_level = Logger::Info;
     logger.enabled = true;
 
-    initLED();
-    //setLEDToColour(COLOUR_HOME);
+    colour_init();
+    colour(COLOUR_HOME);
 
     init_sd_command();
 
@@ -152,7 +152,6 @@ void setup() {
 static int white = 0;
 static long old_time = 0;
 static bool dir = false;
-
 
 // Note: This loop _should_ execute three times faster than the motors can step
 // at 5000 speed. Measured.
@@ -337,7 +336,7 @@ bool readFile(char *filename) {
 
     // if file.available() fails then do something?
 
-    setLEDToColour(COLOUR_PRINTING);
+    colour(COLOUR_PRINTING);
 
     long max_x = 0;
     long max_y = 0;
@@ -434,7 +433,7 @@ bool readFile(char *filename) {
         }
     }
 
-    setLEDToColour(COLOUR_FINISHED);
+    colour(COLOUR_FINISHED);
 
     logger.info() << "File dimensions: " << max_x << " x " << max_y << " steps"
             << Comms::endl;

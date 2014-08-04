@@ -6,7 +6,7 @@
 #include "../util/limit.h"
 #include "../util/utils.h"
 #include "../util/logging.h"
-#include "../util/LEDStrip.h"
+#include "../util/colour.h"
 #include "../util/SdFat/SdFat.h"
 
 uint8_t current_stage = 0;
@@ -151,7 +151,7 @@ void stage_3(void) {
 void stage_4(void) {
     logger.info("Stage 4 - Blink RGB channels in series");
 
-    initLED();
+    colour_init();
 
     while(current_stage == STAGE_4) {
         logger.info("Ramping Red");
@@ -193,8 +193,8 @@ void stage_5(void) {
     Servo a, b, c;
 
     a.attach(10);
-    a.attach(11);
-    a.attach(12);
+    b.attach(11);
+    c.attach(12);
 
     #define SERVO_MIN 0
     #define SERVO_MAX 180

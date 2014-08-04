@@ -6,7 +6,7 @@
 #include "../util/limit.h"
 #include "../util/utils.h"
 #include "calibration.h"
-#include "../util/LEDStrip.h"
+#include "../util/colour.h"
 #include "../util/rollers.h"
 //#include <SD.h>
 
@@ -600,7 +600,7 @@ void red_command(void) {
 
     int value = atoi(arg);
 
-    setRed(value);
+    colour_red(value);
 }
 
 void green_command(void) {
@@ -615,7 +615,7 @@ void green_command(void) {
 
     int value = atoi(arg);
 
-    setGreen(value);
+    colour_green(value);
 }
 
 void blue_command(void) {
@@ -630,7 +630,7 @@ void blue_command(void) {
 
     int value = atoi(arg);
 
-    setBlue(value);
+    colour_blue(value);
 }
 
 void rollers_command(void) {
