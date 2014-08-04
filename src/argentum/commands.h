@@ -2,10 +2,11 @@
 #define _COMMANDS_H_
 
 #include <Arduino.h>
-#include <SD.h>
+//#include <SD.h>
 
 #include "../util/stepper.h"
 #include "../util/axis.h"
+#include "../util/SdFat/SdFat.h"
 
 void acc(void);
 void read_setting_command(void);
@@ -29,7 +30,6 @@ void resume_command(void);
 void print_command(void);
 void print_ram(void);
 void ls(void);
-bool is_printer_file(File file);
 void help_command(void);
 void calibrate_command(void);
 void calibrate_loop_command(void);

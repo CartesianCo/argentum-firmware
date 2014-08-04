@@ -1,5 +1,5 @@
 #include "util/LEDStrip.h"
-#include <SD.h>
+//#include <SD.h>
 #include "util/settings.h"
 #include "util/SerialCommand.h"
 #include "argentum/calibration.h"
@@ -10,7 +10,9 @@
 #include "util/logging.h"
 #include "argentum/argentum.h"
 
-File myFile;
+#include "util/SdFat/SdFat.h"
+
+SdFile myFile;
 
 void setup() {
     comms.initialise();
@@ -98,7 +100,7 @@ void setup() {
     serial_command.addCommand("inc", &incremental_move);
 
     //serial_command.addCommand("xpos", &axis_pos);
-    //serial_command.addCommand("stat", &stat_command);
+    serial_command.addCommand("stat", &stat_command);
 
     serial_command.addCommand("size", &size_command);
 
@@ -207,10 +209,10 @@ void parse_command(byte* command) {
 void file_stats(char *filename) {
     uint8_t command[10];
 
-    myFile = SD.open(filename);
+    myFile.open(filename);
 
     // Check if file open succeeded, if not output error message
-    if (!myFile) {
+    if (!myFile.isOpen()) {
         Serial.print("File could not be opened: ");
         Serial.println(filename);
 
@@ -287,10 +289,10 @@ bool readFile(char *filename) {
     //y_axis.zero();
 
     // Open File
-    myFile = SD.open(filename);
+    myFile.open(filename);
 
     // Check if file open succeeded, if not output error message
-    if (!myFile) {
+    if (!myFile.isOpen()) {
         Serial.print("File could not be opened: ");
         Serial.println(filename);
 

@@ -1,7 +1,7 @@
 all: build 
 
 build: ./src/*
-	ino build
+	ino build -f "-I src/util/SdFat"
 
 upload: build
 	ino upload

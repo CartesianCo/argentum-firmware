@@ -6,6 +6,7 @@
 #include "../util/limit.h"
 #include "../util/rollers.h"
 #include "../util/SerialCommand.h"
+#include "../util/SdFat/SdFat.h"
 
 // All pin mappings should go here
 #define FET_1_PIN 7
@@ -41,5 +42,7 @@ extern Rollers rollers;
 
 extern long x_size;
 extern long y_size;
+
+extern SdFat sd;
 
 #endif
