@@ -8,6 +8,8 @@
 #include "../util/axis.h"
 #include "../util/SdFat/SdFat.h"
 
+extern void send_msgpack(void);
+
 void acc(void);
 void read_setting_command(void);
 void read_saved_setting_command(void);

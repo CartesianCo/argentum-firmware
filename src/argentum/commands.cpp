@@ -868,7 +868,8 @@ void primitive_voltage_command(void) {
 }
 
 void stage_command(void) {
-    char *arg;
+    send_msgpack();
+    /*char *arg;
 
     arg = serial_command.next();
 
@@ -886,5 +887,5 @@ void stage_command(void) {
         current_stage = stage;
     } else {
         logger.error("Stage out of range.");
-    }
+    }*/
 }
