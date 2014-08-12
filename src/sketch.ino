@@ -49,7 +49,6 @@ void setup() {
     // Movement
     serial_command.addCommand("m", &move_command);
     serial_command.addCommand("M", &move_command);
-    serial_command.addCommand("h", &home_command);
 
     serial_command.addCommand("0", &goto_zero_command);
     serial_command.addCommand(")", &zero_position_command);
@@ -102,9 +101,6 @@ void setup() {
     serial_command.addCommand("inc", &incremental_move);
 
     //serial_command.addCommand("xpos", &axis_pos);
-    serial_command.addCommand("stat", &stat_command);
-
-    serial_command.addCommand("size", &size_command);
 
     serial_command.addCommand("++", &plus_command);
     serial_command.addCommand("--", &minus_command);
@@ -207,77 +203,6 @@ void parse_command(byte* command) {
         default:
             break;
     }
-}
-
-void file_stats(char *filename) {
-    uint8_t command[10];
-
-    myFile.open(filename);
-
-    // Check if file open succeeded, if not output error message
-    if (!myFile.isOpen()) {
-        Serial.print("File could not be opened: ");
-        Serial.println(filename);
-
-        return;
-    }
-
-    Serial.println("Starting");
-
-    long max_x = 0;
-    long max_y = 0;
-
-    long cur_x = 0;
-    long cur_y = 0;
-
-    // loop through file
-    while(myFile.available()) {
-        // read in first byte of command
-        command[0] = myFile.read();
-
-        //Serial.println(command[0]);
-
-        if(command[0] == 'M') {
-            // read in extra bytes if necessary
-            int i = 1;
-
-            while(myFile.peek() != '\n' && i < 8) {
-                command[i] = myFile.read();
-                i++;
-            }
-            command[i] = 0x00;
-
-            long steps = atol((const char *)&command[4]);
-            char axis = command[2];
-
-            //logger.info() << "Movement command: " << axis << " " << steps << Comms::endl;
-
-            if(axis == 'X') {
-                cur_x += steps;
-
-                if(cur_x > max_x) {
-                    max_x = cur_x;
-                }
-            }
-
-            if(axis == 'Y') {
-                cur_y += abs(steps);
-
-                if(cur_y > max_y) {
-                    max_y = cur_y;
-                }
-
-                logger.info() << "steps: " << steps << " cur_y: " << cur_y
-                        << " max_y: " << max_y << Comms::endl;
-            }
-        }
-    }
-
-    logger.info() << "File dimensions: " << max_x << " x " << max_y << " steps"
-            << Comms::endl;
-
-    //close file
-    myFile.close();
 }
 
 bool readFile(char *filename) {
@@ -423,7 +348,7 @@ bool readFile(char *filename) {
 
                 Serial.println("Stopping.");
 
-                home_command();
+                goto_zero_command();
 
                 return false;
             }

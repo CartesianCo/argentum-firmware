@@ -26,78 +26,16 @@ extern void file_stats(char *filename);
 long xpos = 0;
 long ypos = 0;
 
-/*
-extern Motor *xMotor;
-extern Motor *yMotor;
-
-void forward(void) {
-    xMotor->move(1);
-}
-
-void backward(void) {
-    xMotor->move(-1);
-}
-
-void fforward(void) {
-    yMotor->move(1);
-}
-
-void bbackward(void) {
-    yMotor->move(-1);
-}
-
-void acc(void) {
-    AccelStepper as(&forward, &backward);
-    AccelStepper bs(&fforward, &bbackward);
-
-    as.setMaxSpeed(50000);
-    as.setAcceleration(5000);
-
-    bs.setMaxSpeed(50000);
-    bs.setAcceleration(5000);
-
-    bool as_end = false;
-    bool bs_end = false;
-
-    while(true) {
-        if(!as.run()) {
-            if(as_end) {
-                as.moveTo(0);
-                as_end = false;
-            } else {
-                as.moveTo(5000);
-                as_end = true;
-            }
-        }
-
-        if(!bs.run()) {
-            if(bs_end) {
-                bs.moveTo(0);
-                bs_end = false;
-            } else {
-                bs.moveTo(5000);
-                bs_end = true;
-            }
-        }
-
-        if(Serial.available()) {
-            return;
-        }
-    }
-}
-*/
 void motors_off_command(void) {
     Serial.println("Motors off");
-    //xMotor->power(0);
-    //yMotor->power(0);
+
     x_axis.get_motor()->enable(false);
     y_axis.get_motor()->enable(false);
 }
 
 void motors_on_command(void) {
     Serial.println("Motors on");
-    //xMotor->power(1);
-    //yMotor->power(1);
+
     x_axis.get_motor()->enable(true);
     y_axis.get_motor()->enable(true);
 }
@@ -168,9 +106,6 @@ void goto_zero_command(void) {
 }
 
 void current_position_command(void) {
-    //logger.info() << "Current position (steps): (" << xMotor->get_position()
-    //        << ", " << yMotor->get_position() << ")" << Comms::endl;
-
     logger.info() << "X: " << x_axis.get_current_position() << " mm, "
             << "Y: " << y_axis.get_current_position() << " mm"
             << Comms::endl;
@@ -179,11 +114,6 @@ void current_position_command(void) {
 
     x_axis.debug_info();
     y_axis.debug_info();
-}
-
-void home_command(void) {
-    x_axis.move_absolute(0.000);
-    y_axis.move_absolute(0.000);
 }
 
 void move_command(void) {
@@ -240,35 +170,7 @@ Stepper * motor_from_axis(unsigned const char axis) {
 }
 
 void continuous_move(void) {
-    char *arg;
-
-    arg = serial_command.next();
-
-    if(arg == NULL) {
-        logger.error("Missing axis parameter");
-        return;
-    }
-
-    char axis = arg[0];
-
-    arg = serial_command.next();
-
-    if(arg == NULL) {
-        logger.error("Missing direction parameter");
-        return;
-    }
-
-    char direction = arg[0];
-
-    Stepper *motor = motor_from_axis(axis);
-
-    while(!Serial.read() == 'c') {
-        if(direction == '+') {
-            //motor->move_incremental(1);
-        } else {
-            //motor->move_incremental(-1);
-        }
-    }
+    logger.warn("Not implemented.");
 }
 
 void move(const char axis_id, long steps) {
@@ -424,31 +326,6 @@ void print_command(void) {
     }
 
     logger.info("Print complete. Enjoy your circuit!");
-}
-
-void stat_command(void) {
-    char *arg;
-
-    uint8_t v = digitalRead(50);
-    logger.info(v);
-
-    v = digitalRead(51);
-    logger.info(v);
-
-    v = digitalRead(52);
-    logger.info(v);
-
-    v = digitalRead(53);
-    logger.info(v);
-
-    arg = serial_command.next();
-
-    if(!arg) {
-        logger.info("No filename supplied, using 'output.hex'");
-    //    file_stats("output.hex");
-    } else {
-    //    file_stats(arg);
-    }
 }
 
 void print_ram(void) {
@@ -822,30 +699,6 @@ void axis_pos(void) {
     logger.info() << "X: " << x_axis.get_current_position() << " mm, "
             << "Y: " << y_axis.get_current_position() << " mm"
             << Comms::endl;
-}
-
-void size_command(void) {
-    char *arg;
-
-    arg = serial_command.next();
-
-    if(arg == NULL) {
-        logger.error("Missing x size");
-        logger.info() << "Current size: " << x_size << " x " << y_size
-                << Comms::endl;
-        return;
-    }
-
-    x_size = atol(arg);
-
-    arg = serial_command.next();
-
-    if(arg == NULL) {
-        logger.error("Missing y size");
-        return;
-    }
-
-    y_size = atol(arg);
 }
 
 void plus_command(void) {
