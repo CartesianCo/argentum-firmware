@@ -22,10 +22,10 @@ Stepper * motor_from_axis(unsigned const char axis);
 Axis * axis_from_id(uint8_t id);
 
 void move(const char axis, long steps);
-void power_command(void);
+void power_command(void); // Delete
 
 void lower_command(void);
-void rollers_command(void);
+void rollers_command(void); // Delete one of these
 
 void pause_command(void);
 void resume_command(void);
@@ -72,7 +72,5 @@ void minus_command(void);
 void wait_command(void);
 
 void primitive_voltage_command(void);
-
-void stage_command(void);
 
 #endif

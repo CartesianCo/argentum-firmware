@@ -866,26 +866,3 @@ void primitive_voltage_command(void) {
     logger.info() << "Primitive Voltage: " << voltage << " volts."
         << Comms::endl;
 }
-
-void stage_command(void) {
-    send_msgpack();
-    /*char *arg;
-
-    arg = serial_command.next();
-
-    if(arg == NULL) {
-        logger.error("Missing stage");
-        return;
-    }
-
-    uint8_t stage = atoi(arg);
-
-    if(stage >= STAGE_0 && stage <= STAGE_7) {
-
-        logger.info() << "Changing to stage " << stage << Comms::endl;
-
-        current_stage = stage;
-    } else {
-        logger.error("Stage out of range.");
-    }*/
-}

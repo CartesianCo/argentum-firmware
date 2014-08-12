@@ -14,88 +14,13 @@
 
 #include "util/SdFat/SdFat.h"
 
-#include "util/cmp.h"
-
 SdFile myFile;
-cmp_ctx_t cmp;
-
-static bool file_reader(cmp_ctx_t *ctx, void *data, size_t limit) {
-    return true;
-}
-
-static size_t file_writer(cmp_ctx_t *ctx, const void *data, size_t count) {
-    //return fwrite(data, sizeof(uint8_t), count, (FILE *)ctx->buf);
-
-    //Serial.print("MSG_PACK: [");
-
-    for(size_t i = 0; i < count; i++) {
-        //Serial.print(((uint8_t *)data)[i], HEX);
-        //Serial.print(", ");
-        Serial.write(((uint8_t *)data)[i]);
-    }
-    //Serial.println("]");
-
-    return sizeof(uint8_t) * count;
-}
-
-void error_and_exit(const char *msg) {
-    //fprintf(stderr, "%s\n\n", msg);
-    //exit(EXIT_FAILURE);
-    //Serial.println(msg);
-}
-
-void send_msgpack(void) {
-    //if (!cmp_write_ext_marker(&cmp, 1, 4))
-    //    error_and_exit(cmp_strerror(&cmp));
-
-    if (!cmp_write_str(&cmp, "Hello", 5))
-        error_and_exit(cmp_strerror(&cmp));
-
-    /*if (!cmp_write_array(&cmp, 9))
-        error_and_exit(cmp_strerror(&cmp));
-
-    if (!cmp_write_sint(&cmp, -14))
-        error_and_exit(cmp_strerror(&cmp));
-
-    if (!cmp_write_uint(&cmp, 38))
-        error_and_exit(cmp_strerror(&cmp));
-
-    if (!cmp_write_float(&cmp, 1.8f))
-        error_and_exit(cmp_strerror(&cmp));
-
-    if (!cmp_write_double(&cmp, 300.4))
-        error_and_exit(cmp_strerror(&cmp));
-
-    if (!cmp_write_nil(&cmp))
-        error_and_exit(cmp_strerror(&cmp));
-
-    if (!cmp_write_true(&cmp))
-        error_and_exit(cmp_strerror(&cmp));
-
-    if (!cmp_write_false(&cmp))
-        error_and_exit(cmp_strerror(&cmp));
-
-    if (!cmp_write_bool(&cmp, false))
-        error_and_exit(cmp_strerror(&cmp));
-
-    if (!cmp_write_u8_as_bool(&cmp, 1))
-        error_and_exit(cmp_strerror(&cmp));*/
-}
 
 void setup() {
     comms.initialise();
 
     logger.minimum_log_level = Logger::Info;
     logger.enabled = true;
-
-    uint8_t buffer[128];
-
-    cmp_init(&cmp, buffer, file_reader, file_writer);
-
-    if (!cmp_write_str(&cmp, "Hello", 5))
-        error_and_exit(cmp_strerror(&cmp));
-
-    send_msgpack();
 
     colour_init();
     colour(COLOUR_HOME);
@@ -189,8 +114,6 @@ void setup() {
 
     // Common
     serial_command.addCommand("help", &help_command);
-
-    serial_command.addCommand("msgpack", &stage_command);
 
     // Initialise Axes from EEPROM here
     if(global_settings.calibration.x_axis.motor == 'A') {
