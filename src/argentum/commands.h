@@ -43,8 +43,8 @@ void wait_command(void);
 void lower_command(void);
 void rollers_command(void); // Delete one of these
 
-void sweep_command(void);
-void sweep(long width, long height);
+void sweep_command(void); // Delete these, sweeping should be implemented in Python
+void sweep(long width, long height); // ^^^^^
 
 // Printing
 void pause_command(void);
