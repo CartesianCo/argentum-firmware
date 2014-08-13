@@ -18,27 +18,25 @@
 #include "argentum.h"
 
 extern bool readFile(char *filename);
-extern void file_stats(char *filename);
 
 long xpos = 0;
 long ypos = 0;
 
 void motors_off_command(void) {
-    Serial.println("Motors off");
-
     x_axis.get_motor()->enable(false);
     y_axis.get_motor()->enable(false);
+
+    logger.info("Motors off");
 }
 
 void motors_on_command(void) {
-    Serial.println("Motors on");
-
     x_axis.get_motor()->enable(true);
     y_axis.get_motor()->enable(true);
+
+    logger.info("Motors on");
 }
 
 void read_setting_command(void) {
-    Serial.println("Current Global Settings:");
     settings_print_settings(&global_settings);
 }
 
@@ -47,7 +45,6 @@ void read_saved_setting_command(void) {
 
     settings_read_settings(&settings);
 
-    Serial.println("EEPROM Settings:");
     settings_print_settings(&settings);
 }
 
@@ -61,7 +58,7 @@ void speed_command(void) {
     arg = serial_command.next();
 
     if(arg == NULL) {
-        Serial.println("Missing axis parameter");
+        logger.error("Missing axis parameter");
         return;
     }
 
@@ -70,7 +67,7 @@ void speed_command(void) {
     arg = serial_command.next();
 
     if(arg == NULL) {
-        Serial.println("Missing speed parameter");
+        logger.error("Missing speed parameter");
         return;
     }
 
@@ -86,8 +83,6 @@ void speed_command(void) {
 
 void zero_position_command(void) {
     logger.info("Setting new zero position");
-    //xMotor->set_position(0L);
-    //yMotor->set_position(0L);
 
     x_axis.zero();
     y_axis.zero();
@@ -95,8 +90,6 @@ void zero_position_command(void) {
 
 void goto_zero_command(void) {
     logger.info("Returning to 0.000, 0.000");
-    //xMotor->go_home();
-    //yMotor->go_home();
 
     x_axis.move_absolute(0.000);
     y_axis.move_absolute(0.000);
@@ -105,15 +98,6 @@ void goto_zero_command(void) {
 void current_position_command(void) {
     logger.info() << x_axis.get_current_position() << ","
             << y_axis.get_current_position() << Comms::endl;
-
-    /*logger.info() << "X: " << x_axis.get_current_position() << " mm, "
-            << "Y: " << y_axis.get_current_position() << " mm"
-            << Comms::endl;*/
-
-    //logger.info() << x_axis.length << ", " << y_axis.length << Comms::endl;
-
-    //x_axis.debug_info();
-    //y_axis.debug_info();
 }
 
 void move_command(void) {
@@ -141,11 +125,10 @@ void move_command(void) {
 }
 
 void continuous_move(void) {
-    logger.warn("Not implemented.");
+    logger.error("Not implemented.");
 }
 
 void move(const char axis_id, long steps) {
-    //Stepper *motor = motor_from_axis(axis);
     Axis *axis = axis_from_id(axis_id);
 
     if(!axis) {
@@ -154,27 +137,10 @@ void move(const char axis_id, long steps) {
         return;
     }
 
-    //logger.info() << "Moving " << axis << " axis " << steps << "steps" << Comms::endl;
-
     if(steps == 0) {
-        //motor->reset_position();
-        //axis->move_absolute(0.000);
-
-        if(axis_id == 'X') {
-            axis->move_incremental(-xpos);
-            xpos = 0;
-        } else {
-            axis->move_incremental(-ypos);
-            ypos = 0;
-        }
+        axis->move_absolute(0.000);
     } else {
         axis->move_incremental(steps);
-
-        if(axis_id == 'X') {
-            xpos += steps;
-        } else {
-            ypos += steps;
-        }
     }
 
     axis->wait_for_move();
@@ -313,23 +279,6 @@ void calibrate_command(void) {
     calibrate(&calibration);
 
     settings_update_calibration(&calibration);
-}
-
-void calibrate_loop_command(void) {
-    while(true) {
-        if(Serial.available()) {
-            if(Serial.read() == 'S') {
-                return;
-            }
-        }
-
-        CalibrationData calibration;
-        calibrate(&calibration);
-
-        logger.info() << calibration.x_axis.motor << " "
-                << calibration.x_axis.length << ", " << calibration.x_axis.motor
-                << " " << calibration.x_axis.length << Comms::endl;
-    }
 }
 
 void init_sd_command(void) {
