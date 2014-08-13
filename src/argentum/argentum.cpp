@@ -37,10 +37,8 @@ Axis * axis_from_id(uint8_t id) {
 
 Stepper * motor_from_axis(unsigned const char axis) {
     if (toupper(axis) == 'X') {
-        //return xMotor;
         return x_axis.get_motor();
     } else if (toupper(axis) == 'Y') {
-        //return yMotor;
         return y_axis.get_motor();
     }
 

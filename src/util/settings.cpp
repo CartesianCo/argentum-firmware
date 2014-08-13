@@ -7,13 +7,13 @@
 PrinterSettings default_settings = {
     {
         {
-            'B',
+            'A',
             false,
             14000L
         },
         {
             'A',
-            true,
+            false,
             10000L
         },
     },

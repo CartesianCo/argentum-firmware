@@ -128,6 +128,16 @@ void continuous_move(void) {
     logger.error("Not implemented.");
 }
 
+void home_command(void) {
+    x_axis.move_to_negative();
+    y_axis.move_to_negative();
+}
+
+void back_corner_command(void) {
+    x_axis.move_to_positive();
+    y_axis.move_to_positive();
+}
+
 void move(const char axis_id, long steps) {
     Axis *axis = axis_from_id(axis_id);
 

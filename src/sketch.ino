@@ -33,6 +33,7 @@ void setup() {
 
     rollers.disable();
     rollers.enable();
+    rollers.retract();
 
     x_axis.set_speed(1500);
     y_axis.set_speed(1500);
@@ -54,6 +55,9 @@ void setup() {
     serial_command.addCommand("0", &goto_zero_command);
     serial_command.addCommand(")", &zero_position_command);
     serial_command.addCommand("pos", &current_position_command);
+
+    serial_command.addCommand("h", &home_command);
+    serial_command.addCommand("b", &back_corner_command);
 
     // Motor
     serial_command.addCommand("s", &speed_command);
@@ -206,14 +210,6 @@ void parse_command(byte* command) {
 bool readFile(char *filename) {
     byte command[10];
 
-    //swap_motors();
-
-    //xMotor->set_position(0L);
-    //yMotor->set_position(0L);
-
-    //x_axis.zero();
-    //y_axis.zero();
-
     // Open File
     myFile.open(filename);
 
@@ -225,52 +221,18 @@ bool readFile(char *filename) {
         return false;
     }
 
-    //Serial.println("Starting");
-    //Serial.println(start);
     logger.info() << "readFile(" << filename << ")" << Comms::endl;
 
     long start = micros();
     long end = 0L;
     long count = 0L;
 
-    /*uint8_t buffer[4096];
-
-    while(myFile.available()) {
-        count++;
-
-        myFile.read(buffer, sizeof(buffer));
-    }
-
-    end = micros();
-
-    count = count * sizeof(buffer);
-
-    double time = end - start;
-    double average = time / count;
-
-    Serial.println("Timing:");
-    Serial.println(start);
-    Serial.println(end);
-    Serial.println(time);
-    Serial.println(count);
-    Serial.println(average);*/
-
-    // if file.available() fails then do something?
-
     colour(COLOUR_PRINTING);
-
-    long max_x = 0;
-    long max_y = 0;
-
-    long cur_x = 0;
-    long cur_y = 0;
 
     // loop through file
     while(myFile.available()) {
         // read in first byte of command
         command[0] = myFile.read();
-
-        //Serial.println(command[0]);
 
         if(command[0] == 0x01) {
             // read in extra bytes if necessary
@@ -284,65 +246,13 @@ bool readFile(char *filename) {
             }
 
             parse_command(command);
-        } else if(command[0] == 'M') {
-            // read in extra bytes if necessary
-            int i = 1;
-
-            while(myFile.peek() != '\n' && i < 8) {
-                command[i] = myFile.read();
-                i++;
-            }
-            command[i] = 0x00;
-
-            long steps = atol((const char *)&command[4]);
-            char axis = command[2];
-
-            //logger.info() << "Movement command: " << axis << " " << steps << Comms::endl;
-
-            if(axis == 'X') {
-                cur_x += steps;
-
-                if(steps == 0) {
-                    cur_x = 0;
-                }
-
-                if(cur_x > max_x) {
-                    max_x = cur_x;
-                }
-            }
-
-            if(axis == 'Y') {
-                cur_y += abs(steps);
-
-                if(steps == 0) {
-                    cur_y = 0;
-                }
-
-                if(cur_y > max_y) {
-                    max_y = cur_y;
-                }
-
-                //logger.info() << "steps: " << steps << " cur_y: " << cur_y
-                //        << " max_y: " << max_y << Comms::endl;
-            }
-
-            for(int i = 0; i < 10; i++) {
-                serial_command.add_byte(command[i]);
-
-                if(command[i] == '\n') {
-                    break;
-                }
-            }
         } else {
             serial_command.add_byte(command[0]);
         }
 
-        //Check if Any serial commands have been received
         if(Serial.available()) {
             if(Serial.peek() == 'S') {
                 myFile.close();
-
-                //swap_motors();
 
                 Serial.println("Stopping.");
 
@@ -356,16 +266,7 @@ bool readFile(char *filename) {
 
     colour(COLOUR_FINISHED);
 
-    logger.info() << "File dimensions: " << max_x << " x " << max_y << " steps"
-            << Comms::endl;
-
-    x_size = max_x;
-    y_size = max_y;
-
-    //close file
     myFile.close();
-
-    //swap_motors();
 
     return true;
 }
