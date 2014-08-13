@@ -2,6 +2,7 @@
 
 #include <EEPROM.h>
 #include "utils.h"
+#include "logging.h"
 
 PrinterSettings default_settings = {
     {
@@ -33,7 +34,7 @@ bool settings_initialise(bool correct) {
     }
 
     if(!valid) {
-        Serial.println("Settings corrupt.");
+        logger.warn("Settings corrupt.");
         settings_print_settings(&global_settings);
     }
 
@@ -41,7 +42,7 @@ bool settings_initialise(bool correct) {
 }
 
 void settings_restore_defaults(void) {
-    Serial.println("Restoring default settings.");
+    logger.info("Restoring default settings.");
     settings_update_settings(&default_settings);
 }
 
@@ -50,52 +51,27 @@ void settings_print_settings(PrinterSettings *settings) {
 
     uint8_t crc = settings_calculate_crc(settings);
 
-    Serial.print("CRC: ");
-    Serial.print(settings->crc, HEX);
-    Serial.print(", Calculated: ");
-    Serial.print(crc, HEX);
+    logger.info() << "CRC: " << settings->crc << ", Calculated: " << crc
+            << Comms::endl;
 
     if(crc == settings->crc) {
-        Serial.println(" [GOOD]");
+        logger.info(" [GOOD]");
     } else {
-        Serial.println(" [CORRUPT]");
+        logger.warn(" [CORRUPT]");
     }
 }
 
 void settings_print_calibration(CalibrationData *calibration) {
-    Serial.print("X axis: ");
+    logger.info("X axis: ");
     settings_print_axis_data(&(calibration->x_axis));
 
-    Serial.print("Y axis: ");
+    logger.info("Y axis: ");
     settings_print_axis_data(&(calibration->y_axis));
 }
 
 void settings_print_axis_data(AxisData *axis) {
-    Serial.print((char)axis->motor);
-    Serial.print(" motor, ");
-
-    if(axis->flipped) {
-        Serial.print("flipped, ");
-    } else {
-        Serial.print("not flipped, ");
-    }
-
-    Serial.print(axis->length);
-    Serial.println(" steps");
-}
-
-void settings_print_axis_data_minimal(AxisData *axis) {
-    Serial.print((char)axis->motor);
-    /*Serial.print(", ");
-
-    if(axis->flipped) {
-        Serial.print("!, ");
-    } else {
-        Serial.print(" , ");
-    }*/
-
-    Serial.print(axis->length);
-    //Serial.println("");
+    logger.info() << (char)axis->motor << " motor, " << axis->flipped
+            << ", " << axis->length << " steps." << Comms::endl;
 }
 
 // Settings CRC Utilities
@@ -171,10 +147,6 @@ uint8_t read_byte(const uint16_t address) {
 }
 
 void write_byte(const uint16_t address, const uint8_t value, bool reduce_wear) {
-    Serial.print('R');
-    Serial.print(value, HEX);
-    Serial.print('|');
-
     if(reduce_wear) {
         uint8_t existing = read_byte(address);
 

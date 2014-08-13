@@ -8,13 +8,10 @@
 #include "calibration.h"
 #include "../util/colour.h"
 #include "../util/rollers.h"
-//#include <SD.h>
-
 #include "../util/comms.h"
-
 #include "../util/axis.h"
-
 #include "../util/logging.h"
+#include "../util/codes.h"
 
 #include "boardtests.h"
 
@@ -270,6 +267,24 @@ void ls(void) {
 
     sd.vwd()->rewind();
 
+    uint16_t count = 0;
+
+    while (file.openNext(sd.vwd(), O_READ)) {
+        file.getFilename(name);
+
+        if(strstr(name, ".HEX")) {
+            count++;
+        }
+
+        file.close();
+    }
+
+    comms.send("*");
+    comms.send(count);
+    comms.send(Comms::endl);
+
+    sd.vwd()->rewind();
+
     while (file.openNext(sd.vwd(), O_READ)) {
         file.getFilename(name);
 
@@ -297,7 +312,6 @@ void calibrate_command(void) {
     CalibrationData calibration;
     calibrate(&calibration);
 
-    settings_print_calibration(&calibration);
     settings_update_calibration(&calibration);
 }
 
@@ -321,6 +335,8 @@ void calibrate_loop_command(void) {
 void init_sd_command(void) {
     if(!sd.begin(53, SPI_HALF_SPEED)) {
         logger.warn("Failed to initialise SD card.");
+    } else {
+        logger.info(code_strings[CODE_SUCCESS]);
     }
 }
 
@@ -613,12 +629,6 @@ void incremental_move(void) {
     y_axis.move_incremental(y_position);
 }
 
-void axis_pos(void) {
-    logger.info() << "X: " << x_axis.get_current_position() << " mm, "
-            << "Y: " << y_axis.get_current_position() << " mm"
-            << Comms::endl;
-}
-
 void plus_command(void) {
     x_axis.move_to_positive();
 }
@@ -634,6 +644,5 @@ void wait_command(void) {
 void primitive_voltage_command(void) {
     double voltage = primitive_voltage();
 
-    logger.info() << "Primitive Voltage: " << voltage << " volts."
-        << Comms::endl;
+    logger.info(voltage);
 }

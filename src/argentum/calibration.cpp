@@ -133,10 +133,6 @@ bool freedom(bool *x_direction_resolved, bool *y_direction_resolved) {
                 //a_motor.set_direction(Stepper::CCW);
                 axis->set_motor_mapping(Axis::CW_Negative);
             }
-
-            logger.info("1");
-            x_axis.debug_info();
-            y_axis.debug_info();
         }
 
         // B -> Y+
@@ -188,7 +184,9 @@ bool freedom(bool *x_direction_resolved, bool *y_direction_resolved) {
 }
 
 void calibrate(CalibrationData *calibration) {
-    logger.info("Calibration beginning.");
+    logger.info("Calibrating.");
+
+    logger.enabled = false;
 
     x_axis.set_speed(250);
     y_axis.set_speed(250);
@@ -206,14 +204,7 @@ void calibrate(CalibrationData *calibration) {
     bool x_direction_resolved = false;
     bool y_direction_resolved = false;
 
-    x_axis.debug_info();
-    y_axis.debug_info();
-
     axes_resolved = freedom(&x_direction_resolved, &y_direction_resolved);
-
-    logger.info("After freedom");
-    x_axis.debug_info();
-    y_axis.debug_info();
 
     x_axis.set_speed(1500);
     y_axis.set_speed(1500);
@@ -234,10 +225,6 @@ void calibrate(CalibrationData *calibration) {
             y_axis.set_motor(temp);
         }
     }
-
-    logger.info("After resolving");
-    x_axis.debug_info();
-    y_axis.debug_info();
 
     while(!(x_direction_resolved && y_direction_resolved)) {
         if(!x_direction_resolved) {
@@ -274,9 +261,6 @@ void calibrate(CalibrationData *calibration) {
     }
 
     // At this point we know both axes, and have resolved their directions.
-    x_axis.debug_info();
-    y_axis.debug_info();
-
     logger.info("Homing");
 
     x_axis.move_to_negative();
@@ -293,8 +277,8 @@ void calibrate(CalibrationData *calibration) {
     y_axis.move_to_positive();
     logger.info("y+");
 
-    x_distance = x_axis.current_position;
-    y_distance = y_axis.current_position;
+    x_distance = x_axis.get_current_position();
+    y_distance = y_axis.get_current_position();
 
     // Return to home
     x_axis.move_to_negative();
@@ -318,4 +302,8 @@ void calibrate(CalibrationData *calibration) {
         calibration->y_axis.flipped = (y_axis.get_motor_mapping() != Axis::CW_Positive);
         calibration->y_axis.length = y_distance;
     }
+
+    logger.enabled = true;
+
+    logger.info("Done.");
 }

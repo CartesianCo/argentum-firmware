@@ -29,7 +29,7 @@ void setup() {
     colour_init();
     colour(COLOUR_HOME);
 
-    //init_sd_command();
+    init_sd_command();
 
     rollers.disable();
     rollers.enable();

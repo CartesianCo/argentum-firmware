@@ -32,9 +32,6 @@ bool Axis::run(void) {
     if(current_position == desired_position) {
         return false;
     } else {
-        logger.info() << current_position << " -> " << desired_position
-                << Comms::endl;
-
         if(((current_position < desired_position) && positive_limit())
                 || ((current_position > desired_position)
                 && negative_limit())) {
@@ -43,7 +40,7 @@ bool Axis::run(void) {
                     << " current_position: " << current_position
                     << " desired_position: " << desired_position
                     << Comms::endl;*/
-            logger.warn("LIM");
+            logger.warn() << axis << " lim" << Comms::endl;
 
             hold();
 
@@ -78,12 +75,8 @@ void Axis::set_direction(uint8_t direction) {
     }
 
     this->direction = direction;
-    //motor->swap_direction();
 
     set_motor_direction();
-
-    logger.info() << axis << " axis setting direction to " << direction
-            << Comms::endl;
 }
 
 void Axis::move_absolute(double position) {
@@ -164,12 +157,10 @@ void Axis::move_to_negative(void) {
 }
 
 uint32_t Axis::get_current_position(void) {
-    //return ((double)current_position) / steps_per_mm;
     return current_position;
 }
 
 uint32_t Axis::get_desired_position(void) {
-    //return ((double)desired_position) / steps_per_mm;
     return desired_position;
 }
 
@@ -202,9 +193,6 @@ uint8_t Axis::get_motor_mapping(void) {
 
 void Axis::set_motor_mapping(uint8_t motor_mapping) {
     this->motor_mapping = motor_mapping;
-
-    logger.info() << axis << " axis motor_mapping = " << motor_mapping
-            << Comms::endl;
 
     set_motor_direction();
 }
