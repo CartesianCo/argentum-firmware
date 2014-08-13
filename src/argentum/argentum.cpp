@@ -17,3 +17,32 @@ SdFat sd;
 
 long x_size = 0;
 long y_size = 0;
+
+Axis * axis_from_id(uint8_t id) {
+    id = toupper(id);
+
+    switch(id) {
+        case Axis::X:
+            return &y_axis;
+            break;
+
+        case Axis::Y:
+            return &x_axis;
+            break;
+
+        default:
+            return NULL;
+    }
+}
+
+Stepper * motor_from_axis(unsigned const char axis) {
+    if (toupper(axis) == 'X') {
+        //return xMotor;
+        return x_axis.get_motor();
+    } else if (toupper(axis) == 'Y') {
+        //return yMotor;
+        return y_axis.get_motor();
+    }
+
+    return NULL;
+}

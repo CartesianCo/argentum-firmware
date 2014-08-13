@@ -28,7 +28,7 @@ Author: Michael Shiel
 
 #include "stepper.h"
 
-#include "logging.h"
+#include <stdint.h>
 
 Stepper::Stepper(int step_pin, int dir_pin, int enable_pin) {
     this->step_pin = step_pin;
@@ -108,8 +108,6 @@ void Stepper::set_speed(int mm_per_minute) {
     long i = 1000000/((rate * steps_per_mm)/60);
 
     step_delay = i;
-
-    logger.info() << "step_delay = " << step_delay << Comms::endl;
 }
 
 int Stepper::get_speed() {

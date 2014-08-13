@@ -14,6 +14,8 @@
 
 #include "util/SdFat/SdFat.h"
 
+#define FIRMWARE_VERSION "v0.12"
+
 SdFile myFile;
 
 void setup() {
@@ -22,15 +24,15 @@ void setup() {
     logger.minimum_log_level = Logger::Info;
     logger.enabled = true;
 
+    logger.info("Argentum " FIRMWARE_VERSION);
+
     colour_init();
     colour(COLOUR_HOME);
 
-    init_sd_command();
+    //init_sd_command();
 
     rollers.disable();
     rollers.enable();
-
-    print_switch_status();
 
     x_axis.set_speed(1500);
     y_axis.set_speed(1500);
@@ -44,7 +46,6 @@ void setup() {
 
     // Calibration
     serial_command.addCommand("c", &calibrate_command);
-    //serial_command.addCommand("cl", &calibrate_loop_command);
 
     // Movement
     serial_command.addCommand("m", &move_command);
@@ -55,13 +56,10 @@ void setup() {
     serial_command.addCommand("pos", &current_position_command);
 
     // Motor
-    serial_command.addCommand("x", &power_command);
     serial_command.addCommand("s", &speed_command);
 
     serial_command.addCommand("+", &motors_on_command);
-    //serial_command.addCommand("=", &motors_on_command);
     serial_command.addCommand("-", &motors_off_command);
-    //serial_command.addCommand("_", &motors_off_command);
 
     // Roller Servo
     serial_command.addCommand("l", &rollers_command);
@@ -77,7 +75,6 @@ void setup() {
     serial_command.addCommand("!write", &write_setting_command);
 
     // Experimentals
-    //serial_command.addCommand("@", &acc);
     serial_command.addCommand("lim", &limit_switch_command);
     serial_command.addCommand("ram", &print_ram);
 
@@ -140,7 +137,8 @@ void setup() {
     y_axis.length = global_settings.calibration.y_axis.length;
 
     //uint8_t *firing_buffer = (uint8_t*)malloc(4096);
-    help_command();
+    //help_command();
+    logger.info("Ready");
 }
 
 static int white = 0;

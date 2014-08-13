@@ -133,6 +133,10 @@ bool freedom(bool *x_direction_resolved, bool *y_direction_resolved) {
                 //a_motor.set_direction(Stepper::CCW);
                 axis->set_motor_mapping(Axis::CW_Negative);
             }
+
+            logger.info("1");
+            x_axis.debug_info();
+            y_axis.debug_info();
         }
 
         // B -> Y+
@@ -186,9 +190,6 @@ bool freedom(bool *x_direction_resolved, bool *y_direction_resolved) {
 void calibrate(CalibrationData *calibration) {
     logger.info("Calibration beginning.");
 
-    x_axis.debug_info();
-    y_axis.debug_info();
-
     x_axis.set_speed(250);
     y_axis.set_speed(250);
 
@@ -205,7 +206,14 @@ void calibrate(CalibrationData *calibration) {
     bool x_direction_resolved = false;
     bool y_direction_resolved = false;
 
+    x_axis.debug_info();
+    y_axis.debug_info();
+
     axes_resolved = freedom(&x_direction_resolved, &y_direction_resolved);
+
+    logger.info("After freedom");
+    x_axis.debug_info();
+    y_axis.debug_info();
 
     x_axis.set_speed(1500);
     y_axis.set_speed(1500);
@@ -226,6 +234,10 @@ void calibrate(CalibrationData *calibration) {
             y_axis.set_motor(temp);
         }
     }
+
+    logger.info("After resolving");
+    x_axis.debug_info();
+    y_axis.debug_info();
 
     while(!(x_direction_resolved && y_direction_resolved)) {
         if(!x_direction_resolved) {

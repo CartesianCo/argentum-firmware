@@ -106,14 +106,17 @@ void goto_zero_command(void) {
 }
 
 void current_position_command(void) {
-    logger.info() << "X: " << x_axis.get_current_position() << " mm, "
+    logger.info() << x_axis.get_current_position() << ","
+            << y_axis.get_current_position() << Comms::endl;
+
+    /*logger.info() << "X: " << x_axis.get_current_position() << " mm, "
             << "Y: " << y_axis.get_current_position() << " mm"
-            << Comms::endl;
+            << Comms::endl;*/
 
-    logger.info() << x_axis.length << ", " << y_axis.length << Comms::endl;
+    //logger.info() << x_axis.length << ", " << y_axis.length << Comms::endl;
 
-    x_axis.debug_info();
-    y_axis.debug_info();
+    //x_axis.debug_info();
+    //y_axis.debug_info();
 }
 
 void move_command(void) {
@@ -138,35 +141,6 @@ void move_command(void) {
     long steps = atol(arg);
 
     move(axis, steps);
-}
-
-Axis * axis_from_id(uint8_t id) {
-    id = toupper(id);
-
-    switch(id) {
-        case Axis::X:
-            return &y_axis;
-            break;
-
-        case Axis::Y:
-            return &x_axis;
-            break;
-
-        default:
-            return NULL;
-    }
-}
-
-Stepper * motor_from_axis(unsigned const char axis) {
-    if (toupper(axis) == 'X') {
-        //return xMotor;
-        return x_axis.get_motor();
-    } else if (toupper(axis) == 'Y') {
-        //return yMotor;
-        return y_axis.get_motor();
-    }
-
-    return NULL;
 }
 
 void continuous_move(void) {
@@ -209,59 +183,10 @@ void move(const char axis_id, long steps) {
     axis->wait_for_move();
 }
 
-void power_command(void) {
-    char *arg;
-
-    arg = serial_command.next();
-
-    if(!arg) {
-        logger.error("Missing axis parameter");
-        return;
-    }
-
-    char axis = arg[0];
-
-    arg = serial_command.next();
-
-    if(!arg) {
-        logger.error("Missing power parameter");
-        return;
-    }
-
-    char power = arg[0];
-
-    //Motor *motor = NULL;
-    Stepper *motor = NULL;
-
-    if(toupper(axis) == 'X') {
-        //motor = xMotor;
-        motor = x_axis.get_motor();
-    } else if(toupper(axis) == 'Y') {
-        //motor = yMotor;
-        motor = y_axis.get_motor();
-    } else {
-        logger.error("No axis");
-        return;
-    }
-
-    if(power == '0') {
-        //motor->power(0);
-        motor->enable(false);
-    } else if (power == '1') {
-        //motor->power(1);
-        motor->enable(true);
-    } else {
-        logger.error("Unknown power");
-        return;
-    }
-}
-
 void lower_command(void) {
     logger.info("Lower/Raise");
 
     rollers.deploy();
-
-
 }
 
 void pause_command(void) {
@@ -357,15 +282,15 @@ void ls(void) {
 }
 
 void help_command(void) {
-    comms.println("Press p to print output.hex");
-    comms.println("S to stop, P to pause, R to resume, c to calibrate.");
-    comms.println("Additional commands: ");
+    logger.info("Press p to print output.hex");
+    logger.info("S to stop, P to pause, R to resume, c to calibrate.");
+    logger.info("Additional commands: ");
     serial_command.installed_commands();
-    comms.println();
+    logger.info();
 
-    comms.println("Available Files: ");
+    logger.info("Available Files: ");
     ls();
-    comms.println();
+    logger.info();
 }
 
 void calibrate_command(void) {
@@ -374,16 +299,6 @@ void calibrate_command(void) {
 
     settings_print_calibration(&calibration);
     settings_update_calibration(&calibration);
-
-    /*log_info("C ");
-    settings_print_axis_data_minimal(&calibration.x_axis);
-    log_info_np(" ");
-    settings_print_axis_data_minimal(&calibration.y_axis);
-    log_info("\r\n");*/
-
-    /*logger.info() << settings_print_axis_data_minimal(&calibration.x_axis)
-            << " " << settings_print_axis_data_minimal(&calibration.y_axis)
-            << Comms::endl;*/
 }
 
 void calibrate_loop_command(void) {
@@ -411,6 +326,9 @@ void init_sd_command(void) {
 
 void limit_switch_command(void) {
     print_switch_status();
+
+    x_axis.debug_info();
+    y_axis.debug_info();
 }
 
 void analog_command(void) {

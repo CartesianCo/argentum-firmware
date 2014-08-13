@@ -16,10 +16,6 @@ void write_setting_command(void);
 void speed_command(void);
 void move_command(void);
 
-Stepper * motor_from_axis(unsigned const char axis);
-Axis * axis_from_id(uint8_t id);
-
-void power_command(void); // Delete
 void motors_off_command(void);
 void motors_on_command(void);
 
@@ -37,7 +33,7 @@ void axis_pos(void);
 
 void plus_command(void);
 void minus_command(void);
-void wait_command(void);
+void wait_command(void); // Is this necessary?
 
 // Rollers
 void lower_command(void);

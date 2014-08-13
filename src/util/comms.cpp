@@ -17,7 +17,8 @@ void SerialChannel::initialise(void) {
 void SerialChannel::write(const void *data, uint8_t length) {
     Serial.write((const uint8_t *)data, length);
 }
-
+/*
 void SerialChannel::println(void) {
     Serial.println();
 }
+*/

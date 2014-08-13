@@ -29,7 +29,7 @@ Author: Michael Shiel
 #ifndef _STEPPER_H_
 #define _STEPPER_H_
 
-#include "Arduino.h"
+#include <Arduino.h>
 
 class Stepper {
 public:
