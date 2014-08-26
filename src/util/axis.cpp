@@ -164,6 +164,14 @@ uint32_t Axis::get_desired_position(void) {
     return desired_position;
 }
 
+void Axis::set_current_position(uint32_t position) {
+    this->current_position = position;
+}
+
+void Axis::set_desired_position(uint32_t position) {
+    this->desired_position = position;
+}
+
 void Axis::zero(void) {
     current_position = 0;
     desired_position = 0;

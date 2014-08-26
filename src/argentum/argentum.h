@@ -7,6 +7,7 @@
 #include "../util/rollers.h"
 #include "../util/SerialCommand.h"
 #include "../util/SdFat/SdFat.h"
+#include "../util/settings.h"
 
 // All pin mappings should go here
 #define PIN_FET_1             7
@@ -53,5 +54,6 @@ extern SdFat sd;
 
 Axis * axis_from_id(uint8_t id);
 Stepper * motor_from_axis(unsigned const char axis);
+void load_settings(void);
 
 #endif

@@ -19,9 +19,6 @@
 
 extern bool readFile(char *filename);
 
-long xpos = 0;
-long ypos = 0;
-
 void motors_off_command(void) {
     x_axis.get_motor()->enable(false);
     y_axis.get_motor()->enable(false);
@@ -34,6 +31,27 @@ void motors_on_command(void) {
     y_axis.get_motor()->enable(true);
 
     logger.info("Motors on");
+}
+
+void stepper_test_command(void) {
+    for(int i = 0; i < 4; i++) {
+        for(int i = 0; i < 1000; i++) {
+            while(!a_motor.step());
+            while(!b_motor.step());
+        }
+
+        a_motor.swap_direction();
+        b_motor.swap_direction();
+
+        for(int i = 0; i < 1000; i++) {
+            while(!a_motor.step());
+            while(!b_motor.step());
+        }
+    }
+}
+
+void default_settings_command(void) {
+    settings_restore_defaults();
 }
 
 void read_setting_command(void) {
@@ -196,7 +214,24 @@ void print_command(void) {
 
     logger.info() << "Printing '" << filename << "'" << Comms::endl;
 
-    for(int pass = 0; pass < passes; pass++) {
+    x_axis.hold();
+    y_axis.hold();
+
+    uint32_t x_pos = x_axis.get_current_position();
+    uint32_t y_pos = y_axis.get_current_position();
+
+    x_axis.zero();
+    y_axis.zero();
+
+    readFile(filename);
+
+    x_axis.set_current_position(x_pos);
+    y_axis.set_current_position(y_pos);
+
+    x_axis.hold();
+    y_axis.hold();
+
+    /*for(int pass = 0; pass < passes; pass++) {
         logger.info() << "Pass " << (pass + 1) << " of " << passes << Comms::endl;
 
         bool result = readFile(filename);
@@ -221,7 +256,7 @@ void print_command(void) {
             logger.info("Something went wrong in readFile, aborting print.");
             return;
         }
-    }
+    }*/
 
     logger.info("Print complete. Enjoy your circuit!");
 }

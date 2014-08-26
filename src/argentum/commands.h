@@ -11,6 +11,8 @@
 void read_setting_command(void);
 void read_saved_setting_command(void);
 void write_setting_command(void);
+void default_settings_command(void);
+void stepper_test_command(void);
 
 // Motors
 void speed_command(void);

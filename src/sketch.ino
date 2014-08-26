@@ -38,7 +38,7 @@ void setup() {
     x_axis.set_speed(1500);
     y_axis.set_speed(1500);
 
-    settings_initialise(false);
+    settings_initialise(true);
 
     cartridge_initialise();
     analog_initialise();
@@ -59,6 +59,8 @@ void setup() {
     serial_command.addCommand("h", &home_command);
     serial_command.addCommand("b", &back_corner_command);
 
+    serial_command.addCommand("stest", &stepper_test_command);
+
     // Motor
     serial_command.addCommand("s", &speed_command);
 
@@ -77,6 +79,7 @@ void setup() {
     serial_command.addCommand("?", &read_setting_command);
     serial_command.addCommand("?eeprom", &read_saved_setting_command);
     serial_command.addCommand("!write", &write_setting_command);
+    serial_command.addCommand("defaults", &default_settings_command);
 
     // Experimentals
     serial_command.addCommand("lim", &limit_switch_command);
@@ -112,33 +115,9 @@ void setup() {
     // Common
     serial_command.addCommand("help", &help_command);
 
-    // Initialise Axes from EEPROM here
-    if(global_settings.calibration.x_axis.motor == 'A') {
-        x_axis.set_motor(&a_motor);
-    } else {
-        x_axis.set_motor(&b_motor);
-    }
+    load_settings();
 
-    if(global_settings.calibration.y_axis.motor == 'A') {
-        y_axis.set_motor(&a_motor);
-    } else {
-        y_axis.set_motor(&b_motor);
-    }
-
-    if(global_settings.calibration.x_axis.flipped) {
-        x_axis.set_motor_mapping(Axis::CW_Negative);
-    } else {
-        x_axis.set_motor_mapping(Axis::CW_Positive);
-    }
-
-    if(global_settings.calibration.y_axis.flipped) {
-        y_axis.set_motor_mapping(Axis::CW_Negative);
-    } else {
-        y_axis.set_motor_mapping(Axis::CW_Positive);
-    }
-
-    x_axis.length = global_settings.calibration.x_axis.length;
-    y_axis.length = global_settings.calibration.y_axis.length;
+    limit_switch_command();
 
     //uint8_t *firing_buffer = (uint8_t*)malloc(4096);
     //help_command();
@@ -215,8 +194,8 @@ bool readFile(char *filename) {
 
     // Check if file open succeeded, if not output error message
     if (!myFile.isOpen()) {
-        Serial.print("File could not be opened: ");
-        Serial.println(filename);
+        logger.error() << "File could not be opened: " << filename
+                << Comms::endl;
 
         return false;
     }

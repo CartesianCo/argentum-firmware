@@ -60,6 +60,9 @@ public:
     uint32_t get_current_position(void);
     uint32_t get_desired_position(void);
 
+    void set_current_position(uint32_t position);
+    void set_desired_position(uint32_t position);
+
     void zero(void);
     void hold(void);
 

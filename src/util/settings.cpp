@@ -4,6 +4,8 @@
 #include "utils.h"
 #include "logging.h"
 
+#include "../argentum/argentum.h"
+
 PrinterSettings default_settings = {
     {
         {
@@ -12,7 +14,7 @@ PrinterSettings default_settings = {
             14000L
         },
         {
-            'A',
+            'B',
             false,
             10000L
         },
@@ -29,13 +31,15 @@ bool settings_initialise(bool correct) {
 
     bool valid = settings_integrity_check(&global_settings);
 
-    if(!valid && correct) {
-        settings_restore_defaults();
-    }
-
     if(!valid) {
         logger.warn("Settings corrupt.");
         settings_print_settings(&global_settings);
+
+        if(correct) {
+            settings_restore_defaults();
+
+            logger.warn("Restored to defaults.");
+        }
     }
 
     return valid;
@@ -44,6 +48,7 @@ bool settings_initialise(bool correct) {
 void settings_restore_defaults(void) {
     logger.info("Restoring default settings.");
     settings_update_settings(&default_settings);
+    settings_write_settings(&global_settings);
 }
 
 void settings_print_settings(PrinterSettings *settings) {
@@ -87,7 +92,7 @@ uint8_t settings_calculate_crc(PrinterSettings *settings) {
 bool settings_integrity_check(PrinterSettings *settings) {
     uint8_t crc = settings_calculate_crc(settings);
 
-    return (crc == settings->crc);
+    return (crc && (crc == settings->crc));
 }
 
 // Settings Read and Write
@@ -114,6 +119,8 @@ void settings_update_settings(PrinterSettings *settings) {
     memcpy(&global_settings, settings, sizeof(PrinterSettings));
 
     settings_update_crc();
+
+    load_settings();
 }
 
 void settings_update_calibration(CalibrationData *calibration) {
