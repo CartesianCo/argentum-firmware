@@ -316,7 +316,7 @@ void help_command(void) {
 
     logger.info("Available Files: ");
     ls();
-    logger.info();
+    //logger.info();
 }
 
 void calibrate_command(void) {
