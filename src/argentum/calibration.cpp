@@ -7,6 +7,8 @@
 #include "../util/logging.h"
 #include "../util/utils.h"
 
+#include "commands.h"
+
 #include "argentum.h"
 
 /**
@@ -186,7 +188,7 @@ bool freedom(bool *x_direction_resolved, bool *y_direction_resolved) {
 void calibrate(CalibrationData *calibration) {
     logger.info("Calibrating.");
 
-    logger.enabled = false;
+    //logger.enabled = false;
 
     x_axis.set_speed(250);
     y_axis.set_speed(250);
@@ -224,6 +226,19 @@ void calibrate(CalibrationData *calibration) {
             x_axis.set_motor(y_axis.get_motor());
             y_axis.set_motor(temp);
         }
+    } else {
+        if(!x_direction_resolved) {
+            logger.info("Failed to resolve X");
+
+            x_axis.get_motor()->set_direction(Stepper::CW);
+
+        }
+
+        if(!y_direction_resolved) {
+            logger.info("Failed to resolve Y");
+
+            y_axis.get_motor()->set_direction(Stepper::CW);
+        }
     }
 
     while(!(x_direction_resolved && y_direction_resolved)) {
@@ -235,26 +250,33 @@ void calibrate(CalibrationData *calibration) {
             } else {
                 x_direction_resolved = true;
 
+                limit_switch_command();
+
                 if(limit_x_negative()) {
                     // Inverted
                     logger.info("Found X to be inverted.");
                     x_axis.set_motor_mapping(Axis::CW_Negative);
+                } else {
+                    x_axis.set_motor_mapping(Axis::CW_Positive);
                 }
             }
         }
 
         if(!y_direction_resolved) {
-            //logger.info("Stepping Y");
-
             if(!limit_y()) {
+                //logger.info("Stepping Y");
                 y_axis.get_motor()->step();
             } else {
                 y_direction_resolved = true;
+
+                limit_switch_command();
 
                 if(limit_y_negative()) {
                     // Inverted
                     logger.info("Found Y to be inverted.");
                     y_axis.set_motor_mapping(Axis::CW_Negative);
+                } else {
+                    y_axis.set_motor_mapping(Axis::CW_Positive);
                 }
             }
         }

@@ -220,12 +220,21 @@ void print_command(void) {
     uint32_t x_pos = x_axis.get_current_position();
     uint32_t y_pos = y_axis.get_current_position();
 
-    x_axis.zero();
+    //x_axis.zero();
     y_axis.zero();
 
     readFile(filename);
 
-    x_axis.set_current_position(x_pos);
+    logger.info() << "x: " << x_axis.get_current_position() <<
+        " y: " << y_axis.get_current_position() << Comms::endl;
+
+    x_axis.move_absolute(x_pos);
+    x_axis.wait_for_move();
+
+    y_axis.move_absolute(0.000);
+    y_axis.wait_for_move();
+
+    //x_axis.set_current_position(x_pos);
     y_axis.set_current_position(y_pos);
 
     x_axis.hold();
@@ -324,6 +333,10 @@ void calibrate_command(void) {
     calibrate(&calibration);
 
     settings_update_calibration(&calibration);
+
+    settings_write_settings(&global_settings);
+
+    load_settings();
 }
 
 void init_sd_command(void) {

@@ -14,7 +14,7 @@
 
 #include "util/SdFat/SdFat.h"
 
-#define FIRMWARE_VERSION "v0.12"
+#define FIRMWARE_VERSION "v0.14-2014XXXXXXXXXX"
 
 SdFile myFile;
 
