@@ -7,6 +7,7 @@
 #include "../argentum/argentum.h"
 
 PrinterSettings default_settings = {
+    0x01,
     {
         {
             'A',
@@ -18,6 +19,10 @@ PrinterSettings default_settings = {
             false,
             10000L
         },
+    },
+    {
+        0,
+        0
     },
     0xFA
 };
@@ -52,7 +57,7 @@ void settings_restore_defaults(void) {
 }
 
 void settings_print_settings(PrinterSettings *settings) {
-    settings_print_calibration(&(settings->calibration));
+    settings_print_calibration(&(settings->stepper_calibration));
 
     uint8_t crc = settings_calculate_crc(settings);
 
@@ -66,7 +71,7 @@ void settings_print_settings(PrinterSettings *settings) {
     }
 }
 
-void settings_print_calibration(CalibrationData *calibration) {
+void settings_print_calibration(StepperCalibrationData *calibration) {
     logger.info("X axis: ");
     settings_print_axis_data(&(calibration->x_axis));
 
@@ -123,22 +128,22 @@ void settings_update_settings(PrinterSettings *settings) {
     load_settings();
 }
 
-void settings_update_calibration(CalibrationData *calibration) {
-    memcpy(&(global_settings.calibration),
+void settings_update_calibration(StepperCalibrationData *calibration) {
+    memcpy(&(global_settings.stepper_calibration),
            calibration,
-           sizeof(CalibrationData));
+           sizeof(StepperCalibrationData));
 
     settings_update_crc();
 }
 
 void settings_update_x_data(AxisData *axis_data) {
-    memcpy(&(global_settings.calibration.x_axis), axis_data, sizeof(AxisData));
+    memcpy(&(global_settings.stepper_calibration.x_axis), axis_data, sizeof(AxisData));
 
     settings_update_crc();
 }
 
 void settings_update_y_data(AxisData *axis_data) {
-    memcpy(&(global_settings.calibration.y_axis), axis_data, sizeof(AxisData));
+    memcpy(&(global_settings.stepper_calibration.y_axis), axis_data, sizeof(AxisData));
 
     settings_update_crc();
 }

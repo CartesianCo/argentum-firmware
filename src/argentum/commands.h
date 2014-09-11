@@ -42,6 +42,7 @@ void wait_command(void); // Is this necessary?
 // Rollers
 void lower_command(void);
 void rollers_command(void); // Delete one of these
+void servo_command(void);
 
 void sweep_command(void); // Delete these, sweeping should be implemented in Python
 void sweep(long width, long height); // ^^^^^

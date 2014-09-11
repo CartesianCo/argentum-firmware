@@ -13,6 +13,22 @@ SerialCommand serial_command;
 
 Rollers rollers;
 
+Servo servo1;
+Servo servo2;
+Servo servo3;
+
+Servo *servos[] = {
+    &servo1,
+    &servo2,
+    &servo3
+};
+
+uint8_t servo_pins[] = {
+    PIN_SERVO_1,
+    PIN_SERVO_2,
+    PIN_SERVO_3
+};
+
 SdFat sd;
 
 long x_size = 0;
@@ -48,30 +64,30 @@ Stepper * motor_from_axis(unsigned const char axis) {
 
 void load_settings(void) {
     // Initialise Axes from EEPROM here
-    if(global_settings.calibration.x_axis.motor == 'A') {
+    if(global_settings.stepper_calibration.x_axis.motor == 'A') {
         x_axis.set_motor(&a_motor);
     } else {
         x_axis.set_motor(&b_motor);
     }
 
-    if(global_settings.calibration.y_axis.motor == 'A') {
+    if(global_settings.stepper_calibration.y_axis.motor == 'A') {
         y_axis.set_motor(&a_motor);
     } else {
         y_axis.set_motor(&b_motor);
     }
 
-    if(global_settings.calibration.x_axis.flipped) {
+    if(global_settings.stepper_calibration.x_axis.flipped) {
         x_axis.set_motor_mapping(Axis::CW_Negative);
     } else {
         x_axis.set_motor_mapping(Axis::CW_Positive);
     }
 
-    if(global_settings.calibration.y_axis.flipped) {
+    if(global_settings.stepper_calibration.y_axis.flipped) {
         y_axis.set_motor_mapping(Axis::CW_Negative);
     } else {
         y_axis.set_motor_mapping(Axis::CW_Positive);
     }
 
-    x_axis.length = global_settings.calibration.x_axis.length;
-    y_axis.length = global_settings.calibration.y_axis.length;
+    x_axis.length = global_settings.stepper_calibration.x_axis.length;
+    y_axis.length = global_settings.stepper_calibration.y_axis.length;
 }

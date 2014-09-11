@@ -18,6 +18,11 @@
 #define PIN_FET_GREEN         2
 #define PIN_FET_BLUE          4
 
+#define PIN_SERVO_1           10
+#define PIN_SERVO_2           11
+#define PIN_SERVO_3           12
+#define PIN_ROLLERS           PIN_SERVO_1
+
 #define STEPPER_A_STEP_PIN    15
 #define STEPPER_A_DIR_PIN     14
 #define STEPPER_A_ENABLE_PIN  16
@@ -44,6 +49,13 @@ extern Axis y_axis;
 
 extern SerialCommand serial_command;
 extern Rollers rollers;
+
+extern Servo servo1;
+extern Servo servo2;
+extern Servo servo3;
+
+extern Servo *servos[];
+extern uint8_t servo_pins[];
 
 extern long x_size;
 extern long y_size;

@@ -119,6 +119,28 @@ uint16_t analog_read(uint8_t analog) {
     return analogRead(analog);
 }
 
+void servo_set_position(uint8_t servo_num, uint8_t position) {
+    if(servo_num > 2) {
+        return;
+    }
+
+    Servo *servo = servos[servo_num];
+
+    if(!servo) {
+        return;
+    }
+
+    if(!servo->attached()) {
+        servo->attach(servo_pins[servo_num]);
+    }
+
+    if(position == 0xFF) {
+        servo->detach();
+    } else {
+        servo->write(position);
+    }
+}
+
 double primitive_voltage(void) {
     uint16_t adc_reading = analog_read(PIN_PRIMITIVE_VOLTAGE);
 

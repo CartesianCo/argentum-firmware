@@ -185,7 +185,7 @@ bool freedom(bool *x_direction_resolved, bool *y_direction_resolved) {
     return (a_resolved | b_resolved);
 }
 
-void calibrate(CalibrationData *calibration) {
+void calibrate(StepperCalibrationData *calibration) {
     logger.info("Calibrating.");
 
     //logger.enabled = false;

@@ -329,7 +329,7 @@ void help_command(void) {
 }
 
 void calibrate_command(void) {
-    CalibrationData calibration;
+    StepperCalibrationData calibration;
     calibrate(&calibration);
 
     settings_update_calibration(&calibration);
@@ -449,6 +449,30 @@ void blue_command(void) {
     int value = atoi(arg);
 
     colour_blue(value);
+}
+
+void servo_command(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(!arg) {
+        logger.error("Missing servo number argument");
+        return;
+    }
+
+    int servo_num = atoi(arg);
+
+    arg = serial_command.next();
+
+    if(!arg) {
+        logger.error("Missing position argument");
+        return;
+    }
+
+    int position = atoi(arg);
+
+    servo_set_position(servo_num, position);
 }
 
 void rollers_command(void) {

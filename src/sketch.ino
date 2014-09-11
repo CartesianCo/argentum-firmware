@@ -69,6 +69,7 @@ void setup() {
 
     // Roller Servo
     serial_command.addCommand("l", &rollers_command);
+    serial_command.addCommand("servo", &servo_command);
 
     // Print
     serial_command.addCommand("p", &print_command);
