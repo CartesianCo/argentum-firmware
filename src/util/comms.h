@@ -21,12 +21,12 @@ public:
         Serial.print(arg);
     }
 
-    template<class T> void println(const T arg) {
+    /*template<class T> void println(const T arg) {
         send(arg);
         send(Comms::endl);
     }
 
-    void println(void);
+    void println(void);*/
 
 private:
     uint32_t baudrate;

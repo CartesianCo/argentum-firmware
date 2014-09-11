@@ -15,13 +15,20 @@ struct AxisData {
     uint16_t length;
 };
 
-struct CalibrationData {
+struct StepperCalibrationData {
     AxisData x_axis;
     AxisData y_axis;
 };
 
+struct ServoCalibrationData {
+    uint8_t retracted_value;
+    uint8_t deployed_value;
+};
+
 struct PrinterSettings {
-    CalibrationData calibration;
+    uint8_t version;
+    StepperCalibrationData stepper_calibration;
+    ServoCalibrationData servo_calibration;
     uint8_t crc;
 };
 
@@ -34,9 +41,8 @@ bool settings_initialise(bool correct);
 void settings_restore_defaults(void);
 
 void settings_print_settings(PrinterSettings *settings);
-void settings_print_calibration(CalibrationData *calibration);
+void settings_print_calibration(StepperCalibrationData *calibration);
 void settings_print_axis_data(AxisData *settings);
-void settings_print_axis_data_minimal(AxisData *axis);
 
 uint8_t settings_calculate_crc(PrinterSettings *settings);
 bool settings_integrity_check(PrinterSettings *settings);
@@ -45,7 +51,7 @@ void settings_read_settings(PrinterSettings *settings);
 void settings_write_settings(PrinterSettings *settings);
 
 void settings_update_settings(PrinterSettings *settings);
-void settings_update_calibration(CalibrationData *calibration);
+void settings_update_calibration(StepperCalibrationData *calibration);
 void settings_update_x_data(AxisData *axis_data);
 void settings_update_y_data(AxisData *axis_data);
 void settings_update_crc(void);

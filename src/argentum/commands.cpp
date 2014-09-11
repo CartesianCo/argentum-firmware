@@ -8,40 +8,53 @@
 #include "calibration.h"
 #include "../util/colour.h"
 #include "../util/rollers.h"
-//#include <SD.h>
-
 #include "../util/comms.h"
-
 #include "../util/axis.h"
-
 #include "../util/logging.h"
+#include "../util/codes.h"
 
 #include "boardtests.h"
 
 #include "argentum.h"
 
 extern bool readFile(char *filename);
-extern void file_stats(char *filename);
-
-long xpos = 0;
-long ypos = 0;
 
 void motors_off_command(void) {
-    Serial.println("Motors off");
-
     x_axis.get_motor()->enable(false);
     y_axis.get_motor()->enable(false);
+
+    logger.info("Motors off");
 }
 
 void motors_on_command(void) {
-    Serial.println("Motors on");
-
     x_axis.get_motor()->enable(true);
     y_axis.get_motor()->enable(true);
+
+    logger.info("Motors on");
+}
+
+void stepper_test_command(void) {
+    for(int i = 0; i < 4; i++) {
+        for(int i = 0; i < 1000; i++) {
+            while(!a_motor.step());
+            while(!b_motor.step());
+        }
+
+        a_motor.swap_direction();
+        b_motor.swap_direction();
+
+        for(int i = 0; i < 1000; i++) {
+            while(!a_motor.step());
+            while(!b_motor.step());
+        }
+    }
+}
+
+void default_settings_command(void) {
+    settings_restore_defaults();
 }
 
 void read_setting_command(void) {
-    Serial.println("Current Global Settings:");
     settings_print_settings(&global_settings);
 }
 
@@ -50,7 +63,6 @@ void read_saved_setting_command(void) {
 
     settings_read_settings(&settings);
 
-    Serial.println("EEPROM Settings:");
     settings_print_settings(&settings);
 }
 
@@ -64,7 +76,7 @@ void speed_command(void) {
     arg = serial_command.next();
 
     if(arg == NULL) {
-        Serial.println("Missing axis parameter");
+        logger.error("Missing axis parameter");
         return;
     }
 
@@ -73,7 +85,7 @@ void speed_command(void) {
     arg = serial_command.next();
 
     if(arg == NULL) {
-        Serial.println("Missing speed parameter");
+        logger.error("Missing speed parameter");
         return;
     }
 
@@ -89,8 +101,6 @@ void speed_command(void) {
 
 void zero_position_command(void) {
     logger.info("Setting new zero position");
-    //xMotor->set_position(0L);
-    //yMotor->set_position(0L);
 
     x_axis.zero();
     y_axis.zero();
@@ -98,22 +108,14 @@ void zero_position_command(void) {
 
 void goto_zero_command(void) {
     logger.info("Returning to 0.000, 0.000");
-    //xMotor->go_home();
-    //yMotor->go_home();
 
     x_axis.move_absolute(0.000);
     y_axis.move_absolute(0.000);
 }
 
 void current_position_command(void) {
-    logger.info() << "X: " << x_axis.get_current_position() << " mm, "
-            << "Y: " << y_axis.get_current_position() << " mm"
-            << Comms::endl;
-
-    logger.info() << x_axis.length << ", " << y_axis.length << Comms::endl;
-
-    x_axis.debug_info();
-    y_axis.debug_info();
+    logger.info() << x_axis.get_current_position() << ","
+            << y_axis.get_current_position() << Comms::endl;
 }
 
 void move_command(void) {
@@ -140,41 +142,21 @@ void move_command(void) {
     move(axis, steps);
 }
 
-Axis * axis_from_id(uint8_t id) {
-    id = toupper(id);
-
-    switch(id) {
-        case Axis::X:
-            return &y_axis;
-            break;
-
-        case Axis::Y:
-            return &x_axis;
-            break;
-
-        default:
-            return NULL;
-    }
-}
-
-Stepper * motor_from_axis(unsigned const char axis) {
-    if (toupper(axis) == 'X') {
-        //return xMotor;
-        return x_axis.get_motor();
-    } else if (toupper(axis) == 'Y') {
-        //return yMotor;
-        return y_axis.get_motor();
-    }
-
-    return NULL;
-}
-
 void continuous_move(void) {
-    logger.warn("Not implemented.");
+    logger.error("Not implemented.");
+}
+
+void home_command(void) {
+    x_axis.move_to_negative();
+    y_axis.move_to_negative();
+}
+
+void back_corner_command(void) {
+    x_axis.move_to_positive();
+    y_axis.move_to_positive();
 }
 
 void move(const char axis_id, long steps) {
-    //Stepper *motor = motor_from_axis(axis);
     Axis *axis = axis_from_id(axis_id);
 
     if(!axis) {
@@ -183,85 +165,19 @@ void move(const char axis_id, long steps) {
         return;
     }
 
-    //logger.info() << "Moving " << axis << " axis " << steps << "steps" << Comms::endl;
-
     if(steps == 0) {
-        //motor->reset_position();
-        //axis->move_absolute(0.000);
-
-        if(axis_id == 'X') {
-            axis->move_incremental(-xpos);
-            xpos = 0;
-        } else {
-            axis->move_incremental(-ypos);
-            ypos = 0;
-        }
+        axis->move_absolute(0.000);
     } else {
         axis->move_incremental(steps);
-
-        if(axis_id == 'X') {
-            xpos += steps;
-        } else {
-            ypos += steps;
-        }
     }
 
     axis->wait_for_move();
-}
-
-void power_command(void) {
-    char *arg;
-
-    arg = serial_command.next();
-
-    if(!arg) {
-        logger.error("Missing axis parameter");
-        return;
-    }
-
-    char axis = arg[0];
-
-    arg = serial_command.next();
-
-    if(!arg) {
-        logger.error("Missing power parameter");
-        return;
-    }
-
-    char power = arg[0];
-
-    //Motor *motor = NULL;
-    Stepper *motor = NULL;
-
-    if(toupper(axis) == 'X') {
-        //motor = xMotor;
-        motor = x_axis.get_motor();
-    } else if(toupper(axis) == 'Y') {
-        //motor = yMotor;
-        motor = y_axis.get_motor();
-    } else {
-        logger.error("No axis");
-        return;
-    }
-
-    if(power == '0') {
-        //motor->power(0);
-        motor->enable(false);
-    } else if (power == '1') {
-        //motor->power(1);
-        motor->enable(true);
-    } else {
-        logger.error("Unknown power");
-        return;
-    }
 }
 
 void lower_command(void) {
     logger.info("Lower/Raise");
 
     rollers.deploy();
-
-
 }
 
 void pause_command(void) {
@@ -298,7 +214,33 @@ void print_command(void) {
 
     logger.info() << "Printing '" << filename << "'" << Comms::endl;
 
-    for(int pass = 0; pass < passes; pass++) {
+    x_axis.hold();
+    y_axis.hold();
+
+    uint32_t x_pos = x_axis.get_current_position();
+    uint32_t y_pos = y_axis.get_current_position();
+
+    //x_axis.zero();
+    y_axis.zero();
+
+    readFile(filename);
+
+    logger.info() << "x: " << x_axis.get_current_position() <<
+        " y: " << y_axis.get_current_position() << Comms::endl;
+
+    x_axis.move_absolute(x_pos);
+    x_axis.wait_for_move();
+
+    y_axis.move_absolute(0.000);
+    y_axis.wait_for_move();
+
+    //x_axis.set_current_position(x_pos);
+    y_axis.set_current_position(y_pos);
+
+    x_axis.hold();
+    y_axis.hold();
+
+    /*for(int pass = 0; pass < passes; pass++) {
         logger.info() << "Pass " << (pass + 1) << " of " << passes << Comms::endl;
 
         bool result = readFile(filename);
@@ -323,7 +265,7 @@ void print_command(void) {
             logger.info("Something went wrong in readFile, aborting print.");
             return;
         }
-    }
+    }*/
 
     logger.info("Print complete. Enjoy your circuit!");
 }
@@ -345,6 +287,24 @@ void ls(void) {
 
     sd.vwd()->rewind();
 
+    uint16_t count = 0;
+
+    while (file.openNext(sd.vwd(), O_READ)) {
+        file.getFilename(name);
+
+        if(strstr(name, ".HEX")) {
+            count++;
+        }
+
+        file.close();
+    }
+
+    comms.send("*");
+    comms.send(count);
+    comms.send(Comms::endl);
+
+    sd.vwd()->rewind();
+
     while (file.openNext(sd.vwd(), O_READ)) {
         file.getFilename(name);
 
@@ -357,60 +317,41 @@ void ls(void) {
 }
 
 void help_command(void) {
-    comms.println("Press p to print output.hex");
-    comms.println("S to stop, P to pause, R to resume, c to calibrate.");
-    comms.println("Additional commands: ");
+    logger.info("Press p to print output.hex");
+    logger.info("S to stop, P to pause, R to resume, c to calibrate.");
+    logger.info("Additional commands: ");
     serial_command.installed_commands();
-    comms.println();
+    logger.info();
 
-    comms.println("Available Files: ");
+    logger.info("Available Files: ");
     ls();
-    comms.println();
+    //logger.info();
 }
 
 void calibrate_command(void) {
-    CalibrationData calibration;
+    StepperCalibrationData calibration;
     calibrate(&calibration);
 
-    settings_print_calibration(&calibration);
     settings_update_calibration(&calibration);
 
-    /*log_info("C ");
-    settings_print_axis_data_minimal(&calibration.x_axis);
-    log_info_np(" ");
-    settings_print_axis_data_minimal(&calibration.y_axis);
-    log_info("\r\n");*/
+    settings_write_settings(&global_settings);
 
-    /*logger.info() << settings_print_axis_data_minimal(&calibration.x_axis)
-            << " " << settings_print_axis_data_minimal(&calibration.y_axis)
-            << Comms::endl;*/
-}
-
-void calibrate_loop_command(void) {
-    while(true) {
-        if(Serial.available()) {
-            if(Serial.read() == 'S') {
-                return;
-            }
-        }
-
-        CalibrationData calibration;
-        calibrate(&calibration);
-
-        logger.info() << calibration.x_axis.motor << " "
-                << calibration.x_axis.length << ", " << calibration.x_axis.motor
-                << " " << calibration.x_axis.length << Comms::endl;
-    }
+    load_settings();
 }
 
 void init_sd_command(void) {
     if(!sd.begin(53, SPI_HALF_SPEED)) {
         logger.warn("Failed to initialise SD card.");
+    } else {
+        logger.info(code_strings[CODE_SUCCESS]);
     }
 }
 
 void limit_switch_command(void) {
     print_switch_status();
+
+    x_axis.debug_info();
+    y_axis.debug_info();
 }
 
 void analog_command(void) {
@@ -508,6 +449,30 @@ void blue_command(void) {
     int value = atoi(arg);
 
     colour_blue(value);
+}
+
+void servo_command(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(!arg) {
+        logger.error("Missing servo number argument");
+        return;
+    }
+
+    int servo_num = atoi(arg);
+
+    arg = serial_command.next();
+
+    if(!arg) {
+        logger.error("Missing position argument");
+        return;
+    }
+
+    int position = atoi(arg);
+
+    servo_set_position(servo_num, position);
 }
 
 void rollers_command(void) {
@@ -695,12 +660,6 @@ void incremental_move(void) {
     y_axis.move_incremental(y_position);
 }
 
-void axis_pos(void) {
-    logger.info() << "X: " << x_axis.get_current_position() << " mm, "
-            << "Y: " << y_axis.get_current_position() << " mm"
-            << Comms::endl;
-}
-
 void plus_command(void) {
     x_axis.move_to_positive();
 }
@@ -716,6 +675,5 @@ void wait_command(void) {
 void primitive_voltage_command(void) {
     double voltage = primitive_voltage();
 
-    logger.info() << "Primitive Voltage: " << voltage << " volts."
-        << Comms::endl;
+    logger.info(voltage);
 }

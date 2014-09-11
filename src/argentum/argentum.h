@@ -7,19 +7,21 @@
 #include "../util/rollers.h"
 #include "../util/SerialCommand.h"
 #include "../util/SdFat/SdFat.h"
+#include "../util/settings.h"
 
 // All pin mappings should go here
-#define FET_1_PIN             7
-#define FET_2_PIN             8
-#define FET_3_PIN             9
-
 #define PIN_FET_1             7
 #define PIN_FET_2             8
 #define PIN_FET_3             9
 
 #define PIN_FET_RED           3
-#define PIN_FET_GREEN         4
-#define PIN_FET_BLUE          2
+#define PIN_FET_GREEN         2
+#define PIN_FET_BLUE          4
+
+#define PIN_SERVO_1           10
+#define PIN_SERVO_2           11
+#define PIN_SERVO_3           12
+#define PIN_ROLLERS           PIN_SERVO_1
 
 #define STEPPER_A_STEP_PIN    15
 #define STEPPER_A_DIR_PIN     14
@@ -48,9 +50,22 @@ extern Axis y_axis;
 extern SerialCommand serial_command;
 extern Rollers rollers;
 
+extern Servo servo1;
+extern Servo servo2;
+extern Servo servo3;
+
+extern Servo *servos[];
+extern uint8_t servo_pins[];
+
 extern long x_size;
 extern long y_size;
 
 extern SdFat sd;
+
+// Helper functions
+
+Axis * axis_from_id(uint8_t id);
+Stepper * motor_from_axis(unsigned const char axis);
+void load_settings(void);
 
 #endif

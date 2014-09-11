@@ -2,19 +2,27 @@
 
 #include <EEPROM.h>
 #include "utils.h"
+#include "logging.h"
+
+#include "../argentum/argentum.h"
 
 PrinterSettings default_settings = {
+    0x01,
     {
         {
-            'B',
+            'A',
             false,
             14000L
         },
         {
-            'A',
-            true,
+            'B',
+            false,
             10000L
         },
+    },
+    {
+        0,
+        0
     },
     0xFA
 };
@@ -28,74 +36,52 @@ bool settings_initialise(bool correct) {
 
     bool valid = settings_integrity_check(&global_settings);
 
-    if(!valid && correct) {
-        settings_restore_defaults();
-    }
-
     if(!valid) {
-        Serial.println("Settings corrupt.");
+        logger.warn("Settings corrupt.");
         settings_print_settings(&global_settings);
+
+        if(correct) {
+            settings_restore_defaults();
+
+            logger.warn("Restored to defaults.");
+        }
     }
 
     return valid;
 }
 
 void settings_restore_defaults(void) {
-    Serial.println("Restoring default settings.");
+    logger.info("Restoring default settings.");
     settings_update_settings(&default_settings);
+    settings_write_settings(&global_settings);
 }
 
 void settings_print_settings(PrinterSettings *settings) {
-    settings_print_calibration(&(settings->calibration));
+    settings_print_calibration(&(settings->stepper_calibration));
 
     uint8_t crc = settings_calculate_crc(settings);
 
-    Serial.print("CRC: ");
-    Serial.print(settings->crc, HEX);
-    Serial.print(", Calculated: ");
-    Serial.print(crc, HEX);
+    logger.info() << "CRC: " << settings->crc << ", Calculated: " << crc
+            << Comms::endl;
 
     if(crc == settings->crc) {
-        Serial.println(" [GOOD]");
+        logger.info(" [GOOD]");
     } else {
-        Serial.println(" [CORRUPT]");
+        logger.warn(" [CORRUPT]");
     }
 }
 
-void settings_print_calibration(CalibrationData *calibration) {
-    Serial.print("X axis: ");
+void settings_print_calibration(StepperCalibrationData *calibration) {
+    logger.info("X axis: ");
     settings_print_axis_data(&(calibration->x_axis));
 
-    Serial.print("Y axis: ");
+    logger.info("Y axis: ");
     settings_print_axis_data(&(calibration->y_axis));
 }
 
 void settings_print_axis_data(AxisData *axis) {
-    Serial.print((char)axis->motor);
-    Serial.print(" motor, ");
-
-    if(axis->flipped) {
-        Serial.print("flipped, ");
-    } else {
-        Serial.print("not flipped, ");
-    }
-
-    Serial.print(axis->length);
-    Serial.println(" steps");
-}
-
-void settings_print_axis_data_minimal(AxisData *axis) {
-    Serial.print((char)axis->motor);
-    /*Serial.print(", ");
-
-    if(axis->flipped) {
-        Serial.print("!, ");
-    } else {
-        Serial.print(" , ");
-    }*/
-
-    Serial.print(axis->length);
-    //Serial.println("");
+    logger.info() << (char)axis->motor << " motor, " << axis->flipped
+            << ", " << axis->length << " steps." << Comms::endl;
 }
 
 // Settings CRC Utilities
@@ -111,7 +97,7 @@ uint8_t settings_calculate_crc(PrinterSettings *settings) {
 bool settings_integrity_check(PrinterSettings *settings) {
     uint8_t crc = settings_calculate_crc(settings);
 
-    return (crc == settings->crc);
+    return (crc && (crc == settings->crc));
 }
 
 // Settings Read and Write
@@ -138,24 +124,26 @@ void settings_update_settings(PrinterSettings *settings) {
     memcpy(&global_settings, settings, sizeof(PrinterSettings));
 
     settings_update_crc();
+
+    load_settings();
 }
 
-void settings_update_calibration(CalibrationData *calibration) {
-    memcpy(&(global_settings.calibration),
+void settings_update_calibration(StepperCalibrationData *calibration) {
+    memcpy(&(global_settings.stepper_calibration),
            calibration,
-           sizeof(CalibrationData));
+           sizeof(StepperCalibrationData));
 
     settings_update_crc();
 }
 
 void settings_update_x_data(AxisData *axis_data) {
-    memcpy(&(global_settings.calibration.x_axis), axis_data, sizeof(AxisData));
+    memcpy(&(global_settings.stepper_calibration.x_axis), axis_data, sizeof(AxisData));
 
     settings_update_crc();
 }
 
 void settings_update_y_data(AxisData *axis_data) {
-    memcpy(&(global_settings.calibration.y_axis), axis_data, sizeof(AxisData));
+    memcpy(&(global_settings.stepper_calibration.y_axis), axis_data, sizeof(AxisData));
 
     settings_update_crc();
 }
@@ -171,10 +159,6 @@ uint8_t read_byte(const uint16_t address) {
 }
 
 void write_byte(const uint16_t address, const uint8_t value, bool reduce_wear) {
-    Serial.print('R');
-    Serial.print(value, HEX);
-    Serial.print('|');
-
     if(reduce_wear) {
         uint8_t existing = read_byte(address);
 

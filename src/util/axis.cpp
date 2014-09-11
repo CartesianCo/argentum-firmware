@@ -32,25 +32,15 @@ bool Axis::run(void) {
     if(current_position == desired_position) {
         return false;
     } else {
-        //logger.info() << current_position << " -> " << desired_position
-        //        << Logger::endl;
-
-        /*if(desired_position == Axis::PositiveLimit) {
-            if(positive_limit()) {
-                logger.info("reached positive limit");
-            } else {
-                return step();
-            }
-        }*/
-
         if(((current_position < desired_position) && positive_limit())
                 || ((current_position > desired_position)
                 && negative_limit())) {
-            logger.warn() << axis
+            /*logger.warn() << axis
                     << " tried to step in a limited direction, holding."
                     << " current_position: " << current_position
                     << " desired_position: " << desired_position
-                    << Comms::endl;
+                    << Comms::endl;*/
+            logger.warn() << axis << " lim" << Comms::endl;
 
             hold();
 
@@ -65,18 +55,15 @@ bool Axis::step(void) {
     bool did_step = motor->step();
 
     if(did_step) {
-        //logger.info() << axis << " step " << current_position << Comms::endl;
-
         if(direction == Axis::Positive) {
             current_position++;
         } else {
-            current_position--;
+            // 'Push' the limit only if we can still go backwards, but aren't at
+            // position 0
+            if(current_position > 0) {
+                current_position--;
+            }
         }
-
-        /*if(current_position == desired_position) {
-            logger.info() << axis << " axis reached goal position: "
-                    << desired_position << Comms::endl;
-        }*/
     }
 
     return did_step;
@@ -88,24 +75,8 @@ void Axis::set_direction(uint8_t direction) {
     }
 
     this->direction = direction;
-    //motor->swap_direction();
 
-    if(direction == Axis::Positive) {
-        if(motor_mapping == Axis::CW_Positive) {
-            motor->set_direction(Stepper::CW);
-        } else {
-            motor->set_direction(Stepper::CCW);
-        }
-    } else if(direction == Axis::Negative) {
-        if(motor_mapping == Axis::CW_Negative) {
-            motor->set_direction(Stepper::CW);
-        } else {
-            motor->set_direction(Stepper::CCW);
-        }
-    }
-
-    //logger.info() << axis << " axis setting direction to " << direction
-    //        << Comms::endl;
+    set_motor_direction();
 }
 
 void Axis::move_absolute(double position) {
@@ -171,6 +142,8 @@ void Axis::move_to_positive(void) {
     while(!positive_limit()) {
         while(!step());
     }
+
+    hold();
 }
 
 void Axis::move_to_negative(void) {
@@ -179,14 +152,24 @@ void Axis::move_to_negative(void) {
     while(!negative_limit()) {
         while(!step());
     }
+
+    hold();
 }
 
-double Axis::get_current_position(void) {
-    return ((double)current_position) / steps_per_mm;
+uint32_t Axis::get_current_position(void) {
+    return current_position;
 }
 
-double Axis::get_desired_position(void) {
-    return ((double)desired_position) / steps_per_mm;
+uint32_t Axis::get_desired_position(void) {
+    return desired_position;
+}
+
+void Axis::set_current_position(uint32_t position) {
+    this->current_position = position;
+}
+
+void Axis::set_desired_position(uint32_t position) {
+    this->desired_position = position;
 }
 
 void Axis::zero(void) {
@@ -219,8 +202,16 @@ uint8_t Axis::get_motor_mapping(void) {
 void Axis::set_motor_mapping(uint8_t motor_mapping) {
     this->motor_mapping = motor_mapping;
 
-    // TODO: This is duplicated here and in the direction function. There's a
-    // better way of structuring it.
+    set_motor_direction();
+}
+
+void Axis::set_motor(Stepper *motor) {
+    this->motor = motor;
+
+    set_motor_direction();
+}
+
+void Axis::set_motor_direction(void) {
     if(direction == Axis::Positive) {
         if(motor_mapping == Axis::CW_Positive) {
             motor->set_direction(Stepper::CW);
@@ -234,12 +225,6 @@ void Axis::set_motor_mapping(uint8_t motor_mapping) {
             motor->set_direction(Stepper::CCW);
         }
     }
-}
-
-void Axis::set_motor(Stepper *motor) {
-    this->motor = motor;
-
-    this->motor->set_direction(Stepper::CW);
 }
 
 Stepper * Axis::get_motor(void) {

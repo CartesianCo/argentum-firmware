@@ -1,6 +1,7 @@
 #include "colour.h"
 
 #include "../argentum/argentum.h"
+#include "utils.h"
 
 // LED Control Functions
 void colour_init(void) {
@@ -26,26 +27,13 @@ void colour_rgb(uint8_t red, uint8_t green, uint8_t blue) {
 }
 
 void colour_red(uint8_t red) {
-    if(red > 0) {
-        //digitalWrite(RED_CHANNEL_PIN, HIGH);
-        analogWrite(PIN_FET_RED, red);
-    } else {
-        digitalWrite(PIN_FET_RED, LOW);
-    }
+    fet_set_value(PIN_FET_RED, red);
 }
 
 void colour_green(uint8_t green) {
-    if(green > 0) {
-        digitalWrite(PIN_FET_GREEN, HIGH);
-    } else {
-        digitalWrite(PIN_FET_GREEN, LOW);
-    }
+    fet_set_value(PIN_FET_GREEN, green);
 }
 
 void colour_blue(uint8_t blue) {
-    if(blue > 0) {
-        digitalWrite(PIN_FET_BLUE, HIGH);
-    } else {
-        digitalWrite(PIN_FET_BLUE, LOW);
-    }
+    fet_set_value(PIN_FET_BLUE, blue);
 }

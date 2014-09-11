@@ -43,11 +43,6 @@ public:
         CCW_Negative = CW_Positive
     };
 
-    enum Goals {
-        PositiveLimit =  123456789,
-        NegativeLimit = -123456789
-    };
-
     Axis(const char axis, Stepper *motor, bool (*positive_limit_function)(void), bool (*negative_limit_function)(void));
     ~Axis();
 
@@ -62,8 +57,11 @@ public:
     void move_to_positive(void);
     void move_to_negative(void);
 
-    double get_current_position(void);
-    double get_desired_position(void);
+    uint32_t get_current_position(void);
+    uint32_t get_desired_position(void);
+
+    void set_current_position(uint32_t position);
+    void set_desired_position(uint32_t position);
 
     void zero(void);
     void hold(void);
@@ -79,9 +77,11 @@ public:
     void set_motor(Stepper *motor);
     Stepper * get_motor(void);
 
+    void set_motor_direction(void);
+
     static const long steps_per_mm = 80;
 
-    uint32_t current_position;
+
 
     uint32_t length;
 
@@ -107,6 +107,7 @@ private:
 
     uint8_t motor_mapping;
 
+    uint32_t current_position;
     uint32_t desired_position;
 };
 

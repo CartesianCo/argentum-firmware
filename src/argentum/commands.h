@@ -11,21 +11,21 @@
 void read_setting_command(void);
 void read_saved_setting_command(void);
 void write_setting_command(void);
+void default_settings_command(void);
+void stepper_test_command(void);
 
 // Motors
 void speed_command(void);
 void move_command(void);
 
-Stepper * motor_from_axis(unsigned const char axis);
-Axis * axis_from_id(uint8_t id);
-
-void power_command(void); // Delete
 void motors_off_command(void);
 void motors_on_command(void);
 
 void zero_position_command(void);
 void goto_zero_command(void);
 void current_position_command(void);
+void home_command(void);
+void back_corner_command(void);
 
 void continuous_move(void);
 
@@ -37,11 +37,12 @@ void axis_pos(void);
 
 void plus_command(void);
 void minus_command(void);
-void wait_command(void);
+void wait_command(void); // Is this necessary?
 
 // Rollers
 void lower_command(void);
 void rollers_command(void); // Delete one of these
+void servo_command(void);
 
 void sweep_command(void); // Delete these, sweeping should be implemented in Python
 void sweep(long width, long height); // ^^^^^

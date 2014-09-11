@@ -92,13 +92,13 @@ void print_switch_status(void) {
 
 void fet_initialise(void) {
     // Disable FETs by default
-    pinMode(FET_1_PIN, OUTPUT);
-    pinMode(FET_2_PIN, OUTPUT);
-    pinMode(FET_3_PIN, OUTPUT);
+    pinMode(PIN_FET_1, OUTPUT);
+    pinMode(PIN_FET_2, OUTPUT);
+    pinMode(PIN_FET_3, OUTPUT);
 
-    fet_set_value(FET_1_PIN, 0);
-    fet_set_value(FET_2_PIN, 0);
-    fet_set_value(FET_3_PIN, 0);
+    fet_set_value(PIN_FET_1, 0);
+    fet_set_value(PIN_FET_2, 0);
+    fet_set_value(PIN_FET_3, 0);
 }
 
 void fet_set_value(uint8_t fet, uint8_t value) {
@@ -117,6 +117,28 @@ void analog_initialise(void) {
 
 uint16_t analog_read(uint8_t analog) {
     return analogRead(analog);
+}
+
+void servo_set_position(uint8_t servo_num, uint8_t position) {
+    if(servo_num > 2) {
+        return;
+    }
+
+    Servo *servo = servos[servo_num];
+
+    if(!servo) {
+        return;
+    }
+
+    if(!servo->attached()) {
+        servo->attach(servo_pins[servo_num]);
+    }
+
+    if(position == 0xFF) {
+        servo->detach();
+    } else {
+        servo->write(position);
+    }
 }
 
 double primitive_voltage(void) {
