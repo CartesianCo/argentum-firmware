@@ -320,7 +320,7 @@ bool cmp_write_sint(cmp_ctx_t *ctx, int64_t d) {
     return cmp_write_s8(ctx, d);
   if (d >= -32768)
     return cmp_write_s16(ctx, d);
-  if (d >= -2147483648)
+  if (d >= -2147483648LL)
     return cmp_write_s32(ctx, d);
 
   return cmp_write_s64(ctx, d);
