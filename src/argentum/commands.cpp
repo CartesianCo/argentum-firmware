@@ -145,11 +145,11 @@ Axis * axis_from_id(uint8_t id) {
 
     switch(id) {
         case Axis::X:
-            return &y_axis;
+            return &x_axis;
             break;
 
         case Axis::Y:
-            return &x_axis;
+            return &y_axis;
             break;
 
         default:
