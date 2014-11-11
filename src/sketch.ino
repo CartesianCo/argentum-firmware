@@ -206,7 +206,7 @@ void parse_command(byte* command) {
 }
 
 bool readFile(char *filename) {
-    byte command[10];
+    byte command[20];
 
     //swap_motors();
 
@@ -290,7 +290,7 @@ bool readFile(char *filename) {
             // read in extra bytes if necessary
             int i = 1;
 
-            while(myFile.peek() != '\n' && i < 8) {
+            while(myFile.peek() != '\n' && i < 18) {
                 command[i] = myFile.read();
                 i++;
             }
@@ -314,7 +314,7 @@ bool readFile(char *filename) {
             }
 
             if(axis == 'Y') {
-                cur_y += abs(steps);
+                cur_y += steps;
 
                 if(steps == 0) {
                     cur_y = 0;
