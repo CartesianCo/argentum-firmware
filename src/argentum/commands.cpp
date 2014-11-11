@@ -320,8 +320,8 @@ void print_command(void) {
             move('X', x_delta);
             move('Y', 500);
         } else {
-            logger.info("Something went wrong in readFile, aborting print.");
-            return;
+            //logger.info("Something went wrong in readFile, aborting print.");
+            //return;
         }
     }
 
