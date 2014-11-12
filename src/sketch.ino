@@ -205,6 +205,17 @@ void parse_command(byte* command) {
     }
 }
 
+char hexdig(char ch)
+{
+    if (ch >= '0' && ch <= '9')
+        return ch - '0';
+    if (ch >= 'A' && ch <= 'F')
+        return ch - 'A' + 10;
+    if (ch >= 'a' && ch <= 'f')
+        return ch - 'a' + 10;
+    return 0;
+}
+
 bool readFile(char *filename) {
     byte command[20];
 
@@ -286,6 +297,22 @@ bool readFile(char *filename) {
             }
 
             parse_command(command);
+        } else if(command[0] == 'F') {
+            // Textual version of firing commands
+            int i = 1;
+
+            while(myFile.peek() != '\n' && i < 18) {
+                command[i] = myFile.read();
+                i++;
+            }
+            command[i] = 0x00;
+
+            byte a, f1, f2; 
+
+            a = hexdig(command[2]);
+            f1 = (hexdig(command[3]) << 4) | hexdig(command[4]);
+            f2 = (hexdig(command[5]) << 4) | hexdig(command[6]);
+            fire_head(f1, a, f2, a);
         } else if(command[0] == 'M') {
             // read in extra bytes if necessary
             int i = 1;
