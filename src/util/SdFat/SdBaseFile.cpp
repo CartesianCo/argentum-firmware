@@ -327,6 +327,70 @@ bool SdBaseFile::getFilename(char* name) {
  fail:
   return false;
 }
+
+struct lfn_dir_entry_t
+{
+    uint8_t seq;
+    uint16_t name1[5];
+    uint8_t attrs; // always 0x0f
+    uint8_t typ;   // always 0
+    uint8_t chksum;
+    uint16_t name2[6];
+    uint16_t cluster; // always 0
+    uint16_t name3[2];
+};
+typedef struct lfn_dir_entry_t lfn_dir_t;
+
+bool SdBaseFile::getLongFilename(char* lfn)
+{
+    int len=0, i, n, start_dirIndex = m_dirIndex;
+    lfn_dir_t *p = 0;
+
+  if (!isOpen()) {
+    goto fallback;
+  }
+  if (isRoot()) {
+    lfn[0] = '/';
+    lfn[1] = '\0';
+    return true;
+  }
+
+    lfn[0] = 0;
+    for (n = 1; n <= 20; n++)
+    {
+        if (m_dirIndex == 0)
+            goto fallback;
+        m_dirIndex--;
+        p = (lfn_dir_t*)cacheDirEntry(SdVolume::CACHE_FOR_READ);
+        if (!p)
+            goto fallback;
+        if (p->seq & (1 << 5))
+            goto fallback;
+        if ((p->seq & 0x1f) != n)
+            goto fallback;
+        if (p->attrs != 0x0f)
+            goto fallback;
+
+        for (i = 0; i < 5; i++)
+            lfn[len++] = p->name1[i] & 0xff;
+        for (i = 0; i < 6; i++)
+            lfn[len++] = p->name2[i] & 0xff;
+        for (i = 0; i < 2; i++)
+            lfn[len++] = p->name3[i] & 0xff;
+        if (p->seq & (1 << 6))
+            break;
+    }
+    if ((p->seq & (1 << 6)) == 0)
+        goto fallback;
+
+    lfn[len] = 0;
+    m_dirIndex = start_dirIndex;
+    return true;
+
+ fallback:
+    m_dirIndex = start_dirIndex;
+    return getFilename(lfn);
+}
 //------------------------------------------------------------------------------
 void SdBaseFile::getpos(FatPos_t* pos) {
   pos->position = m_curPosition;

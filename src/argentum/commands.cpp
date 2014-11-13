@@ -341,14 +341,14 @@ void print_ram(void) {
 
 void ls(void) {
     SdFile file;
-    char name[13];
+    char name[256];
 
     sd.vwd()->rewind();
 
     while (file.openNext(sd.vwd(), O_READ)) {
-        file.getFilename(name);
+        file.getLongFilename(name);
 
-        if(strstr(name, ".HEX")) {
+        if(strstr(name, ".HEX") || strstr(name, ".hex")) {
             logger.info(name);
         }
 

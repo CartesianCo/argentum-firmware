@@ -283,6 +283,7 @@ class SdBaseFile {
   /** \return The first cluster number for a file or directory. */
   uint32_t firstCluster() const {return m_firstCluster;}
   bool getFilename(char* name);
+  bool getLongFilename(char* lfn);
   /** \return True if this is a directory else false. */
   bool isDir() const {return m_type >= FAT_FILE_TYPE_MIN_DIR;}
   /** \return True if this is a normal file else false. */
