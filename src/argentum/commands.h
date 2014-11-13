@@ -24,6 +24,7 @@ void motors_off_command(void);
 void motors_on_command(void);
 
 void zero_position_command(void);
+void home_command(void);
 void goto_zero_command(void);
 void current_position_command(void);
 

@@ -98,11 +98,17 @@ void zero_position_command(void) {
 
 void goto_zero_command(void) {
     logger.info("Returning to 0.000, 0.000");
-    //xMotor->go_home();
-    //yMotor->go_home();
 
     x_axis.move_absolute(0.000);
     y_axis.move_absolute(0.000);
+}
+
+void home_command(void) {
+    x_axis.move_to_negative();
+    y_axis.move_to_negative();
+    x_axis.zero();
+    y_axis.zero();
+    logger.info("Homed");
 }
 
 void current_position_command(void) {

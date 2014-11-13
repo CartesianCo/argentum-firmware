@@ -52,7 +52,9 @@ void setup() {
 
     serial_command.addCommand("0", &goto_zero_command);
     serial_command.addCommand(")", &zero_position_command);
+    serial_command.addCommand("home", &home_command);
     serial_command.addCommand("pos", &current_position_command);
+
 
     // Motor
     serial_command.addCommand("x", &power_command);
