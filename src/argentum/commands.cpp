@@ -395,10 +395,6 @@ void help_command(void) {
     comms.println("Additional commands: ");
     serial_command.installed_commands();
     comms.println();
-
-    comms.println("Available Files: ");
-    ls();
-    comms.println();
 }
 
 #include "version.h"

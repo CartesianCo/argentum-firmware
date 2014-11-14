@@ -30,8 +30,6 @@ void setup() {
     rollers.disable();
     rollers.enable();
 
-    print_switch_status();
-
     x_axis.set_speed(1500);
     y_axis.set_speed(1500);
 
@@ -144,7 +142,7 @@ void setup() {
     y_axis.length = global_settings.calibration.y_axis.length;
 
     //uint8_t *firing_buffer = (uint8_t*)malloc(4096);
-    help_command();
+    version_command();
 }
 
 static int white = 0;

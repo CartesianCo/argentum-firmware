@@ -108,8 +108,6 @@ void Stepper::set_speed(int mm_per_minute) {
     long i = 1000000/((rate * steps_per_mm)/60);
 
     step_delay = i;
-
-    logger.info() << "step_delay = " << step_delay << Comms::endl;
 }
 
 int Stepper::get_speed() {
