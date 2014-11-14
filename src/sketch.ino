@@ -113,6 +113,7 @@ void setup() {
 
     // Common
     serial_command.addCommand("help", &help_command);
+    serial_command.addCommand("version", &version_command);
 
     // Initialise Axes from EEPROM here
     if(global_settings.calibration.x_axis.motor == 'A') {

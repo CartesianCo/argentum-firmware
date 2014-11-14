@@ -401,6 +401,15 @@ void help_command(void) {
     comms.println();
 }
 
+#include "version.h"
+
+void version_command(void) {
+    if (strcmp(version_string,"$Id$") == 0)
+        comms.println("No version");
+    else
+        comms.println(version_string);
+}
+
 void calibrate_command(void) {
     CalibrationData calibration;
     calibrate(&calibration);

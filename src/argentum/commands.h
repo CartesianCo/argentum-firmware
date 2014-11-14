@@ -55,6 +55,7 @@ void print_command(void);
 void print_ram(void);
 
 void help_command(void);
+void version_command(void);
 void calibrate_command(void);
 void calibrate_loop_command(void);
 
