@@ -72,6 +72,7 @@ void setup() {
     serial_command.addCommand("p", &print_command);
     serial_command.addCommand("P", &pause_command);
     serial_command.addCommand("R", &resume_command);
+    serial_command.addCommand("F", &fire_command);
 
     // Settings
     serial_command.addCommand("?", &read_setting_command);
@@ -207,16 +208,7 @@ void parse_command(byte* command) {
     }
 }
 
-char hexdig(char ch)
-{
-    if (ch >= '0' && ch <= '9')
-        return ch - '0';
-    if (ch >= 'A' && ch <= 'F')
-        return ch - 'A' + 10;
-    if (ch >= 'a' && ch <= 'f')
-        return ch - 'a' + 10;
-    return 0;
-}
+extern void fire_spec(char *spec);
 
 bool readFile(char *filename) {
     byte command[20];
@@ -309,12 +301,7 @@ bool readFile(char *filename) {
             }
             command[i] = 0x00;
 
-            byte a, f1, f2; 
-
-            a = hexdig(command[2]);
-            f1 = (hexdig(command[3]) << 4) | hexdig(command[4]);
-            f2 = (hexdig(command[5]) << 4) | hexdig(command[6]);
-            fire_head(f1, a, f2, a);
+            fire_spec((char*)command + 2);
         } else if(command[0] == 'M') {
             // read in extra bytes if necessary
             int i = 1;

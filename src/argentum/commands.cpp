@@ -8,6 +8,7 @@
 #include "calibration.h"
 #include "../util/colour.h"
 #include "../util/rollers.h"
+#include "../util/cartridge.h"
 //#include <SD.h>
 
 #include "../util/comms.h"
@@ -279,6 +280,32 @@ void pause_command(void) {
 
 void resume_command(void) {
     Serial.println("Resuming");
+}
+
+char hexdig(char ch)
+{
+    if (ch >= '0' && ch <= '9')
+        return ch - '0';
+    if (ch >= 'A' && ch <= 'F')
+        return ch - 'A' + 10;
+    if (ch >= 'a' && ch <= 'f')
+        return ch - 'a' + 10;
+    return 0;
+}
+
+void fire_spec(char *spec)
+{
+    byte a, f1, f2;
+
+    a = hexdig(spec[0]);
+    f1 = (hexdig(spec[1]) << 4) | hexdig(spec[2]);
+    f2 = (hexdig(spec[3]) << 4) | hexdig(spec[4]);
+    fire_head(f1, a, f2, a);
+}
+
+void fire_command(void) {
+    char *spec = serial_command.next();
+    fire_spec(spec);
 }
 
 void print_command(void) {
