@@ -6,8 +6,8 @@ from datetime import date
 def main(argv):
 
     try:
-        opts, args = getopt.getopt(argv, "mMt:h",
-                            ["minor", "major", "tag=", "help"])
+        opts, args = getopt.getopt(argv, "mMt:rh",
+                            ["minor", "major", "tag=", "report", "help"])
     except getopt.GetoptError:
         print("bumpversion -h for help.")
         sys.exit(2)
@@ -15,12 +15,14 @@ def main(argv):
     bumpMajor = False
     bumpMinor = False
     setTag = None
+    reportOnly = False
     for opt, arg in opts:
         if opt in ("-h", "--help"):
             print("bumpversion increases the version number.")
             print("  -m or --minor          Increase the minor version number.")
             print("  -M or --major          Increase the major version number.")
             print("  -t or --tag <tag>      Set the tag (default: keep existing tag)")
+            print("  -r or --report         Report the version, don't update.")
             print("  -h or --help           This help.")
             sys.exit(0)
         elif opt in ("-m", "--minor"):
@@ -29,6 +31,8 @@ def main(argv):
             bumpMajor = True
         elif opt in ("-t", "--tag"):
             setTag = arg
+        elif opt in ("-r", "--report"):
+            reportOnly = True
 
     versionFile = open("src/argentum/version.h", "r")
     lines = versionFile.read().split("\n")
@@ -81,7 +85,7 @@ def main(argv):
             print("Error: malformed version_string, major/minor/patch are not integers on line {}.".format(i))
             continue
 
-        if setTag == None:
+        if setTag == None and not reportOnly:
             if bumpMajor:
                 major = major + 1
                 minor = 0
