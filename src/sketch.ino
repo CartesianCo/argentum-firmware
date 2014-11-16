@@ -113,6 +113,7 @@ void setup() {
     // Common
     serial_command.addCommand("help", &help_command);
     serial_command.addCommand("version", &version_command);
+    serial_command.addCommand("sle", &sle_command);
 
     // Initialise Axes from EEPROM here
     if(global_settings.calibration.x_axis.motor == 'A') {
@@ -178,17 +179,25 @@ void loop() {
     }*/
 }
 
+bool simulateLocalEcho = false;
+void sle_command(void) {
+    simulateLocalEcho = !simulateLocalEcho;
+}
+
 void serialEvent(void) {
     uint8_t input = Serial.read();
 
-    if(input == 0x08) {
-        Serial.print("\x08 ");
-    }
+    if (simulateLocalEcho)
+    {
+        if(input == 0x08) {
+            Serial.print("\x08 ");
+        }
 
-    if(input == '\r') {
-        Serial.print("\r\n");
-    } else {
-        Serial.print((char)input);
+        if(input == '\r') {
+            Serial.print("\r\n");
+        } else {
+            Serial.print((char)input);
+        }
     }
 
     serial_command.add_byte(input);
