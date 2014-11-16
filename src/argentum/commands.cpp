@@ -431,6 +431,46 @@ void md5_command(void) {
     Serial.println((char*)data + 16);
 }
 
+void djb2_command(void) {
+    char *arg = serial_command.next();
+
+    myFile.open(arg);
+
+    if (!myFile.isOpen()) {
+        Serial.print("File could not be opened: ");
+        Serial.println(arg);
+
+        return;
+    }
+
+    uint32_t hash = 5381;
+
+    char data[1024];
+    for (;;)
+    {
+        int len = myFile.read(data, sizeof(data));
+        if (len <= 0)
+            break;
+
+        int pos;
+        for (pos = 0; pos < len; pos++)
+        {
+            int c = data[pos];
+            hash = ((hash << 5) + hash) + c;
+        }
+    }
+
+    int i;
+    for (i = 0; i < 8; i++)
+    {
+        uint8_t v = (hash >> (28 - i*4)) & 0xf;
+        data[i] = v >= 10 ? v + 'a' - 10 : v + '0';
+    }
+    data[8] = 0;
+    Serial.println(data);
+}
+
+
 void help_command(void) {
     comms.println("Press p to print output.hex");
     comms.println("S to stop, P to pause, R to resume, c to calibrate.");

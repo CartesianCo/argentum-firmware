@@ -63,6 +63,7 @@ void calibrate_loop_command(void);
 void init_sd_command(void);
 void ls_command(void);
 void md5_command(void);
+void djb2_command(void);
 
 // GPIO
 void analog_command(void);
