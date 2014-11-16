@@ -86,7 +86,8 @@ void setup() {
     //serial_command.addCommand("analog", &analog_command);
 
     // SD Card
-    serial_command.addCommand("ls", &ls);
+    serial_command.addCommand("ls", &ls_command);
+    serial_command.addCommand("md5", &md5_command);
     serial_command.addCommand("sd", &init_sd_command);
 
     // Colour

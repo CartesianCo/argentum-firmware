@@ -343,11 +343,9 @@ typedef struct lfn_dir_entry_t lfn_dir_t;
 
 bool SdBaseFile::getLongFilename(char* lfn)
 {
-    int len=0, i, n, start_dirIndex = m_dirIndex;
-    lfn_dir_t *p = 0;
-
+  dir_t *p;
   if (!isOpen()) {
-    goto fallback;
+    goto fail;
   }
   if (isRoot()) {
     lfn[0] = '/';
@@ -355,21 +353,38 @@ bool SdBaseFile::getLongFilename(char* lfn)
     return true;
   }
 
+    p = cacheDirEntry(SdVolume::CACHE_FOR_READ);
+    if (getLongFilename(lfn, p, m_dirIndex))
+        return true;
+
+    // fallback to 8.3
+    return getFilename(lfn);
+
+ fail:
+    return false;
+}
+
+bool SdBaseFile::getLongFilename(char* lfn, dir_t *op, int odirIndex)
+{
+    int len=0, i, n;
+    lfn_dir_t *p = 0;
+    int dirIndex = odirIndex;
+
     lfn[0] = 0;
     for (n = 1; n <= 20; n++)
     {
-        if (m_dirIndex == 0)
-            goto fallback;
-        m_dirIndex--;
-        p = (lfn_dir_t*)cacheDirEntry(SdVolume::CACHE_FOR_READ);
+        if (dirIndex == 0)
+            goto fail;
+        dirIndex--;
+        p = (lfn_dir_t*)(op - odirIndex + dirIndex);
         if (!p)
-            goto fallback;
+            goto fail;
         if (p->seq & (1 << 5))
-            goto fallback;
+            goto fail;
         if ((p->seq & 0x1f) != n)
-            goto fallback;
+            goto fail;
         if (p->attrs != 0x0f)
-            goto fallback;
+            goto fail;
 
         for (i = 0; i < 5; i++)
             lfn[len++] = p->name1[i] & 0xff;
@@ -381,15 +396,13 @@ bool SdBaseFile::getLongFilename(char* lfn)
             break;
     }
     if ((p->seq & (1 << 6)) == 0)
-        goto fallback;
+        goto fail;
 
     lfn[len] = 0;
-    m_dirIndex = start_dirIndex;
     return true;
 
- fallback:
-    m_dirIndex = start_dirIndex;
-    return getFilename(lfn);
+ fail:
+    return false;
 }
 //------------------------------------------------------------------------------
 void SdBaseFile::getpos(FatPos_t* pos) {
@@ -491,7 +504,7 @@ bool SdBaseFile::mkdir(SdBaseFile* parent, const char* path, bool pFlag) {
     }
     while (*path == '/') path++;
     if (!*path) break;
-    if (!sub->open(parent, dname, O_READ)) {
+    if (!sub->open(parent, dname, NULL, O_READ)) {
       if (!pFlag || !sub->mkdir(parent, dname)) {
         DBG_FAIL_MACRO;
         goto fail;
@@ -518,7 +531,7 @@ bool SdBaseFile::mkdir(SdBaseFile* parent, const uint8_t dname[11]) {
     goto fail;
   }
   // create a normal file
-  if (!open(parent, dname, O_CREAT | O_EXCL | O_RDWR)) {
+  if (!open(parent, dname, NULL, O_CREAT | O_EXCL | O_RDWR)) {
     DBG_FAIL_MACRO;
     goto fail;
   }
@@ -646,6 +659,7 @@ bool SdBaseFile::open(SdBaseFile* dirFile, const char* path, uint8_t oflag) {
   SdBaseFile dir1, dir2;
   SdBaseFile *parent = dirFile;
   SdBaseFile *sub = &dir1;
+  const char *lfn = NULL;
 
   if (!dirFile) {
     DBG_FAIL_MACRO;
@@ -667,13 +681,15 @@ bool SdBaseFile::open(SdBaseFile* dirFile, const char* path, uint8_t oflag) {
     }
   }
   while (1) {
+    lfn = path;
     if (!make83Name(path, dname, &path)) {
-      DBG_FAIL_MACRO;
-      goto fail;
+      strcpy((char*)dname, "lfn");
+      while (*path != '\0' && *path != '/')
+            path++;
     }
     while (*path == '/') path++;
     if (!*path) break;
-    if (!sub->open(parent, dname, O_READ)) {
+    if (!sub->open(parent, dname, lfn, O_READ)) {
       DBG_FAIL_MACRO;
       goto fail;
     }
@@ -681,7 +697,7 @@ bool SdBaseFile::open(SdBaseFile* dirFile, const char* path, uint8_t oflag) {
     parent = sub;
     sub = parent != &dir1 ? &dir1 : &dir2;
   }
-  return open(parent, dname, oflag);
+  return open(parent, dname, lfn, oflag);
 
  fail:
   return false;
@@ -689,7 +705,7 @@ bool SdBaseFile::open(SdBaseFile* dirFile, const char* path, uint8_t oflag) {
 //------------------------------------------------------------------------------
 // open with filename in dname
 bool SdBaseFile::open(SdBaseFile* dirFile,
-  const uint8_t dname[11], uint8_t oflag) {
+  const uint8_t dname[11], const char *lfn, uint8_t oflag) {
   cache_t* pc;
   bool emptyFound = false;
   bool fileFound = false;
@@ -722,6 +738,30 @@ bool SdBaseFile::open(SdBaseFile* dirFile,
         // done if no entries follow
         if (p->name[0] == DIR_NAME_FREE) {
           goto done;
+        }
+      } else if (!strcmp((char*)dname, "lfn")) {
+        char cur_lfn[256];
+        memset(cur_lfn, 0, 256);
+        if (getLongFilename(cur_lfn, p, index)) {
+            int i;
+            fileFound = true;
+            for (i = 0; (cur_lfn[i] || lfn[i]) && i < 256; i++)
+            {
+                char ch1 = cur_lfn[i], ch2 = lfn[i];
+                if (ch1 == '/' && ch2 == '/')
+                    break;
+                if (ch1 >= 'a' && ch1 <= 'z')
+                    ch1 = ch1 + 'A' - 'a';
+                if (ch2 >= 'a' && ch2 <= 'z')
+                    ch2 = ch2 + 'A' - 'a';
+                if (ch1 != ch2)
+                {
+                    fileFound = false;
+                    break;
+                }
+            }
+            if (fileFound)
+                goto done;
         }
       } else if (!memcmp(dname, p->name, 11)) {
          fileFound = true;

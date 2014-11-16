@@ -16,11 +16,15 @@
 #include "../util/axis.h"
 
 #include "../util/logging.h"
+extern "C" {
+#include "../util/md5.h"
+}
 
 #include "boardtests.h"
 
 #include "argentum.h"
 
+extern SdFile myFile;
 extern bool readFile(char *filename);
 extern void file_stats(char *filename);
 
@@ -372,7 +376,7 @@ void print_ram(void) {
     Serial.println("%)");
 }
 
-void ls(void) {
+void ls_command(void) {
     SdFile file;
     char name[256];
 
@@ -387,6 +391,44 @@ void ls(void) {
 
         file.close();
     }
+}
+
+void md5_command(void) {
+    char *arg = serial_command.next();
+
+    myFile.open(arg);
+
+    if (!myFile.isOpen()) {
+        Serial.print("File could not be opened: ");
+        Serial.println(arg);
+
+        return;
+    }
+
+    MD5_CTX md5;
+    MD5_Init(&md5);
+    byte data[1024];
+    for (;;)
+    {
+        int n = myFile.read(data, sizeof(data));
+        if (n <= 0)
+            break;
+        MD5_Update(&md5, data, (unsigned int)n);
+    }
+    myFile.close();
+
+    MD5_Final(data, &md5);
+    int i;
+    for (i = 0; i < 16; i++)
+    {
+        char lo = data[i] & 0xf;
+        char hi = (data[i] >> 4) & 0xf;
+        data[16 + i*2]     = hi >= 10 ? hi + 'a' - 10 : hi + '0';
+        data[16 + i*2 + 1] = lo >= 10 ? lo + 'a' - 10 : lo + '0';
+    }
+    data[16+16*2] = 0;
+
+    Serial.println((char*)data + 16);
 }
 
 void help_command(void) {

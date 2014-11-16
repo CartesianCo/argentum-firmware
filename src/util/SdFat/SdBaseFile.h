@@ -373,8 +373,9 @@ class SdBaseFile {
   dir_t* cacheDirEntry(uint8_t action);
   int8_t lsPrintNext(Print *pr, uint8_t flags, uint8_t indent);
   static bool make83Name(const char* str, uint8_t* name, const char** ptr);
+  bool getLongFilename(char* lfn, dir_t *op, int odirIndex);
   bool mkdir(SdBaseFile* parent, const uint8_t dname[11]);
-  bool open(SdBaseFile* dirFile, const uint8_t dname[11], uint8_t oflag);
+  bool open(SdBaseFile* dirFile, const uint8_t dname[11], const char *lfn, uint8_t oflag);
   bool openCachedEntry(uint8_t cacheIndex, uint8_t oflags);
   dir_t* readDirCache();
   static void setCwd(SdBaseFile* cwd) {m_cwd = cwd;}
