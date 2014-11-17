@@ -711,6 +711,42 @@ bool SdBaseFile::open(SdBaseFile* dirFile,
   bool fileFound = false;
   uint8_t index;
   dir_t* p;
+  uint8_t lfn83name[11];
+
+  if ((oflag & O_CREAT) && (oflag & O_WRITE)) {
+    int lastDot = -1;
+    bool bLong = false;
+    memset(lfn83name, ' ', 11);
+    for (int i = 0; lfn[i]; i++)
+    {
+        char ch = lfn[i];
+        if (ch >= 'a' && ch <= 'z')
+            ch = ch - 'a' + 'A';
+        if (ch == '.')
+        {
+            lastDot = i;
+        }
+        else if (lastDot == -1)
+        {
+            if (i < 8)
+                lfn83name[i] = ch;
+            else
+                bLong = true;
+        }
+        else
+        {
+            if (i - lastDot <= 3)
+                lfn83name[8 + i - lastDot - 1] = ch;
+            else
+                bLong = true;
+        }
+    }
+    if (bLong)
+    {
+        lfn83name[6] = '~';
+        lfn83name[7] = '1';
+    }
+  }
 
   m_vol = dirFile->m_vol;
 
@@ -731,9 +767,31 @@ bool SdBaseFile::open(SdBaseFile* dirFile,
       if (p->name[0] == DIR_NAME_FREE || p->name[0] == DIR_NAME_DELETED) {
         // remember first empty slot
         if (!emptyFound) {
-          m_dirBlock = m_vol->cacheBlockNumber();
-          m_dirIndex = index;
-          emptyFound = true;
+          bool okEmpty = true;
+          if (!strcmp((char*)dname, "lfn")) {
+              int len;
+              for (len = 0; lfn[len] && lfn[len] != '/'; len++)
+                ;
+              int req = (len - 1) / 13 + 1;
+              if (req > index)
+                okEmpty = false;
+              else
+              {
+                  int i;
+                  for (i = 0; i < req; i++)
+                  {
+                      dir_t *pp = p - i - 1;
+                      if (pp->name[0] != DIR_NAME_DELETED)
+                        okEmpty = false;
+                  }
+              }
+          }
+          if (okEmpty)
+          {
+              m_dirBlock = m_vol->cacheBlockNumber();
+              m_dirIndex = index;
+              emptyFound = true;
+          }
         }
         // done if no entries follow
         if (p->name[0] == DIR_NAME_FREE) {
@@ -804,10 +862,73 @@ bool SdBaseFile::open(SdBaseFile* dirFile,
       // use first entry in cluster
       p = pc->dir;
       index = 0;
+
+      if (!strcmp((char*)dname, "lfn"))
+      {
+        int len;
+        for (len = 0; lfn[len] && lfn[len] != '/'; len++)
+            ;
+        index = len / 13 + 1;
+        p = pc->dir + index;
+      }
     }
     // initialize as empty file
     memset(p, 0, sizeof(dir_t));
-    memcpy(p->name, dname, 11);
+    if (!strcmp((char*)dname, "lfn"))
+    {
+        memcpy(p->name, lfn83name, 11);
+        unsigned char sum = 0;
+        int i, j = 0;
+        for (i = 11; i; i--)
+            sum = ((sum & 1) << 7) + (sum >> 1) + lfn83name[11-i];
+
+        bool doneZero = false;
+        for (int seq = 0; seq < 32 && seq < index && !doneZero; seq++)
+        {
+            lfn_dir_t *lp = (lfn_dir_t*)(p - 1 - seq);
+            memset(lp, 0, 32);
+            lp->seq = seq+1;
+            lp->attrs = 0x0f;
+            lp->chksum = sum;
+            memset(lp->name1, 0xff, 10);
+            memset(lp->name2, 0xff, 12);
+            memset(lp->name3, 0xff,  4);
+            for (i = 0; !doneZero && i < 5; i++)
+            {
+                if (lfn[j] == 0 || lfn[j] == '/')
+                {
+                    doneZero = true;
+                    lp->name1[i] = 0;
+                }
+                else
+                    lp->name1[i] = lfn[j++];
+            }
+            for (i = 0; !doneZero && i < 6; i++)
+            {
+                if (lfn[j] == 0 || lfn[j] == '/')
+                {
+                    doneZero = true;
+                    lp->name2[i] = 0;
+                }
+                else
+                    lp->name2[i] = lfn[j++];
+            }
+            for (i = 0; !doneZero && i < 2; i++)
+            {
+                if (lfn[j] == 0 || lfn[j] == '/')
+                {
+                    doneZero = true;
+                    lp->name3[i] = 0;
+                }
+                else
+                    lp->name3[i] = lfn[j++];
+            }
+            if (doneZero || seq == 31)
+                lp->seq |= (1 << 6);
+        }
+    }
+    else
+        memcpy(p->name, dname, 11);
 
     // set timestamps
     if (m_dateTime) {

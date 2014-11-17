@@ -24,7 +24,6 @@ extern "C" {
 
 #include "argentum.h"
 
-extern SdFile myFile;
 extern bool readFile(char *filename);
 extern void file_stats(char *filename);
 
@@ -382,92 +381,192 @@ void ls_command(void) {
 
     sd.vwd()->rewind();
 
+    int count = 0;
     while (file.openNext(sd.vwd(), O_READ)) {
         file.getLongFilename(name);
 
         if(strstr(name, ".HEX") || strstr(name, ".hex")) {
             logger.info(name);
+            count++;
         }
 
         file.close();
     }
+
+    if (count == 0)
+        logger.info("No files.");
 }
 
 void md5_command(void) {
     char *arg = serial_command.next();
 
-    myFile.open(arg);
+    SdFile file;
+    file.open(arg);
 
-    if (!myFile.isOpen()) {
+    if (!file.isOpen()) {
         Serial.print("File could not be opened: ");
         Serial.println(arg);
 
         return;
     }
 
+    byte block[1024];
     MD5_CTX md5;
     MD5_Init(&md5);
-    byte data[1024];
     for (;;)
     {
-        int n = myFile.read(data, sizeof(data));
+        int n = file.read(block, sizeof(block));
         if (n <= 0)
             break;
-        MD5_Update(&md5, data, (unsigned int)n);
+        MD5_Update(&md5, block, (unsigned int)n);
     }
-    myFile.close();
+    file.close();
 
-    MD5_Final(data, &md5);
+    MD5_Final(block, &md5);
     int i;
     for (i = 0; i < 16; i++)
     {
-        char lo = data[i] & 0xf;
-        char hi = (data[i] >> 4) & 0xf;
-        data[16 + i*2]     = hi >= 10 ? hi + 'a' - 10 : hi + '0';
-        data[16 + i*2 + 1] = lo >= 10 ? lo + 'a' - 10 : lo + '0';
+        char lo = block[i] & 0xf;
+        char hi = (block[i] >> 4) & 0xf;
+        block[16 + i*2]     = hi >= 10 ? hi + 'a' - 10 : hi + '0';
+        block[16 + i*2 + 1] = lo >= 10 ? lo + 'a' - 10 : lo + '0';
     }
-    data[16+16*2] = 0;
+    block[16+16*2] = 0;
 
-    Serial.println((char*)data + 16);
+    Serial.println((char*)block + 16);
 }
 
 void djb2_command(void) {
     char *arg = serial_command.next();
 
-    myFile.open(arg);
+    SdFile file;
+    file.open(arg);
 
-    if (!myFile.isOpen()) {
+    if (!file.isOpen()) {
         Serial.print("File could not be opened: ");
         Serial.println(arg);
 
         return;
     }
 
+    byte block[1024];
     uint32_t hash = 5381;
 
-    char data[1024];
     for (;;)
     {
-        int len = myFile.read(data, sizeof(data));
+        int len = file.read(block, sizeof(block));
         if (len <= 0)
             break;
 
         int pos;
         for (pos = 0; pos < len; pos++)
         {
-            int c = data[pos];
+            int c = block[pos];
             hash = ((hash << 5) + hash) + c;
         }
     }
+
+    file.close();
 
     int i;
     for (i = 0; i < 8; i++)
     {
         uint8_t v = (hash >> (28 - i*4)) & 0xf;
-        data[i] = v >= 10 ? v + 'a' - 10 : v + '0';
+        block[i] = v >= 10 ? v + 'a' - 10 : v + '0';
     }
-    data[8] = 0;
-    Serial.println(data);
+    block[8] = 0;
+    Serial.println((char*)block);
+}
+
+void recv_command(void) {
+    char *arg = serial_command.next();
+    uint32_t size = 0;
+    while (*arg >= '0' && *arg <= '9')
+        size = size * 10 + (*arg++ - '0');
+
+    char *filename = serial_command.next();
+    SdFile file;
+    file.open(filename, O_CREAT|O_WRITE);
+    if (!file.isOpen()) {
+        Serial.print("File could not be opened: ");
+        Serial.println(filename);
+        return;
+    }
+
+    Serial.println("Ready");
+
+    byte block[1024];
+    uint32_t hash = 5381;
+    uint32_t pos = 0;
+    while (pos < size)
+    {
+        uint32_t nleft = size - pos;
+        int blocksize = nleft < 1024 ? nleft : 1024;
+        int nread = blocksize;
+        while (nread > 0)
+        {
+            int len = Serial.readBytes((char*)block, nread);
+            if (len <= 0)
+                break;
+            nread -= len;
+        }
+        if (nread != 0)
+        {
+            Serial.println("Errorecv");
+            Serial.println(nread);
+            Serial.println(blocksize);
+            Serial.println(pos);
+            Serial.println(size);
+            return;
+        }
+
+        uint32_t oldhash = hash;
+        int n;
+        for (n = 0; n < blocksize; n++)
+        {
+            block[n] ^= 0x26;
+            int c = block[n];
+            hash = ((hash << 5) + hash) + c;
+        }
+
+        file.write(block, blocksize);
+
+        char resp[10];
+        int i;
+        for (i = 0; i < 8; i++)
+        {
+            uint8_t v = (hash >> (28 - i*4)) & 0xf;
+            resp[i] = v >= 10 ? v + 'a' - 10 : v + '0';
+        }
+        resp[8] = 0;
+        Serial.println(resp);
+
+        int len = Serial.readBytes(resp, 1);
+        if (len != 1)
+        {
+            Serial.println("Errorcmd");
+            return;
+        }
+        char cmd = resp[0];
+        if (cmd == 'G')
+        {
+            pos += 1024;
+        }
+        else if (cmd == 'B')
+        {
+            file.seekCur(-blocksize);
+            hash = oldhash;
+        }
+        else
+        {
+            // anything else cancels
+            Serial.println("Canceled");
+            file.remove();
+            return;
+        }
+    }
+
+    file.close();
 }
 
 
