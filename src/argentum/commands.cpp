@@ -491,6 +491,7 @@ void recv_command(void) {
     {
         compressed = true;
         filename = serial_command.next();
+        decb_init();
     }
     SdFile file;
     file.open(filename, O_CREAT|O_WRITE);
@@ -502,21 +503,31 @@ void recv_command(void) {
 
     Serial.println("Ready");
 
-    byte block[1028];
+#define OVERLAP 64
+    byte block[1028 + OVERLAP];
+    byte block2[512 + OVERLAP];
     uint32_t hash = 5381;
     uint32_t pos = 0;
+    int inoff = 0;
     while (pos < size)
     {
+        if (compressed && inoff > OVERLAP)
+        {
+            // eep
+            Serial.write((byte*)"J", 1);
+            return;
+        }
         uint32_t nleft = size - pos;
         int blocksize = nleft < 1024 ? nleft : 1024;
         int nread = blocksize + 4;
-        int where = 0;
+        int where = inoff;
+        int len;
         while (nread > 0)
         {
-            int len = Serial.readBytes((char*)block + where, nread);
+            len = Serial.readBytes((char*)block + where, nread);
             if (len <= 0)
                 break;
-            if (len == 1 && where == 0 && *block == 'C')
+            if (len == 1 && where == inoff && *block == 'C')
             {
                 file.remove();
                 return;
@@ -538,8 +549,8 @@ void recv_command(void) {
         int n;
         for (n = 0; n < blocksize; n++)
         {
-            block[n] ^= 0x26;
-            int c = block[n];
+            block[inoff + n] ^= 0x26;
+            int c = block[inoff + n];
             hash = ((hash << 5) + hash) + c;
         }
         byte bhash[4];
@@ -547,14 +558,40 @@ void recv_command(void) {
         bhash[1] = ((hash >>  8) & 0xff);
         bhash[2] = ((hash >> 16) & 0xff);
         bhash[3] = ((hash >> 24) & 0xff);
-        if (memcmp(bhash, &block[blocksize], 4) != 0)
+        if (memcmp(bhash, &block[inoff + blocksize], 4) != 0)
         {
             Serial.write((byte*)"B", 1);
             hash = oldhash;
             continue;
         }
 
-        file.write(block, blocksize);
+        pos += blocksize;
+        len = inoff + blocksize;
+        inoff = 0;
+
+        if (compressed)
+        {
+            int res = KEEP_GOING;
+            while (res == KEEP_GOING)
+            {
+                int outlen = sizeof(block2);
+                res = decb((char*)block, &inoff, len, (char*)block2, &outlen);
+                if (res == DECODE_ERROR)
+                {
+                    // TODO: see if we can report bad block and unwind
+                    Serial.write((byte*)"F", 1);
+                    return;
+                }
+                file.write(block2, outlen);
+            }
+
+            memmove(block, block+inoff, len-inoff);
+            inoff = len-inoff;
+        }
+        else
+        {
+            file.write(block, blocksize);
+        }
 
         Serial.write((byte*)"G", 1);
     }
