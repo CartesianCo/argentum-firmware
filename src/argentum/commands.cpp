@@ -18,6 +18,7 @@
 #include "../util/logging.h"
 extern "C" {
 #include "../util/md5.h"
+#include "../util/decb.h"
 }
 
 #include "boardtests.h"
@@ -485,6 +486,12 @@ void recv_command(void) {
         size = size * 10 + (*arg++ - '0');
 
     char *filename = serial_command.next();
+    bool compressed = false;
+    if (!strcmp(filename, "b"))
+    {
+        compressed = true;
+        filename = serial_command.next();
+    }
     SdFile file;
     file.open(filename, O_CREAT|O_WRITE);
     if (!file.isOpen()) {
@@ -495,20 +502,27 @@ void recv_command(void) {
 
     Serial.println("Ready");
 
-    byte block[1024];
+    byte block[1028];
     uint32_t hash = 5381;
     uint32_t pos = 0;
     while (pos < size)
     {
         uint32_t nleft = size - pos;
         int blocksize = nleft < 1024 ? nleft : 1024;
-        int nread = blocksize;
+        int nread = blocksize + 4;
+        int where = 0;
         while (nread > 0)
         {
-            int len = Serial.readBytes((char*)block, nread);
+            int len = Serial.readBytes((char*)block + where, nread);
             if (len <= 0)
                 break;
+            if (len == 1 && where == 0 && *block == 'C')
+            {
+                file.remove();
+                return;
+            }
             nread -= len;
+            where += len;
         }
         if (nread != 0)
         {
@@ -528,42 +542,21 @@ void recv_command(void) {
             int c = block[n];
             hash = ((hash << 5) + hash) + c;
         }
+        byte bhash[4];
+        bhash[0] = ( hash        & 0xff);
+        bhash[1] = ((hash >>  8) & 0xff);
+        bhash[2] = ((hash >> 16) & 0xff);
+        bhash[3] = ((hash >> 24) & 0xff);
+        if (memcmp(bhash, &block[blocksize], 4) != 0)
+        {
+            Serial.write((byte*)"B", 1);
+            hash = oldhash;
+            continue;
+        }
 
         file.write(block, blocksize);
 
-        char resp[10];
-        int i;
-        for (i = 0; i < 8; i++)
-        {
-            uint8_t v = (hash >> (28 - i*4)) & 0xf;
-            resp[i] = v >= 10 ? v + 'a' - 10 : v + '0';
-        }
-        resp[8] = 0;
-        Serial.println(resp);
-
-        int len = Serial.readBytes(resp, 1);
-        if (len != 1)
-        {
-            Serial.println("Errorcmd");
-            return;
-        }
-        char cmd = resp[0];
-        if (cmd == 'G')
-        {
-            pos += 1024;
-        }
-        else if (cmd == 'B')
-        {
-            file.seekCur(-blocksize);
-            hash = oldhash;
-        }
-        else
-        {
-            // anything else cancels
-            Serial.println("Canceled");
-            file.remove();
-            return;
-        }
+        Serial.write((byte*)"G", 1);
     }
 
     file.close();
