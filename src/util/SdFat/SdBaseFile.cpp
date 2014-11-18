@@ -782,7 +782,32 @@ bool SdBaseFile::open(SdBaseFile* dirFile,
                   {
                       dir_t *pp = p - i - 1;
                       if (pp->name[0] != DIR_NAME_DELETED)
+                      {
                         okEmpty = false;
+                        break;
+                      }
+                  }
+              }
+              if (!okEmpty && index + req + 1 < 16) {
+                  okEmpty = true;
+                  int i;
+                  for (i = 0; i < req; i++)
+                  {
+                      dir_t *np = p + i + 1;
+                      if (np->name[i] == DIR_NAME_FREE)
+                        break;
+                      if (np->name[0] != DIR_NAME_DELETED)
+                      {
+                        okEmpty = false;
+                        break;
+                      }
+                  }
+                  if (okEmpty)
+                  {
+                    m_dirBlock = m_vol->cacheBlockNumber();
+                    m_dirIndex = index + req;
+                    emptyFound = true;
+                    okEmpty = false;
                   }
               }
           }
