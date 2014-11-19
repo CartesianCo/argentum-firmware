@@ -494,7 +494,7 @@ void recv_command(void) {
         decb_init();
     }
     SdFile file;
-    file.open(filename, O_CREAT|O_WRITE);
+    file.open(filename, O_CREAT|O_WRITE|O_TRUNC);
     if (!file.isOpen()) {
         Serial.print("File could not be opened: ");
         Serial.println(filename);

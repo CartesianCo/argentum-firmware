@@ -200,6 +200,15 @@ int decb(char *inbuf, int *pinoff, int inlen, char *outbuf, int *poutlen)
                     nLastParts++;
                     value += 2;
                 }
+                else if ((value - firingLine + 4 == firingLineLen ||
+                         value[4] == ',') &&
+                         ishexdigit(value[0]) && ishexdigit(value[1]) &&
+                         ishexdigit(value[2]) && ishexdigit(value[3]))
+                {
+                    memcpy(zone, value, 4);
+                    firing = zone;
+                    value += 4;
+                }
                 else
                 {
 #ifdef DEBUG
