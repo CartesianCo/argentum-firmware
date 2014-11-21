@@ -189,7 +189,7 @@ void move(const char axis_id, long steps) {
     Axis *axis = axis_from_id(axis_id);
 
     if(!axis) {
-        logger.error() << "Cannot obtain pointer for " << axis_id << "axis"
+        logger.error() << "Cannot obtain pointer for " << axis_id << " axis"
                 << Comms::endl;
         return;
     }
