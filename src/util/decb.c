@@ -51,6 +51,16 @@ int decb(char *inbuf, int *pinoff, int inlen, char *outbuf, int *poutlen)
             else if (line[lineLen] == ',')
                 ncommas++;
 
+        if (line[0] == '#')
+        {
+            if (*poutlen + lineLen + lineLen + 1 > outlen)
+                return KEEP_GOING;
+            memcpy(outbuf + *poutlen, line, lineLen + 1);
+            *poutlen += lineLen + 1;
+            *pinoff += lineLen + 1;
+            continue;
+        }
+
         if (line[0] == 'X')
         {
             if (*poutlen + lineLen + 4 > outlen)

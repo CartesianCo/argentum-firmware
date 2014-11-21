@@ -452,12 +452,25 @@ void djb2_command(void) {
 
     byte block[1024];
     uint32_t hash = 5381;
+    bool bFirst = true;
 
     for (;;)
     {
         int len = file.read(block, sizeof(block));
         if (len <= 0)
             break;
+
+        if (bFirst && len >= 10 && block[0] == '#' && block[1] == ' ' &&
+                block[10] == '\n')
+        {
+            // easy out
+            block[10] = 0;
+            Serial.println((char*)block + 2);
+            file.close();
+            return;
+        }
+
+        bFirst = false;
 
         int pos;
         for (pos = 0; pos < len; pos++)
