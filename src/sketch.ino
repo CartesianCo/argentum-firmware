@@ -338,6 +338,8 @@ bool readFile(char *filename) {
                 if(cur_x > max_x) {
                     max_x = cur_x;
                 }
+
+                Serial.println(".");
             }
 
             if(axis == 'Y') {
