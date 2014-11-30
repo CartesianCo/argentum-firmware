@@ -20,7 +20,6 @@ def waitForResponse(serialDevice, timeout=0.5, expect=None):
             data = serialDevice.read(1)
             n = serialDevice.inWaiting()
             if n > 0:
-                #print("waitForResponse reading {} more bytes.".format(n))
                 data = data + serialDevice.read(n)
             else:
                 break
@@ -39,6 +38,18 @@ def main(args):
     if len(args) < 1:
         print("usage: send <cmd>")
         sys.exit(1)
+
+    wait = False
+    if args[0] == '-w':
+        args = args[1:]
+        wait = True
+
+    oneLineOnly = False
+    if args[0] == '-w1':
+        args = args[1:]
+        wait = True
+        oneLineOnly = True
+
     cmd = ' '.join(args)
 
     port = findPort()
@@ -52,13 +63,22 @@ def main(args):
         print("printer did not respond.")
         sys.exit(1)
 
+    print(cmd)
     serialDevice.write(cmd + "\n")
 
+    if not wait:
+        return
+
+    serialDevice.timeout = 30.0
     try:
         while True:
             data = serialDevice.read(1)
             if data:
                 sys.stdout.write(data.decode('utf-8', 'ignore'))
+                if oneLineOnly and data == '\n':
+                    break
+            else:
+                break
     except:
         pass
 
