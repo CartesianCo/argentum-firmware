@@ -312,6 +312,53 @@ void fire_command(void) {
     fire_spec(spec);
 }
 
+void draw_command(void) {
+    char *arg;
+    char *spec = serial_command.next();
+
+    if(spec == NULL) {
+        logger.error("Missing firing parameter");
+        return;
+    }
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        logger.error("Missing axis parameter");
+        return;
+    }
+
+    char axis_id = arg[0];
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        logger.error("Missing steps parameter");
+        return;
+    }
+
+    long steps = atol(arg);
+
+    Axis *axis = axis_from_id(axis_id);
+    if (axis == NULL) {
+        logger.error("Bad axis");
+        return;
+    }
+
+    axis->move_incremental(steps);
+
+    if (axis_id == 'X') {
+        xpos += steps;
+    } else {
+        ypos += steps;
+    }
+
+    while(axis->moving()) {
+        if (axis->run())
+            fire_spec(spec);
+    }
+}
+
 void print_command(void) {
     char *arg;
 

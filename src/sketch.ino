@@ -71,6 +71,7 @@ void setup() {
     serial_command.addCommand("P", &pause_command);
     serial_command.addCommand("R", &resume_command);
     serial_command.addCommand("F", &fire_command);
+    serial_command.addCommand("D", &draw_command);
 
     // Settings
     serial_command.addCommand("?", &read_setting_command);

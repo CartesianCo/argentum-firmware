@@ -51,6 +51,7 @@ void sweep(long width, long height); // ^^^^^
 void pause_command(void);
 void resume_command(void);
 void fire_command(void);
+void draw_command(void);
 void print_command(void);
 void print_ram(void);
 
