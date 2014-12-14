@@ -313,7 +313,6 @@ void fire_command(void) {
 }
 
 void draw_command(void) {
-    char *arg;
     char *spec = serial_command.next();
 
     if(spec == NULL) {
@@ -321,7 +320,13 @@ void draw_command(void) {
         return;
     }
 
-    arg = serial_command.next();
+    char *srate = serial_command.next();
+    if(srate == NULL) {
+        logger.error("Missing firing rate");
+        return;
+    }
+
+    char *arg = serial_command.next();
 
     if(arg == NULL) {
         logger.error("Missing axis parameter");
@@ -338,6 +343,7 @@ void draw_command(void) {
     }
 
     long steps = atol(arg);
+    float rate = atof(srate);
 
     Axis *axis = axis_from_id(axis_id);
     if (axis == NULL) {
@@ -353,9 +359,17 @@ void draw_command(void) {
         ypos += steps;
     }
 
+    logger.info() << "Firing " << spec << " at rate " << rate << Comms::endl;
+
+    float acc = 0;
     while(axis->moving()) {
-        if (axis->run())
-            fire_spec(spec);
+        if (axis->run()) {
+            acc += rate;
+            while (acc >= 1.0) {
+                fire_spec(spec);
+                acc -= 1.0;
+            }
+        }
     }
 }
 
