@@ -21,6 +21,11 @@
 #define PIN_FET_GREEN         4
 #define PIN_FET_BLUE          2
 
+// Unfortunately ROLLER_SERVO_PIN was not seen from rollers.h and had to be duplicated there.
+#define ROLLER_SERVO_PIN      10	// AOUT 1
+#define AOUT_2_PIN            11  // Spare, not yet used.
+#define AOUT_3_PIN            12  // Spare, not yet used.
+
 #define STEPPER_A_STEP_PIN    15
 #define STEPPER_A_DIR_PIN     14
 #define STEPPER_A_ENABLE_PIN  16
