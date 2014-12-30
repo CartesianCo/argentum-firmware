@@ -831,85 +831,87 @@ void blue_command(void) {
 }
 
 void rollers_command(void) {
-	/* Command set:
-		 + move up by some small amount.
-		 - move down by some small amount.
-		 E enable
-		 e disable
-		 r retract
-		 d deploy
-		 g get current servo angle.
-		 R Set retract position to current possition. Do not move.
-		 D Set Deploy position to current position, do not move.
-		 n where n is an integer number to set the servo angle to.
-  */
+/* Command set:
+    + move up by some small amount.
+    - move down by some small amount.
+    E enable
+    e disable
+    r retract
+    d deploy
+    g get current servo angle.
+    R Set retract position to current possition. Do not move.
+    D Set Deploy position to current position, do not move.
+    n where n is an integer number to set the servo angle to.
+*/
 
-    char *arg;
-		int aval;	// angle value of servo, assum at 90 deg. to start with.
-		aval=rollers.getangle();
+  char *arg;
+  int aval;	// angle value of servo, assum at 90 deg. to start with.
+  aval=rollers.getangle();
 
-    arg = serial_command.next();
-		logger.info("Got the roller command: ");
-		logger.info(arg);
-		logger.info("Current angle is:");
-		logger.info(aval);
+  arg = serial_command.next();
+/*
+  logger.info("Got the roller command: ");
+  logger.info(arg);
+  logger.info("Current angle is:");
+  logger.info(aval);
+*/
 
-    if(!arg) {
-        logger.error("Missing position argument");
+  if(!arg) {
+    logger.error("Missing position argument");
+    logger.info("Valid options are:\n+ up\n - down\nE enable\ne disable\nr retract\nd deploy\nR Set retract pos.\nD Set deploy pos.\nangle, an integer\n");
+    return;
+  }
+
+
+  switch(*arg)
+  {
+    case '+':
+      logger.info("Raising the rollers");
+      rollers.angle(--aval); // Smaller angles rotate up.
+      break;
+    case '-':
+      logger.info("lowering the rollers");
+      rollers.angle(++aval); // Larger angles rotate down.
+      break;
+    case 'E':
+      logger.info("Enabling the rollers");
+      rollers.enable();
+      break;
+    case 'e':
+      logger.info("Disabling the rollers");
+      rollers.disable();
+      break;
+    case 'r':
+      logger.info("Retracting the rollers");
+      rollers.retract();
+      break;
+    case 'd':
+      logger.info("Deploying the rollers");
+      rollers.deploy();
+      break;
+    case 'g':
+      logger.info("The current server angle is:");
+      logger.info(rollers.getangle());
+      break;
+    case 'R':
+      logger.info("Setting the roller retract position");
+      rollers.setrp(aval);
+      break;
+    case 'D':
+      logger.info("Setting the roller deploy position");
+      rollers.setdp(aval);
+      break;
+    default:
+      int value = (unsigned char)atoi(arg);
+      if(value > 0 && value <= 180) // Do not include zero, as a non-number apparently converts to zero, causing bad behavior.
+      {															// Typical usefull values are from 50 to 90, outside that is unlikely if assembled as per the docs.
+        logger.info("Setting the angle of the rollers to:");
+        logger.info(value);
+        rollers.angle(value);
+      }
+      else
         logger.info("Valid options are:\n+ up\n - down\nE enable\ne disable\nr retract\nd deploy\nR Set retract pos.\nD Set deploy pos.\nangle, an integer\n");
-        return;
-    }
-
-
-		switch(*arg)
-		{
-			case '+':
-				logger.info("Raising the rollers");
-				rollers.angle(--aval); // Smaller angles rotate up.
-				break;
-			case '-':
-				logger.info("lowering the rollers");
-				rollers.angle(++aval); // Larger angles rotate down.
-				break;
-			case 'E':
-				logger.info("Enabling the rollers");
-				rollers.enable();
-				break;
-			case 'e':
-				logger.info("Disabling the rollers");
-				rollers.disable();
-				break;
-			case 'r':
-				logger.info("Retracting the rollers");
-				rollers.retract();
-				break;
-			case 'd':
-				logger.info("Deploying the rollers");
-				rollers.deploy();
-				break;
-			case 'g':
-				logger.info("The current server angle is:");
-				logger.info(rollers.getangle());
-				break;
-			case 'R':
-				logger.info("Setting the roller retract position");
-				rollers.setrp(aval);
-				break;
-			case 'D':
-				logger.info("Setting the roller deploy position");
-				rollers.setdp(aval);
-				break;
-			default:
-    		int value = (unsigned char)atoi(arg);
-				if(value > 0 && value <= 180) // Do not include zero, as a non-number apparently converts to zero, causing bad behavior.
-				{															// Typical usefull values are from 50 to 90, outside that is unlikely if assembled as per the docs.
-					logger.info("Setting the angle of the rollers to:");
-					logger.info(value);
-    			rollers.angle(value);
-				}
-				else
-        	logger.info("Valid options are:\n+ up\n - down\nE enable\ne disable\nr retract\nd deploy\nR Set retract pos.\nD Set deploy pos.\nangle, an integer\n");
-		}
+  }
 }
 
 void pwm_command(void) {
