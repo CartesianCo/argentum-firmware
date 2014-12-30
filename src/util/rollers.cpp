@@ -39,35 +39,36 @@ void Rollers::retract(void) {
 
 unsigned char Rollers::getangle(void)
 {
-	return roller_servo.read();
+    return roller_servo.read();
 }
 
 void Rollers::angle(unsigned char angle) {
-
-    logger.info("Changing servo angle.");
-		if(angle >= 0 && angle <= 180)
-		{
+    // logger.info("Changing servo angle.");
+    if(angle >= 0 && angle <= 180)
+    {
       roller_servo.write(angle);
       logger.info("Servo angle changed to:");
       logger.info(angle);
-		}
-		else
+    }
+    else
       logger.info("Invalide servo angle.");
 }
 
+// Set the retract position to angle.
 void Rollers::setrp(unsigned char angle)
 {
-		if(angle >= 0 && angle <= 180)
-    	retracted_position = angle;
-		else
+    if(angle >= 0 && angle <= 180)
+      retracted_position = angle;
+    else
       logger.info("Invalide servo angle.");
 }
 
+// Set the deploy position to angle.
 void Rollers::setdp(unsigned char angle)
 {
-		if(angle >= 0 && angle <= 180)
+    if(angle >= 0 && angle <= 180)
     	deployed_position = angle;
-		else
+    else
       logger.info("Invalide servo angle.");
 }
 
