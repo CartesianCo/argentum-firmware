@@ -15,7 +15,7 @@ public:
     void deploy(void);
     void retract(void);
 
-		unsigned char getangle(void);
+    unsigned char getangle(void);
     void angle(unsigned char angle);
     void setrp(unsigned char angle);
     void setdp(unsigned char angle);
