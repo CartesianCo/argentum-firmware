@@ -41,8 +41,7 @@ void minus_command(void);
 void wait_command(void);
 
 // Rollers
-void lower_command(void);
-void rollers_command(void); // Delete one of these
+void rollers_command(void); // Picks up an argument from serial after call.
 
 void sweep_command(void); // Delete these, sweeping should be implemented in Python
 void sweep(long width, long height); // ^^^^^
