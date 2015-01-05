@@ -148,6 +148,8 @@ void setup() {
 
     //uint8_t *firing_buffer = (uint8_t*)malloc(4096);
     version_command();
+    //lineTo(1000.0,1000.0,-1);
+    //Serial.println("Done");
 }
 
 static int white = 0;
@@ -400,4 +402,66 @@ bool readFile(char *filename) {
     //swap_motors();
 
     return true;
+}
+
+/**
+ * Uses Bresenham's line algorithm to move both motors
+ * @input newx the destination x position
+ * @input newy the destination y position
+ * @input gap between firings
+ **/
+void lineTo(double newx, double newy, int fps)
+{
+    long dx = newx;  // distance to move (delta)
+    long dy = newy;
+    int32_t dirx = dx>0?1:-1;  // direction to move
+    int32_t diry = dy>0?1:-1;
+    dx=abs(dx);  // absolute delta
+    dy=abs(dy);
+    int fire = 0; // When this reaches fps a drop is fired
+    long i;
+    long over=0;
+
+    if (dx > dy)
+    {
+        for (i = 0; i < dx; ++i)
+        {
+            x_axis.move_incremental(dirx);
+            over += dy;
+            if (over >= dx)
+            {
+                over -= dx;
+                y_axis.move_incremental(diry);
+            }
+
+            fire++;
+            if (fire >= fps)
+            {
+                fire_head(2,2,0,0);
+                fire = 0;
+                //delay(10);
+            }
+        }
+    }
+    else
+    {
+        for (i = 0; i < dy; ++i)
+        {
+            y_axis.move_incremental(diry);
+            over += dx;
+            if (over >= dy)
+            {
+                over -= dy;
+                x_axis.move_incremental(dirx);
+            }
+
+            fire++;
+            if (fire >= fps)
+            {
+                fire_head(2,2,0,0);
+                fire = 0;
+                //delay(10);
+            }
+        }
+    }
 }
