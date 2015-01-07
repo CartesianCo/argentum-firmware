@@ -27,6 +27,8 @@ extern "C" {
 
 extern bool readFile(char *filename);
 extern void file_stats(char *filename);
+void moveTo(long x, long y);
+void lineTo(long x, long y, float width);
 
 long xpos = 0;
 long ypos = 0;
@@ -138,6 +140,16 @@ void move_command(void) {
     }
 
     char axis = arg[0];
+    if (axis >= '0' && axis <= '9')
+    {
+        // assume this is a moveTo command
+        long x = atol(arg);
+        arg = serial_command.next();
+        long y = atol(arg);
+        moveTo(x, y);
+        logger.info("Ok");
+        return;
+    }
 
     arg = serial_command.next();
 
@@ -149,6 +161,20 @@ void move_command(void) {
     long steps = atol(arg);
 
     move(axis, steps);
+}
+
+void line_command(void) {
+    char *arg;
+
+    arg = serial_command.next();
+    long x = atol(arg);
+    arg = serial_command.next();
+    long y = atol(arg);
+    arg = serial_command.next();
+    float width = atof(arg);
+
+    lineTo(x, y, width);
+    logger.info("Ok");
 }
 
 Axis * axis_from_id(uint8_t id) {
@@ -218,6 +244,95 @@ void move(const char axis_id, long steps) {
     }
 
     axis->wait_for_move();
+}
+
+void moveTo(long x, long y)
+{
+    x_axis.move_absolute((uint32_t)x);
+    y_axis.move_absolute((uint32_t)y);
+    while (x_axis.moving() || y_axis.moving())
+    {
+        if (x_axis.moving())
+            x_axis.run();
+        if (y_axis.moving())
+            y_axis.run();
+    }
+
+    xpos = x;
+    ypos = y;
+}
+
+void lineTo(long x, long y, float width)
+{
+    long dx = x - xpos;
+    long dy = y - ypos;
+    int32_t dirx = 1;
+    int32_t diry = 1;
+    if (dx < 0)
+    {
+        dirx = -1;
+        dx = -dx;
+    }
+    if (dy < 0)
+    {
+        diry = -1;
+        dy = -dy;
+    }
+
+    int fps = 1;  // TODO use width
+    int fire = 0; // When this reaches fps a drop is fired
+
+    long i;
+    long over=0;
+    if (dx > dy)
+    {
+        for (i = 0; i < dx; ++i)
+        {
+            x_axis.move_incremental(dirx);
+            x_axis.wait_for_move();
+            over += dy;
+            if (over >= dx)
+            {
+                over -= dx;
+                y_axis.move_incremental(diry);
+                y_axis.wait_for_move();
+            }
+
+            fire++;
+            if (fire >= fps)
+            {
+                fire_head(2,2,0,0);
+                fire = 0;
+                //delay(10);
+            }
+        }
+    }
+    else
+    {
+        for (i = 0; i < dy; ++i)
+        {
+            y_axis.move_incremental(diry);
+            y_axis.wait_for_move();
+            over += dx;
+            if (over >= dy)
+            {
+                over -= dy;
+                x_axis.move_incremental(dirx);
+                x_axis.wait_for_move();
+            }
+
+            fire++;
+            if (fire >= fps)
+            {
+                fire_head(2,2,0,0);
+                fire = 0;
+                //delay(10);
+            }
+        }
+    }
+
+    xpos = x;
+    ypos = y;
 }
 
 void power_command(void) {
