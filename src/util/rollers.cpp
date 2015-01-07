@@ -18,8 +18,6 @@ Rollers::~Rollers() {
 
 void Rollers::enable(void) {
     roller_servo.attach(ROLLER_SERVO_PIN);
-    logger.info("Rollers attached at pin ");
-    logger.info(ROLLER_SERVO_PIN);
     retract();
 }
 
