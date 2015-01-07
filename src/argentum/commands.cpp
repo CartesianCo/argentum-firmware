@@ -302,8 +302,8 @@ void lineTo(long x, long y, float width)
             if (fire >= fps)
             {
                 fire_head(2,2,0,0);
+                delay(10);
                 fire = 0;
-                //delay(10);
             }
         }
     }
@@ -325,8 +325,8 @@ void lineTo(long x, long y, float width)
             if (fire >= fps)
             {
                 fire_head(2,2,0,0);
+                delay(10);
                 fire = 0;
-                //delay(10);
             }
         }
     }
