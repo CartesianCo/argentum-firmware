@@ -175,6 +175,7 @@ void line_command(void) {
 
     lineTo(x, y, width);
     logger.info("Ok");
+    //test
 }
 
 Axis * axis_from_id(uint8_t id) {
