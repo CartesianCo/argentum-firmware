@@ -694,16 +694,7 @@ void calibrate_command(void) {
 
     settings_print_calibration(&calibration);
     settings_update_calibration(&calibration);
-
-    /*log_info("C ");
-    settings_print_axis_data_minimal(&calibration.x_axis);
-    log_info_np(" ");
-    settings_print_axis_data_minimal(&calibration.y_axis);
-    log_info("\r\n");*/
-
-    /*logger.info() << settings_print_axis_data_minimal(&calibration.x_axis)
-            << " " << settings_print_axis_data_minimal(&calibration.y_axis)
-            << Comms::endl;*/
+    settings_write_settings(&global_settings);
 }
 
 void calibrate_loop_command(void) {

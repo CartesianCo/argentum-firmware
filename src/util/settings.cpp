@@ -171,10 +171,6 @@ uint8_t read_byte(const uint16_t address) {
 }
 
 void write_byte(const uint16_t address, const uint8_t value, bool reduce_wear) {
-    Serial.print('R');
-    Serial.print(value, HEX);
-    Serial.print('|');
-
     if(reduce_wear) {
         uint8_t existing = read_byte(address);
 
