@@ -34,7 +34,6 @@ void move(const char axis, long steps);
 
 void absolute_move(void);
 void incremental_move(void);
-void axis_pos(void);
 
 void plus_command(void);
 void minus_command(void);

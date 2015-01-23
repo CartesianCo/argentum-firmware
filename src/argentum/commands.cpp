@@ -28,9 +28,6 @@ extern "C" {
 extern bool readFile(char *filename);
 extern void file_stats(char *filename);
 
-long xpos = 0;
-long ypos = 0;
-
 void motors_off_command(void) {
     Serial.println("Motors off");
 
@@ -134,14 +131,12 @@ void home_command(void) {
 }
 
 void current_position_command(void) {
-    logger.info() << "X: " << x_axis.get_current_position() << " mm, "
-            << "Y: " << y_axis.get_current_position() << " mm"
+    logger.info() << "X: " << x_axis.get_current_position_mm() << " mm, "
+            << "Y: " << y_axis.get_current_position_mm() << " mm"
             << Comms::endl;
-
-    logger.info() << x_axis.length << ", " << y_axis.length << Comms::endl;
-
-    x_axis.debug_info();
-    y_axis.debug_info();
+    logger.info() << "X: " << x_axis.get_current_position() << " steps, "
+            << "Y: " << y_axis.get_current_position() << " steps"
+            << Comms::endl;
 }
 
 void move_command(void) {
@@ -217,21 +212,9 @@ void move(const char axis_id, long steps) {
         //motor->reset_position();
         //axis->move_absolute(0.000);
 
-        if(axis_id == 'X') {
-            axis->move_incremental(-xpos);
-            xpos = 0;
-        } else {
-            axis->move_incremental(-ypos);
-            ypos = 0;
-        }
+        axis->move_incremental(-(int32_t)axis->get_current_position());
     } else {
         axis->move_incremental(steps);
-
-        if(axis_id == 'X') {
-            xpos += steps;
-        } else {
-            ypos += steps;
-        }
     }
 
     axis->wait_for_move();
@@ -369,12 +352,6 @@ void draw_command(void) {
     }
 
     axis->move_incremental(steps);
-
-    if (axis_id == 'X') {
-        xpos += steps;
-    } else {
-        ypos += steps;
-    }
 
     logger.info() << "Firing " << spec << " at rate " << rate << Comms::endl;
 
@@ -1080,12 +1057,6 @@ void incremental_move(void) {
 
     x_axis.move_incremental(x_position);
     y_axis.move_incremental(y_position);
-}
-
-void axis_pos(void) {
-    logger.info() << "X: " << x_axis.get_current_position() << " mm, "
-            << "Y: " << y_axis.get_current_position() << " mm"
-            << Comms::endl;
 }
 
 void plus_command(void) {

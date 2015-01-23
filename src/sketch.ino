@@ -105,8 +105,6 @@ void setup() {
     serial_command.addCommand("abs", &absolute_move);
     serial_command.addCommand("inc", &incremental_move);
 
-    //serial_command.addCommand("xpos", &axis_pos);
-
     serial_command.addCommand("++", &plus_command);
     serial_command.addCommand("--", &minus_command);
     serial_command.addCommand("wait", &wait_command);

@@ -181,12 +181,20 @@ void Axis::move_to_negative(void) {
     }
 }
 
-double Axis::get_current_position(void) {
+double Axis::get_current_position_mm(void) {
     return ((double)current_position) / steps_per_mm;
 }
 
-double Axis::get_desired_position(void) {
+double Axis::get_desired_position_mm(void) {
     return ((double)desired_position) / steps_per_mm;
+}
+
+uint32_t Axis::get_current_position(void) {
+    return current_position;
+}
+
+uint32_t Axis::get_desired_position(void) {
+    return desired_position;
 }
 
 void Axis::zero(void) {

@@ -62,8 +62,10 @@ public:
     void move_to_positive(void);
     void move_to_negative(void);
 
-    double get_current_position(void);
-    double get_desired_position(void);
+    double get_current_position_mm(void);
+    double get_desired_position_mm(void);
+    uint32_t get_current_position(void);
+    uint32_t get_desired_position(void);
 
     void zero(void);
     void hold(void);
