@@ -16,25 +16,26 @@ PrinterSettings default_settings = {
             10000L
         },
     },
-    0xFA
+    {
+        726,
+        0,
+        41
+    },
+    0x09
 };
 
 PrinterSettings global_settings;
 
 // Settings helpers
 
-bool settings_initialise(bool correct) {
+bool settings_initialise() {
     settings_read_settings(&global_settings);
 
     bool valid = settings_integrity_check(&global_settings);
 
-    if(!valid && correct) {
-        settings_restore_defaults();
-    }
-
-    if(!valid) {
+    if (!valid) {
         Serial.println("Settings corrupt.");
-        settings_print_settings(&global_settings);
+        settings_restore_defaults();
     }
 
     return valid;
@@ -47,6 +48,7 @@ void settings_restore_defaults(void) {
 
 void settings_print_settings(PrinterSettings *settings) {
     settings_print_calibration(&(settings->calibration));
+    settings_print_processing_options(&(settings->processingOptions));
 
     uint8_t crc = settings_calculate_crc(settings);
 
@@ -96,6 +98,15 @@ void settings_print_axis_data_minimal(AxisData *axis) {
 
     Serial.print(axis->length);
     //Serial.println("");
+}
+
+void settings_print_processing_options(ProcessingOptionsData *processingOptions) {
+    Serial.print("horizontal_offset: ");
+    Serial.println(processingOptions->horizontal_offset);
+    Serial.print("vertical_offset: ");
+    Serial.println(processingOptions->vertical_offset);
+    Serial.print("print_overlap: ");
+    Serial.println(processingOptions->print_overlap);
 }
 
 // Settings CRC Utilities

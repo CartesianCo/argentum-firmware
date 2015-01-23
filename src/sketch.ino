@@ -33,7 +33,7 @@ void setup() {
     x_axis.set_speed(1500);
     y_axis.set_speed(1500);
 
-    settings_initialise(false);
+    settings_initialise();
 
     cartridge_initialise();
     analog_initialise();

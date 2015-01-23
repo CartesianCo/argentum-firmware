@@ -20,8 +20,15 @@ struct CalibrationData {
     AxisData y_axis;
 };
 
+struct ProcessingOptionsData {
+    int16_t horizontal_offset;
+    int16_t vertical_offset;
+    int16_t print_overlap;
+};
+
 struct PrinterSettings {
     CalibrationData calibration;
+    ProcessingOptionsData processingOptions;
     uint8_t crc;
 };
 
@@ -30,13 +37,14 @@ struct PrinterSettings {
 extern PrinterSettings default_settings;
 extern PrinterSettings global_settings;
 
-bool settings_initialise(bool correct);
+bool settings_initialise();
 void settings_restore_defaults(void);
 
 void settings_print_settings(PrinterSettings *settings);
 void settings_print_calibration(CalibrationData *calibration);
 void settings_print_axis_data(AxisData *settings);
 void settings_print_axis_data_minimal(AxisData *axis);
+void settings_print_processing_options(ProcessingOptionsData *processingOptions);
 
 uint8_t settings_calculate_crc(PrinterSettings *settings);
 bool settings_integrity_check(PrinterSettings *settings);

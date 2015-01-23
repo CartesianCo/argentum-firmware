@@ -60,6 +60,23 @@ void read_saved_setting_command(void) {
 }
 
 void write_setting_command(void) {
+    char *arg;
+    arg = serial_command.next();
+
+    if (arg) {
+        if (!strcmp(arg, "defaults"))
+            settings_restore_defaults();
+        else if (!strcmp(arg, "po"))
+        {
+            arg = serial_command.next();
+            global_settings.processingOptions.horizontal_offset = atoi(arg);
+            arg = serial_command.next();
+            global_settings.processingOptions.vertical_offset = atoi(arg);
+            arg = serial_command.next();
+            global_settings.processingOptions.print_overlap = atoi(arg);
+        }
+    }
+
     settings_write_settings(&global_settings);
 }
 
