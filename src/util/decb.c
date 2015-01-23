@@ -6,7 +6,7 @@
 
 //#define DEBUG
 
-static char lastFiringLine[64];
+static char lastFiringLine[65];
 static char lastFiring[4];
 static char lastParts[50];
 static char nLastParts;
@@ -107,7 +107,7 @@ int decb(char *inbuf, int *pinoff, int inlen, char *outbuf, int *poutlen)
                 if (lineLen > sizeof(lastFiringLine)-1)
                 {
 #ifdef DEBUG
-                    fprintf(stderr, "firing line too long.\n");
+                    fprintf(stderr, "firing line too long %d > %d.\n", lineLen, (int)sizeof(lastFiringLine));
 #endif
                     return DECODE_ERROR;
                 }
