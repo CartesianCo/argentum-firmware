@@ -70,7 +70,8 @@ bool Axis::step(void) {
         if(direction == Axis::Positive) {
             current_position++;
         } else {
-            current_position--;
+            if (current_position > 0)
+                current_position--;
         }
 
         /*if(current_position == desired_position) {
