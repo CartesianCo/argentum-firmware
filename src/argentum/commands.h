@@ -39,6 +39,8 @@ void plus_command(void);
 void minus_command(void);
 void wait_command(void);
 
+void stest_command(void);
+
 // Rollers
 void rollers_command(void); // Picks up an argument from serial after call.
 
@@ -77,5 +79,7 @@ void pwm_command(void);
 void limit_switch_command(void);
 
 void primitive_voltage_command(void);
+
+
 
 #endif

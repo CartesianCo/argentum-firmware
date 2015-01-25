@@ -56,6 +56,7 @@ void setup() {
 
     // Motor
     serial_command.addCommand("x", &power_command);
+    serial_command.addCommand("stest", &stest_command);
     serial_command.addCommand("s", &speed_command);
 
     serial_command.addCommand("+", &motors_on_command);
