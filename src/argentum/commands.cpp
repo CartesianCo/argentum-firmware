@@ -453,6 +453,11 @@ void ls_command(void) {
         logger.info("No files.");
 }
 
+void rm_command(void) {
+    char *arg = serial_command.next();
+    sd.remove(arg);
+}
+
 void md5_command(void) {
     char *arg = serial_command.next();
 
