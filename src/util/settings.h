@@ -29,6 +29,7 @@ struct ProcessingOptionsData {
 struct PrinterSettings {
     CalibrationData calibration;
     ProcessingOptionsData processingOptions;
+    char printerNumber[20];
     uint8_t crc;
 };
 

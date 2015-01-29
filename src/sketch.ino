@@ -115,6 +115,7 @@ void setup() {
     // Common
     serial_command.addCommand("help", &help_command);
     serial_command.addCommand("version", &version_command);
+    serial_command.addCommand("pnum", &printer_number_command);
     serial_command.addCommand("sle", &sle_command);
 
     // Initialise Axes from EEPROM here
@@ -146,6 +147,7 @@ void setup() {
     y_axis.length = global_settings.calibration.y_axis.length;
 
     //uint8_t *firing_buffer = (uint8_t*)malloc(4096);
+    printer_number_command();
     version_command();
 }
 

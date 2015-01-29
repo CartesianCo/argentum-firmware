@@ -684,7 +684,20 @@ void help_command(void) {
 #include "version.h"
 
 void version_command(void) {
-    comms.println(version_string);
+    logger.info() << "Version [" << version_string << "]" << Comms::endl;
+}
+
+void printer_number_command(void) {
+    char *arg = serial_command.next();
+    if (arg)
+    {
+        memset(global_settings.printerNumber, 0, sizeof(global_settings.printerNumber));
+        strncpy(global_settings.printerNumber, arg, sizeof(global_settings.printerNumber) - 1);
+        settings_write_settings(&global_settings);
+        return;
+    }
+
+    logger.info() << "Printer Number [" << global_settings.printerNumber << "]" << Comms::endl;
 }
 
 void calibrate_command(void) {
