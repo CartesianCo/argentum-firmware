@@ -552,6 +552,40 @@ void djb2_command(void) {
     Serial.println((char*)block);
 }
 
+int onlinePrint(byte *buf, int buflen)
+{
+    byte *p = buf;
+    while (p < buf + buflen)
+    {
+        byte *pe = p;
+        while (pe < buf + buflen && *pe != '\n')
+            pe++;
+        if (pe == buf + buflen)
+            break;
+
+        *pe = 0;
+        if (p[0] == '#')
+        {
+            // ignore comment
+        }
+        else if (p[0] == 'M')
+        {
+            char axis = p[2];
+
+            long steps = atol((char*)p + 4);
+            move(axis, steps);
+        }
+        else if (p[0] == 'F')
+        {
+            fire_spec((char*)p+2);
+        }
+
+        p = pe + 1;
+    }
+
+    return buf + buflen - p;
+}
+
 void recv_command(void) {
     char *arg = serial_command.next();
     uint32_t size = 0;
@@ -559,19 +593,25 @@ void recv_command(void) {
         size = size * 10 + (*arg++ - '0');
 
     char *filename = serial_command.next();
-    bool compressed = false;
-    if (!strcmp(filename, "b"))
+    bool compressed = false, online = false;
+    if (!strcmp(filename, "bo") || !strcmp(filename, "o"))
+        online = true;
+    if (!strcmp(filename, "b") || !strcmp(filename, "bo"))
     {
         compressed = true;
         filename = serial_command.next();
         decb_init();
     }
+
     SdFile file;
-    file.open(filename, O_CREAT|O_WRITE|O_TRUNC);
-    if (!file.isOpen()) {
-        Serial.print("File could not be opened: ");
-        Serial.println(filename);
-        return;
+    if (!online)
+    {
+        file.open(filename, O_CREAT|O_WRITE|O_TRUNC);
+        if (!file.isOpen()) {
+            Serial.print("File could not be opened: ");
+            Serial.println(filename);
+            return;
+        }
     }
 
     Serial.println("Ready");
@@ -582,6 +622,7 @@ void recv_command(void) {
     uint32_t hash = 5381;
     uint32_t pos = 0;
     int inoff = 0;
+    int outoff = 0;
     while (pos < size)
     {
         if (compressed && inoff > OVERLAP)
@@ -602,7 +643,8 @@ void recv_command(void) {
                 break;
             if (len == 1 && where == inoff && *block == 'C')
             {
-                file.remove();
+                if (!online)
+                    file.remove();
                 return;
             }
             nread -= len;
@@ -647,15 +689,24 @@ void recv_command(void) {
             int res = KEEP_GOING;
             while (res == KEEP_GOING)
             {
-                int outlen = sizeof(block2);
-                res = decb((char*)block, &inoff, len, (char*)block2, &outlen);
+                int outlen = sizeof(block2) - outoff;
+                res = decb((char*)block, &inoff, len, (char*)block2 + outoff, &outlen);
                 if (res == DECODE_ERROR)
                 {
                     // TODO: see if we can report bad block and unwind
                     Serial.write((byte*)"F", 1);
                     return;
                 }
-                file.write(block2, outlen);
+                if (online)
+                {
+                    int unused = onlinePrint(block2, outoff + outlen);
+                    memmove(block2, block2 + outoff + outlen - unused, unused);
+                    outoff = unused;
+                }
+                else
+                {
+                    file.write(block2, outlen);
+                }
             }
 
             memmove(block, block+inoff, len-inoff);
@@ -663,13 +714,23 @@ void recv_command(void) {
         }
         else
         {
-            file.write(block, blocksize);
+            if (online)
+            {
+                int unused = onlinePrint(block, blocksize);
+                memmove(block, block + blocksize - unused, unused);
+                inoff = unused;
+            }
+            else
+            {
+                file.write(block, blocksize);
+            }
         }
 
         Serial.write((byte*)"G", 1);
     }
 
-    file.close();
+    if (!online)
+        file.close();
 }
 
 
