@@ -21,8 +21,8 @@ PrinterSettings default_settings = {
         0,
         41
     },
-    "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",
-    0x09
+    "NOT_SET\0\0\0\0\0\0\0\0\0\0\0\0",
+    0xD2
 };
 
 PrinterSettings global_settings;
