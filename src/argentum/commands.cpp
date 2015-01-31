@@ -158,6 +158,9 @@ void move_command(void) {
         arg = serial_command.next();
         long y = atol(arg);
         moveTo(x, y);
+        arg = serial_command.next();
+        if (arg && arg[0] == 'k')
+            logger.info() << "Ok" << Comms::endl;
         return;
     }
 
