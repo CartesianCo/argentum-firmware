@@ -1,15 +1,9 @@
 #include "rollers.h"
 #include "utils.h"
 #include "../util/logging.h"
+#include "settings.h"
 
 Rollers::Rollers() {
-    //TODO: This causes the servo to not take any updates (it still holds position)
-    // I'm guessing it's something to do with initialisation orders since this
-    // object is typically created as a global.
-
-    retracted_position = 70;
-    deployed_position = 80;
-    //enable();
 }
 
 Rollers::~Rollers() {
@@ -27,12 +21,12 @@ void Rollers::disable(void) {
 
 void Rollers::deploy(void) {
     deployed = true;
-    roller_servo.write(deployed_position);
+    roller_servo.write(global_settings.rollerOptions.deployed_pos);
 }
 
 void Rollers::retract(void) {
     deployed = false;
-    roller_servo.write(retracted_position);
+    roller_servo.write(global_settings.rollerOptions.retracted_pos);
 }
 
 unsigned char Rollers::getangle(void)
@@ -56,7 +50,7 @@ void Rollers::angle(unsigned char angle) {
 void Rollers::setrp(unsigned char angle)
 {
     if(angle >= 0 && angle <= 180)
-      retracted_position = angle;
+      global_settings.rollerOptions.retracted_pos = angle;
     else
       logger.info("Invalide servo angle.");
 }
@@ -65,7 +59,7 @@ void Rollers::setrp(unsigned char angle)
 void Rollers::setdp(unsigned char angle)
 {
     if(angle >= 0 && angle <= 180)
-    	deployed_position = angle;
+        global_settings.rollerOptions.deployed_pos = angle;
     else
       logger.info("Invalide servo angle.");
 }

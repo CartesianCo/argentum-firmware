@@ -28,9 +28,6 @@ public:
 private:
     bool deployed;
 
-    int retracted_position; // These can not be static const, as they need to be set from gui.py
-    int deployed_position;
-
     Servo roller_servo;
 };
 

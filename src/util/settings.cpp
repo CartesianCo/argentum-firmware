@@ -22,7 +22,11 @@ PrinterSettings default_settings = {
         41
     },
     "NOT_SET\0\0\0\0\0\0\0\0\0\0\0\0",
-    0xD2
+    {
+        70,
+        80
+    },
+    0x23
 };
 
 PrinterSettings global_settings;
@@ -50,6 +54,8 @@ void settings_restore_defaults(void) {
 void settings_print_settings(PrinterSettings *settings) {
     settings_print_calibration(&(settings->calibration));
     settings_print_processing_options(&(settings->processingOptions));
+    settings_print_printer_number(settings->printerNumber);
+    settings_print_roller_options(&(settings->rollerOptions));
 
     uint8_t crc = settings_calculate_crc(settings);
 
@@ -108,6 +114,20 @@ void settings_print_processing_options(ProcessingOptionsData *processingOptions)
     Serial.println(processingOptions->vertical_offset);
     Serial.print("print_overlap: ");
     Serial.println(processingOptions->print_overlap);
+}
+
+void settings_print_printer_number(char *printerNumber)
+{
+    Serial.print("printerNumber: ");
+    Serial.println(printerNumber);
+}
+
+void settings_print_roller_options(RollerOptionsData *rollerOptions)
+{
+    Serial.print("retracted_pos: ");
+    Serial.println(rollerOptions->retracted_pos);
+    Serial.print("deployed_pos: ");
+    Serial.println(rollerOptions->deployed_pos);
 }
 
 // Settings CRC Utilities

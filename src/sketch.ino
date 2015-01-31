@@ -28,7 +28,6 @@ void setup() {
     init_sd_command();
 
     rollers.disable();
-    rollers.enable();
 
     x_axis.set_speed(1500);
     y_axis.set_speed(1500);

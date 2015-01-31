@@ -26,10 +26,16 @@ struct ProcessingOptionsData {
     int16_t print_overlap;
 };
 
+struct RollerOptionsData {
+    uint8_t retracted_pos;
+    uint8_t deployed_pos;
+};
+
 struct PrinterSettings {
     CalibrationData calibration;
     ProcessingOptionsData processingOptions;
     char printerNumber[20];
+    RollerOptionsData rollerOptions;
     uint8_t crc;
 };
 
@@ -46,6 +52,8 @@ void settings_print_calibration(CalibrationData *calibration);
 void settings_print_axis_data(AxisData *settings);
 void settings_print_axis_data_minimal(AxisData *axis);
 void settings_print_processing_options(ProcessingOptionsData *processingOptions);
+void settings_print_printer_number(char *printerNumber);
+void settings_print_roller_options(RollerOptionsData *rollerOptions);
 
 uint8_t settings_calculate_crc(PrinterSettings *settings);
 bool settings_integrity_check(PrinterSettings *settings);
