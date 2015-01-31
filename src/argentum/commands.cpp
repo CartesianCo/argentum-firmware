@@ -89,15 +89,6 @@ void speed_command(void) {
     }
 
     char axis = arg[0];
-    if (axis >= '0' && axis <= '9')
-    {
-        // assume this is a moveTo command
-        long x = atol(arg);
-        arg = serial_command.next();
-        long y = atol(arg);
-        moveTo(x, y);
-        return;
-    }
 
     arg = serial_command.next();
 
@@ -160,6 +151,15 @@ void move_command(void) {
     }
 
     char axis = arg[0];
+    if (axis >= '0' && axis <= '9')
+    {
+        // assume this is a moveTo command
+        long x = atol(arg);
+        arg = serial_command.next();
+        long y = atol(arg);
+        moveTo(x, y);
+        return;
+    }
 
     arg = serial_command.next();
 
@@ -241,9 +241,6 @@ void moveTo(long x, long y)
         if (y_axis.moving())
             y_axis.run();
     }
-
-    xpos = x;
-    ypos = y;
 }
 
 void power_command(void) {
