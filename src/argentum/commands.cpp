@@ -27,6 +27,7 @@ extern "C" {
 
 extern bool readFile(char *filename);
 extern void file_stats(char *filename);
+void moveTo(long x, long y);
 
 void motors_off_command(void) {
     Serial.println("Motors off");
@@ -88,6 +89,15 @@ void speed_command(void) {
     }
 
     char axis = arg[0];
+    if (axis >= '0' && axis <= '9')
+    {
+        // assume this is a moveTo command
+        long x = atol(arg);
+        arg = serial_command.next();
+        long y = atol(arg);
+        moveTo(x, y);
+        return;
+    }
 
     arg = serial_command.next();
 
@@ -218,6 +228,22 @@ void move(const char axis_id, long steps) {
     }
 
     axis->wait_for_move();
+}
+
+void moveTo(long x, long y)
+{
+    x_axis.move_absolute((uint32_t)x);
+    y_axis.move_absolute((uint32_t)y);
+    while (x_axis.moving() || y_axis.moving())
+    {
+        if (x_axis.moving())
+            x_axis.run();
+        if (y_axis.moving())
+            y_axis.run();
+    }
+
+    xpos = x;
+    ypos = y;
 }
 
 void power_command(void) {
