@@ -662,16 +662,25 @@ void recv_command(void) {
         int nread = blocksize + 4;
         int where = inoff;
         int len;
+        bool paused = false;
         while (nread > 0)
         {
             len = Serial.readBytes((char*)block + where, nread);
+            if (paused && len == 0)
+                continue;
             if (len <= 0)
                 break;
-            if (len == 1 && where == inoff && *block == 'C')
+            if (len == 1 && where == inoff && block[where] == 'C')
             {
                 if (!online)
                     file.remove();
                 return;
+            }
+            if (len == 1 && where == inoff && block[where] == 'P')
+            {
+                paused = true;
+                Serial.write((byte*)"p", 1);
+                continue;
             }
             nread -= len;
             where += len;
