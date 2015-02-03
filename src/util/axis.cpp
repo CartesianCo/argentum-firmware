@@ -169,16 +169,34 @@ void Axis::move_incremental(int32_t increment) {
 void Axis::move_to_positive(void) {
     set_direction(Axis::Positive);
 
+    bool startingAtNegLimit = negative_limit();
     while(!positive_limit()) {
         while(!step());
+
+        if (startingAtNegLimit && !negative_limit())
+            startingAtNegLimit = false;
+        if (!startingAtNegLimit && negative_limit())
+        {
+            // probably bad calibration, stop
+            break;
+        }
     }
 }
 
 void Axis::move_to_negative(void) {
     set_direction(Axis::Negative);
 
+    bool startingAtPosLimit = positive_limit();
     while(!negative_limit()) {
         while(!step());
+
+        if (startingAtPosLimit && !positive_limit())
+            startingAtPosLimit = false;
+        if (!startingAtPosLimit && positive_limit())
+        {
+            // probably bad calibration, stop
+            break;
+        }
     }
 }
 
