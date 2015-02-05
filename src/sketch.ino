@@ -1,5 +1,4 @@
 #include "util/colour.h"
-//#include <SD.h>
 #include "util/settings.h"
 #include "util/SerialCommand.h"
 #include "argentum/calibration.h"
@@ -24,8 +23,6 @@ void setup() {
 
     colour_init();
     colour(COLOUR_HOME);
-
-    init_sd_command();
 
     rollers.disable();
 

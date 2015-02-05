@@ -25,6 +25,8 @@ extern "C" {
 
 #include "argentum.h"
 
+static char sd_initialized = 0;
+
 extern bool readFile(char *filename);
 extern void file_stats(char *filename);
 void moveTo(long x, long y);
@@ -394,6 +396,8 @@ void draw_command(void) {
 }
 
 void print_command(void) {
+    if (!sd_initialized)
+        init_sd_command();
     char *arg;
 
     static char filename[32] = "output.hex";
@@ -458,6 +462,8 @@ void print_ram(void) {
 }
 
 void ls_command(void) {
+    if (!sd_initialized)
+        init_sd_command();
     SdFile file;
     char name[256];
 
@@ -480,11 +486,15 @@ void ls_command(void) {
 }
 
 void rm_command(void) {
+    if (!sd_initialized)
+        init_sd_command();
     char *arg = serial_command.next();
     sd.remove(arg);
 }
 
 void md5_command(void) {
+    if (!sd_initialized)
+        init_sd_command();
     char *arg = serial_command.next();
 
     SdFile file;
@@ -524,6 +534,8 @@ void md5_command(void) {
 }
 
 void djb2_command(void) {
+    if (!sd_initialized)
+        init_sd_command();
     char *arg = serial_command.next();
 
     SdFile file;
@@ -622,6 +634,8 @@ void recv_command(void) {
     bool compressed = false, online = false;
     if (!strcmp(filename, "bo") || !strcmp(filename, "o"))
         online = true;
+    else if (!sd_initialized)
+        init_sd_command();
     if (!strcmp(filename, "b") || !strcmp(filename, "bo"))
     {
         compressed = true;
