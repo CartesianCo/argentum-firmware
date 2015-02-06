@@ -1205,3 +1205,20 @@ void primitive_voltage_command(void) {
     logger.info() << "Primitive Voltage: " << voltage << " volts."
         << Comms::endl;
 }
+
+void stest_command(void) {
+    for(int j = 0; j < 5; j++) {
+        for(int i = 0; i < 2500; i++) {
+            x_axis.move_incremental(int32_t(1));
+            y_axis.move_incremental(int32_t(1));
+            x_axis.wait_for_move();
+            y_axis.wait_for_move();
+        }
+        for(int i = 0; i < 2500; i++) {
+            x_axis.move_incremental(int32_t(-1));
+            y_axis.move_incremental(int32_t(-1));
+            x_axis.wait_for_move();
+            y_axis.wait_for_move();
+        }
+    }
+}
