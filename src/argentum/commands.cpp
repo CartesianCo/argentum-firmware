@@ -330,6 +330,8 @@ void fire_spec(char *spec)
     byte a, f1, f2;
 
     a = hexdig(spec[0]);
+    if (a == 8 || a == 0xa) // stop striations
+        return;
     f1 = (hexdig(spec[1]) << 4) | hexdig(spec[2]);
     f2 = (hexdig(spec[3]) << 4) | hexdig(spec[4]);
     fire_head(f1, a, f2, a);
