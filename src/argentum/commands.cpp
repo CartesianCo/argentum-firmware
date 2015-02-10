@@ -330,8 +330,8 @@ void fire_spec(char *spec)
     byte a, f1, f2;
 
     a = hexdig(spec[0]);
-    //if (a == 8 || a == 0xa) // stop striations
-    //    return;
+    if (a == 8 || a == 0xa) // stop striations
+        return;
     f1 = (hexdig(spec[1]) << 4) | hexdig(spec[2]);
     f2 = (hexdig(spec[3]) << 4) | hexdig(spec[4]);
     fire_head(f1, a, f2, a);
@@ -659,7 +659,7 @@ void recv_command(void) {
     Serial.println("Ready");
 
 #define OVERLAP 64
-    byte block[1028 + OVERLAP];
+    byte block[1029 + OVERLAP];
     byte block2[512 + OVERLAP];
     uint32_t hash = 5381;
     uint32_t pos = 0;
@@ -675,7 +675,7 @@ void recv_command(void) {
         }
         uint32_t nleft = size - pos;
         int blocksize = nleft < 1024 ? nleft : 1024;
-        int nread = blocksize + 4;
+        int nread = blocksize + 5;
         int where = inoff;
         int len;
         bool paused = false;
@@ -708,6 +708,7 @@ void recv_command(void) {
             Serial.println(blocksize);
             Serial.println(pos);
             Serial.println(size);
+            Serial.write(block + inoff, blocksize + 5 - nread);
             return;
         }
 
@@ -715,16 +716,16 @@ void recv_command(void) {
         int n;
         for (n = 0; n < blocksize; n++)
         {
-            block[inoff + n] ^= 0x26;
             int c = block[inoff + n];
             hash = ((hash << 5) + hash) + c;
         }
-        byte bhash[4];
-        bhash[0] = ( hash        & 0xff);
-        bhash[1] = ((hash >>  8) & 0xff);
-        bhash[2] = ((hash >> 16) & 0xff);
-        bhash[3] = ((hash >> 24) & 0xff);
-        if (memcmp(bhash, &block[inoff + blocksize], 4) != 0)
+        byte bhash[5];
+        bhash[0] = ( hash        & 0x7f);
+        bhash[1] = ((hash >>  7) & 0x7f);
+        bhash[2] = ((hash >> 14) & 0x7f);
+        bhash[3] = ((hash >> 21) & 0x7f);
+        bhash[4] = ((hash >> 28) & 0x0f);
+        if (memcmp(bhash, &block[inoff + blocksize], 5) != 0)
         {
             Serial.write((byte*)"B", 1);
             hash = oldhash;
