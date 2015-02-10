@@ -698,6 +698,14 @@ void recv_command(void) {
                 Serial.write((byte*)"p", 1);
                 continue;
             }
+            int f0cnt = 0;
+            while (f0cnt < len && block[where + f0cnt] == 0xf0)
+                f0cnt++;
+            if (f0cnt > 0)
+            {
+                memmove(block + where, block + where + f0cnt, len - f0cnt);
+                len -= f0cnt;
+            }
             nread -= len;
             where += len;
         }
