@@ -330,8 +330,8 @@ void fire_spec(char *spec)
     byte a, f1, f2;
 
     a = hexdig(spec[0]);
-    if (a == 8 || a == 0xa) // stop striations
-        return;
+    //if (a == 8 || a == 0xa) // stop striations
+    //    return;
     f1 = (hexdig(spec[1]) << 4) | hexdig(spec[2]);
     f2 = (hexdig(spec[3]) << 4) | hexdig(spec[4]);
     fire_head(f1, a, f2, a);
@@ -782,6 +782,19 @@ void recv_command(void) {
 
     if (!online)
         file.close();
+}
+
+void echo_command(void) {
+    char *arg = serial_command.next();
+    uint32_t size = 0;
+    while (*arg >= '0' && *arg <= '9')
+        size = size * 10 + (*arg++ - '0');
+
+    byte block[1028 + OVERLAP];
+    int nread = size < sizeof(block) ? size : sizeof(block);
+    int len = Serial.readBytes((char*)block, nread);
+    logger.info() << "Read " << len << " bytes." << Comms::endl;
+    Serial.write(block, len);
 }
 
 

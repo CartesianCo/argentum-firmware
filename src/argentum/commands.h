@@ -68,6 +68,7 @@ void rm_command(void);
 void md5_command(void);
 void djb2_command(void);
 void recv_command(void);
+void echo_command(void);
 
 // GPIO
 void analog_command(void);

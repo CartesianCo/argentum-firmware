@@ -90,6 +90,7 @@ void setup() {
     serial_command.addCommand("djb2", &djb2_command);
     serial_command.addCommand("sd", &init_sd_command);
     serial_command.addCommand("recv", &recv_command);
+    serial_command.addCommand("echo", &echo_command);
 
     // Colour
     serial_command.addCommand("red", &red_command);
