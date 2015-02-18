@@ -183,7 +183,8 @@ bool freedom(bool *x_direction_resolved, bool *y_direction_resolved) {
     return (a_resolved | b_resolved);
 }
 
-void calibrate(CalibrationData *calibration) {
+bool retry_calibrate(CalibrationData *calibration)
+{
     logger.info("Calibration beginning.");
 
     x_axis.debug_info();
@@ -268,27 +269,63 @@ void calibrate(CalibrationData *calibration) {
     logger.info("Homing");
 
     x_axis.move_to_negative();
-    logger.info("x-");
+    if (limit_x_negative())
+        logger.info("x-");
+    else
+    {
+        logger.info("x- failed! Restarting.");
+        return false;
+    }
     y_axis.move_to_negative();
-    logger.info("y-");
+    if (limit_y_negative())
+        logger.info("y-");
+    else
+    {
+        logger.info("y- failed! Restarting calibration.");
+        return false;
+    }
 
     x_axis.zero();
     y_axis.zero();
 
     // Go to maximum extents
     x_axis.move_to_positive();
-    logger.info("x+");
+    if (limit_x_positive())
+        logger.info("x+");
+    else
+    {
+        logger.info("x+ failed! Restarting.");
+        return false;
+    }
     y_axis.move_to_positive();
-    logger.info("y+");
+    if (limit_y_positive())
+        logger.info("y+");
+    else
+    {
+        logger.info("y+ failed! Restarting calibration.");
+        return false;
+    }
 
     x_distance = x_axis.current_position;
     y_distance = y_axis.current_position;
 
     // Return to home
     x_axis.move_to_negative();
-    logger.info("x-");
+    if (limit_x_negative())
+        logger.info("x-");
+    else
+    {
+        logger.info("x- failed! Restarting.");
+        return false;
+    }
     y_axis.move_to_negative();
-    logger.info("y-");
+    if (limit_y_negative())
+        logger.info("y-");
+    else
+    {
+        logger.info("y- failed! Restarting calibration.");
+        return false;
+    }
 
     x_axis.zero();
     y_axis.zero();
@@ -306,4 +343,18 @@ void calibrate(CalibrationData *calibration) {
         calibration->y_axis.flipped = (y_axis.get_motor_mapping() != Axis::CW_Positive);
         calibration->y_axis.length = y_distance;
     }
+
+    return true;
 }
+
+void calibrate(CalibrationData *calibration)
+{
+    int nTries;
+    for (nTries = 0; nTries < 3; nTries++)
+    {
+        if (retry_calibrate(calibration))
+            break;
+    }
+}
+
+

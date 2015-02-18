@@ -170,16 +170,27 @@ void Axis::move_to_positive(void) {
     set_direction(Axis::Positive);
 
     bool startingAtNegLimit = negative_limit();
+    int steps = 0;
     while(!positive_limit()) {
         while(!step());
 
-        if (startingAtNegLimit && !negative_limit())
-            startingAtNegLimit = false;
+        if (startingAtNegLimit)
+        {
+            if (!negative_limit())
+                startingAtNegLimit = false;
+            else if (steps > 400)
+            {
+                // probably wrong direction calibration
+                break;
+            }
+        }
         if (!startingAtNegLimit && negative_limit())
         {
             // probably bad calibration, stop
             break;
         }
+
+        steps++;
     }
 }
 
@@ -187,16 +198,27 @@ void Axis::move_to_negative(void) {
     set_direction(Axis::Negative);
 
     bool startingAtPosLimit = positive_limit();
+    int steps = 0;
     while(!negative_limit()) {
         while(!step());
 
-        if (startingAtPosLimit && !positive_limit())
-            startingAtPosLimit = false;
+        if (startingAtPosLimit)
+        {
+            if (!positive_limit())
+                startingAtPosLimit = false;
+            else if (steps > 400)
+            {
+                // probably wrong direction calibration
+                break;
+            }
+        }
         if (!startingAtPosLimit && positive_limit())
         {
             // probably bad calibration, stop
             break;
         }
+
+        steps++;
     }
 }
 
