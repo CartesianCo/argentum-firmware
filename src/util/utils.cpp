@@ -127,3 +127,7 @@ double primitive_voltage(void) {
 
     return voltage;
 }
+
+bool no_power(void) {
+    return primitive_voltage() < 5.0;
+}

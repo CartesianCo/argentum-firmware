@@ -27,6 +27,7 @@ SOFTWARE.
 #ifndef _AXIS_H_
 #define _AXIS_H_
 
+#include "utils.h"
 #include "stepper.h"
 
 class Axis {

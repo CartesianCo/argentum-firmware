@@ -29,6 +29,12 @@ Axis::~Axis() {
 }
 
 bool Axis::run(void) {
+    if (no_power())
+    {
+        desired_position = current_position;
+        return false;
+    }
+
     if(current_position == desired_position) {
         return false;
     } else {
@@ -172,7 +178,11 @@ void Axis::move_to_positive(void) {
     bool startingAtNegLimit = negative_limit();
     int steps = 0;
     while(!positive_limit()) {
-        while(!step());
+        while(!step())
+            if (no_power())
+                break;
+        if (no_power())
+            break;
 
         if (startingAtNegLimit)
         {
@@ -199,8 +209,13 @@ void Axis::move_to_negative(void) {
 
     bool startingAtPosLimit = positive_limit();
     int steps = 0;
-    while(!negative_limit()) {
-        while(!step());
+    while(!negative_limit())
+    {
+        while(!step())
+            if (no_power())
+                break;
+        if (no_power())
+            break;
 
         if (startingAtPosLimit)
         {

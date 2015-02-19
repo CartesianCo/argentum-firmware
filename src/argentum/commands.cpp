@@ -834,7 +834,8 @@ void printer_number_command(void) {
 
 void calibrate_command(void) {
     CalibrationData calibration;
-    calibrate(&calibration);
+    if (!calibrate(&calibration))
+        return;
 
     settings_print_calibration(&calibration);
     settings_update_calibration(&calibration);
@@ -850,7 +851,8 @@ void calibrate_loop_command(void) {
         }
 
         CalibrationData calibration;
-        calibrate(&calibration);
+        if (!calibrate(&calibration))
+            break;
 
         logger.info() << calibration.x_axis.motor << " "
                 << calibration.x_axis.length << ", " << calibration.x_axis.motor

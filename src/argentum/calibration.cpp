@@ -54,7 +54,9 @@ bool resolve(Stepper *motor,
     }
 
     for(long step = 0; step < steps; step++) {
-        while(!motor->step());
+        while(!motor->step())
+            if (no_power())
+                return false;
     }
 
     uint8_t after = limit_switches();
@@ -211,11 +213,16 @@ bool retry_calibrate(CalibrationData *calibration)
     x_axis.set_speed(1500);
     y_axis.set_speed(1500);
 
+    if (no_power())
+        return false;
+
     if(!axes_resolved) {
         logger.info("Resolved nothing, finding X");
 
         while(!limit_any()) {
-            while(!x_axis.get_motor()->step());
+            while(!x_axis.get_motor()->step())
+                if (no_power())
+                    return false;
         }
 
         if(limit_y()) {
@@ -260,6 +267,9 @@ bool retry_calibrate(CalibrationData *calibration)
                 }
             }
         }
+
+        if (no_power())
+            return false;
     }
 
     // At this point we know both axes, and have resolved their directions.
@@ -285,6 +295,9 @@ bool retry_calibrate(CalibrationData *calibration)
         return false;
     }
 
+    if (no_power())
+        return false;
+
     x_axis.zero();
     y_axis.zero();
 
@@ -308,6 +321,9 @@ bool retry_calibrate(CalibrationData *calibration)
 
     x_distance = x_axis.current_position;
     y_distance = y_axis.current_position;
+
+    if (no_power())
+        return false;
 
     // Return to home
     x_axis.move_to_negative();
@@ -347,14 +363,21 @@ bool retry_calibrate(CalibrationData *calibration)
     return true;
 }
 
-void calibrate(CalibrationData *calibration)
+bool calibrate(CalibrationData *calibration)
 {
     int nTries;
     for (nTries = 0; nTries < 3; nTries++)
     {
         if (retry_calibrate(calibration))
+            return true;
+        if (no_power())
+        {
+            logger.info("No power. Stopping calibration.");
             break;
+        }
     }
+
+    return false;
 }
 
 

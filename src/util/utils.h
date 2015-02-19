@@ -22,5 +22,6 @@ void analog_initialise(void);
 uint16_t analog_read(uint8_t analog);
 
 double primitive_voltage(void);
+bool no_power(void);
 
 #endif
