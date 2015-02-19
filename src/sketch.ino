@@ -159,6 +159,9 @@ void loop() {
     x_axis.run();
     y_axis.run();
 
+    if (no_power())
+        analogWrite(8, 0);
+
     //run_tests();
 
     /*if(millis() - old_time > 10) {
