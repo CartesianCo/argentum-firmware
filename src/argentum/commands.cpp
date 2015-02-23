@@ -90,7 +90,7 @@ void speed_command(void) {
         return;
     }
 
-    char axis = arg[0];
+    char axis_id = arg[0];
 
     arg = serial_command.next();
 
@@ -105,8 +105,8 @@ void speed_command(void) {
         speed = 1;
     }
 
-    Stepper *motor = motor_from_axis(axis);
-    motor->set_speed(speed);
+    Axis *axis = axis_from_id(axis_id);
+    axis->set_speed(speed);
 }
 
 void zero_position_command(void) {
