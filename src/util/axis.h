@@ -84,6 +84,7 @@ public:
 
     static const long steps_per_mm = 80;
 
+    uint32_t start_position;
     uint32_t current_position;
 
     uint32_t length;
@@ -111,6 +112,7 @@ private:
     uint8_t motor_mapping;
 
     uint32_t desired_position;
+    uint32_t desired_speed;
 };
 
 #endif

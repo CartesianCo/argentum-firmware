@@ -99,11 +99,10 @@ bool Stepper::step() {
 void Stepper::set_speed(int mm_per_minute) {
     int rate = mm_per_minute;
 
-    if (rate > 5000) {
-        rate = 5000; //maximum rate
-    } else if (rate < 0) {
+    if (rate > 30000)
+        rate = 30000; //maximum rate
+    if (rate < 0)
         rate = 0; // cannot have a negative rate
-    }
 
     long i = 1000000/((rate * steps_per_mm)/60);
 

@@ -13,6 +13,7 @@ Axis::Axis(const char axis,
     this->negative_limit = negative_limit;
 
     length = 0;
+    start_position = 0;
     current_position = 0;
     desired_position = 0;
 
@@ -20,7 +21,7 @@ Axis::Axis(const char axis,
 
     direction = Axis::Positive;
 
-    motor->set_speed(1000);
+    set_speed(1000);
 
     //logger.info() << "Axis created for: " << axis << Comms::endl;
 }
@@ -61,6 +62,24 @@ bool Axis::run(void) {
             hold();
 
             return false;
+        }
+
+        int acc_steps = 100;
+        uint32_t min_speed = 100;
+        uint32_t d_len = abs((int32_t)desired_position - (int32_t)start_position);
+        if (d_len < acc_steps)
+            acc_steps = d_len / 2;
+        uint32_t d_from_start = abs((int32_t)current_position - (int32_t)start_position);
+        uint32_t d_from_end = abs((int32_t)desired_position - (int32_t)current_position);
+        if (d_from_start < acc_steps)
+        {
+            int speed = min_speed + (d_from_start + 1) * (desired_speed - min_speed) / acc_steps;
+            motor->set_speed(speed);
+        }
+        else if (d_from_end < acc_steps)
+        {
+            int speed = min_speed + (d_from_end + 1) * (desired_speed - min_speed) / acc_steps;
+            motor->set_speed(speed);
         }
 
         return step();
@@ -148,6 +167,8 @@ void Axis::move_absolute(uint32_t position) {
     } else {
         set_direction(Axis::Negative);
     }
+
+    start_position = current_position;
 }
 
 void Axis::move_incremental(double increment) {
@@ -174,6 +195,7 @@ void Axis::move_incremental(int32_t increment) {
 
 void Axis::move_to_positive(void) {
     set_direction(Axis::Positive);
+    motor->set_speed(desired_speed);
 
     bool startingAtNegLimit = negative_limit();
     int steps = 0;
@@ -206,6 +228,7 @@ void Axis::move_to_positive(void) {
 
 void Axis::move_to_negative(void) {
     set_direction(Axis::Negative);
+    motor->set_speed(desired_speed);
 
     bool startingAtPosLimit = positive_limit();
     int steps = 0;
@@ -273,7 +296,8 @@ void Axis::wait_for_move(void) {
 }
 
 void Axis::set_speed(uint32_t mm_per_minute) {
-    motor->set_speed(mm_per_minute);
+    desired_speed = mm_per_minute;
+    motor->set_speed(desired_speed);
 }
 
 uint8_t Axis::get_motor_mapping(void) {
