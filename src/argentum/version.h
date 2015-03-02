@@ -1,1 +1,1 @@
-const char *version_string = "0.16.10+20150224";
+const char *version_string = "0.16.11+20150302";
