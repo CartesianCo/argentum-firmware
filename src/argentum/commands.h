@@ -81,6 +81,7 @@ void version_command(void);
 void printer_number_command(void);
 void calibrate_command(void);
 void calibrate_loop_command(void);
+void unknown_command(const char *cmd);
 
 // SD
 void init_sd_command(void);

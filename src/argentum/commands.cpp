@@ -834,6 +834,10 @@ void help_command(void) {
     comms.println();
 }
 
+void unknown_command(const char *cmd) {
+    logger.error("Unknown command.");
+}
+
 #include "version.h"
 
 void version_command(void) {

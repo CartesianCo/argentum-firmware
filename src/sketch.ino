@@ -117,6 +117,8 @@ void setup() {
     serial_command.addCommand("pnum", &printer_number_command);
     serial_command.addCommand("sle", &sle_command);
 
+    serial_command.setDefaultHandler(&unknown_command);
+
     // Initialise Axes from EEPROM here
     if(global_settings.calibration.x_axis.motor == 'A') {
         x_axis.set_motor(&a_motor);
