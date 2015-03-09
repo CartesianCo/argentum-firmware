@@ -38,6 +38,7 @@ void setup() {
 
     // Calibration
     serial_command.addCommand("c", &calibrate_command);
+    serial_command.addCommand("calibrate", &calibrate_command);
     //serial_command.addCommand("cl", &calibrate_loop_command);
 
     // Movement
