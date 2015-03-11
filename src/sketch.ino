@@ -150,6 +150,7 @@ void setup() {
     //uint8_t *firing_buffer = (uint8_t*)malloc(4096);
     printer_number_command();
     version_command();
+    analogWrite(8, 255);
 }
 
 static int white = 0;
@@ -161,9 +162,6 @@ static bool dir = false;
 void loop() {
     x_axis.run();
     y_axis.run();
-
-    if (no_power())
-        analogWrite(8, 0);
 
     //run_tests();
 
