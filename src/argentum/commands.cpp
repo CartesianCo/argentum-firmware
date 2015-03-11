@@ -835,7 +835,11 @@ void help_command(void) {
 }
 
 void unknown_command(const char *cmd) {
-    logger.error("Unknown command.");
+    if (cmd == NULL || *cmd == 0)
+        return;
+    if (!strcmp(cmd, "notacmd"))
+        return;
+    logger.error() << "Unknown command '" << cmd << "'." << Comms::endl;
 }
 
 #include "version.h"
