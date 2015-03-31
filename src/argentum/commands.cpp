@@ -130,6 +130,33 @@ void speed_command(void) {
     axis->set_speed(speed);
 }
 
+void acceleration_command(void) {
+    char *arg;
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        Serial.println("Missing axis parameter");
+        return;
+    }
+
+    char axis_id = arg[0];
+
+    arg = serial_command.next();
+
+    if(arg == NULL) {
+        Serial.println("Missing acceleration parameter");
+        return;
+    }
+
+    Axis *axis = axis_from_id(axis_id);
+
+    if (!strcmp(arg, "off") || !strcmp(arg, "false") || !strcmp(arg, "no"))
+        axis->set_acceleration(false);
+    else
+        axis->set_acceleration(true);
+}
+
 void zero_position_command(void) {
     logger.info("Setting new zero position");
     //xMotor->set_position(0L);

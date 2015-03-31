@@ -43,6 +43,7 @@ Axis::Axis(const char axis,
     direction = Axis::Positive;
 
     set_speed(1000);
+    acceleration = true;
 
     //logger.info() << "Axis created for: " << axis << Comms::endl;
 }
@@ -85,23 +86,28 @@ bool Axis::run(void) {
             return false;
         }
 
-        int acc_steps = 100;
-        uint32_t min_speed = 100;
-        uint32_t d_len = abs((int32_t)desired_position - (int32_t)start_position);
-        if (d_len < acc_steps)
-            acc_steps = d_len / 2;
-        uint32_t d_from_start = abs((int32_t)current_position - (int32_t)start_position);
-        uint32_t d_from_end = abs((int32_t)desired_position - (int32_t)current_position);
-        if (d_from_start < acc_steps)
+        if (acceleration)
         {
-            int speed = min_speed + (d_from_start + 1) * (desired_speed - min_speed) / acc_steps;
-            motor->set_speed(speed);
+            int acc_steps = 100;
+            uint32_t min_speed = 100;
+            uint32_t d_len = abs((int32_t)desired_position - (int32_t)start_position);
+            if (d_len < acc_steps)
+                acc_steps = d_len / 2;
+            uint32_t d_from_start = abs((int32_t)current_position - (int32_t)start_position);
+            uint32_t d_from_end = abs((int32_t)desired_position - (int32_t)current_position);
+            if (d_from_start < acc_steps)
+            {
+                int speed = min_speed + (d_from_start + 1) * (desired_speed - min_speed) / acc_steps;
+                motor->set_speed(speed);
+            }
+            else if (d_from_end < acc_steps)
+            {
+                int speed = min_speed + (d_from_end + 1) * (desired_speed - min_speed) / acc_steps;
+                motor->set_speed(speed);
+            }
         }
-        else if (d_from_end < acc_steps)
-        {
-            int speed = min_speed + (d_from_end + 1) * (desired_speed - min_speed) / acc_steps;
-            motor->set_speed(speed);
-        }
+        else
+            motor->set_speed(desired_speed);
 
         return step();
     }
@@ -319,6 +325,10 @@ void Axis::wait_for_move(void) {
 void Axis::set_speed(uint32_t mm_per_minute) {
     desired_speed = mm_per_minute;
     motor->set_speed(desired_speed);
+}
+
+void Axis::set_acceleration(bool acc) {
+    acceleration = acc;
 }
 
 uint8_t Axis::get_motor_mapping(void) {

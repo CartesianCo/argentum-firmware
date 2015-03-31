@@ -70,6 +70,7 @@ public:
     void wait_for_move(void);
 
     void set_speed(uint32_t mm_per_minute);
+    void set_acceleration(bool acc);
 
     void set_motor_mapping(uint8_t motor_mapping);
     uint8_t get_motor_mapping(void);
@@ -108,6 +109,7 @@ private:
 
     uint32_t desired_position;
     uint32_t desired_speed;
+    bool acceleration;
 };
 
 #endif

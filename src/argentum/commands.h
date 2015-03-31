@@ -35,6 +35,7 @@ void write_setting_command(void);
 
 // Motors
 void speed_command(void);
+void acceleration_command(void);
 void move_command(void);
 
 Stepper * motor_from_axis(unsigned const char axis);
